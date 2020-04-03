@@ -1,0 +1,183 @@
+---
+title: "15时间序列预测"
+author: "LJJ"
+date: "2020/3/29"
+output: 
+  html_document:
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,fig.show = "hold",fig.align = "center")
+```
+
+The purpose of this in-class lab15 is to use R to practice with **time series forecasting**. The lab15 should be completed in your group. To get credit, upload your .R script to the appropriate place on Canvas.
+
+## 15.1 For starters
+
+Open up a new R script (named `ICL15_XYZ.R`, where `XYZ` are your initials) and add the usual "preamble" to the top:
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+# Add names of group members HERE
+library(tidyverse)
+library(wooldridge)
+library(broom)
+library(magrittr)
+library(stargazer)
+library(zoo)
+library(dynlm)
+library(pdfetch)
+library(tseries)   # You may need to install this package
+library(lubridate) # You may need to install this package
+library(forecast)  # You will likely have to install this one
+```
+
+### 15.2.1 Load the data
+
+First we'll look at the return on a 3-month treasury bill over the period of **1960q1--1990q4**.
+
+Second, we'll read in Google's and Apple's stock price data from January 3, 2005 until October 31, 2018.
+
+```{r}
+df1 <- as_tibble(intqrt)
+df1 %>% skimr::skim()
+df1 %<>% 
+  dplyr::mutate(quarter = seq(yq('1960:Q1'),yq('1990:Q4'), by = 'quarters')) # create quarter
+df1 %<>% 
+  dplyr::select(r3,quarter)
+
+```
+
+```{r,eval=FALSE}
+df2 <- pdfetch_YAHOO(c("goog","aapl"), 
+                     fields = c("adjclose"), 
+                     from = ymd("2005-01-01"),
+                     to = ymd("2018-11-01"),
+                     interval = "1d") %>% 
+  as_tibble
+df2 %<>% 
+  dplyr::mutate(date=rownames(df2), date=ymd(date)) # create date variable
+```
+
+### 15.2.2 Declare as time series objects
+
+```{r}
+df1.ts <- df1 %>% 
+  dplyr::select(r3) %>% 
+  zoo(order.by=df1$quarter)
+```
+
+```{r,eval=FALSE}
+df2.ts <- df2 %>% 
+  select(goog,aapl) %>% 
+  dplyr::zoo(order.by=df2$date)
+```
+
+## 15.3 Plot time series data
+
+Let's have a look at the **3-month T-bill return for the US** over the period 1960--1990:
+
+```{r}
+autoplot(df1.ts) + xlab("Year") + ylab("T-bill return")
+```
+
+And now the Google adjusted closing price:
+
+```{r,eval=FALSE}
+autoplot(df2.ts) + xlab("Year") + ylab("Price")
+```
+
+## 15.4 Testing for a unit root
+
+Let's test for a unit root in each of the time series. The way to do this is the Augmented Dickey-Fuller (ADF) test, which is available as `adf.test()` in the `tseries` package.
+
+The function tests 
+
+$$
+H_0: \text{Unit Root} \\ 
+H_a: \text{Stationary}
+$$
+
+```{r}
+adf.test(df1.ts$r3, k=1)
+
+pp.test(df1.ts$r3)
+```
+
+```{r,eval=FALSE}
+adf.test(df2.ts$goog, k=1)
+adf.test(df2.ts$aapl, k=1)
+```
+
+1. Which of these time series has a unit root, according to the ADF test? Explain what the consequences are of analyzing a time series that contains a unit root.
+
+### 15.4.1 Estimating AR(1) models
+
+To alternatively examine the unit root, we can estimate AR(1) models for each series:
+
+```{r}
+est.tbill <- dynlm(r3 ~ L(r3,1), data=df1.ts)
+stargazer(est.tbill,type="text")
+```
+
+```{r,eval=FALSE}
+est.goog  <- dynlm(goog ~ L(goog,1), data=df2.ts)
+stargazer(est.goog,type="text")
+
+est.aapl  <- dynlm(aapl ~ L(aapl,1), data=df2.ts)
+stargazer(est.aapl,type="text")
+```
+
+2. Are the $R^2$ values from these estimates meaningful?
+
+## 15.5 Forecasting
+
+Now let's use our time series data to forecast future stock prices. First, we should create a shortened version of the time series so we can compare our forecast to actual data:
+
+```{r,eval=FALSE}
+df2.short    <- df2 %>% 
+  dplyr::filter(date < as.Date("2018-10-01"))
+
+df2.ts.short <- df2.short %>% 
+  dplyr::select(goog,aapl) %>%
+  zoo(order.by=df2.short$date)
+```
+
+### 15.5.1 Estimating simple AR models
+
+We can use the `Arima` function to estimate basic AR(1) models on the **differenced stock prices**.
+
+```{r,eval=FALSE}
+simple.goog <- Arima(df2.ts.short$goog,order=c(1,1,0))
+simple.aapl <- Arima(df2.ts.short$aapl,order=c(1,1,0))
+```
+
+This is the same thing as estimating
+
+$$
+\Delta goog_t = \rho \Delta goog_{t-1} + u_t
+$$
+
+### 15.5.2 Estimating ARIMA models
+
+We can also use the `auto.arima` function to allow the computer to choose the best ARIMA model:
+
+```{r,eval=FALSE}
+auto.goog <- auto.arima(df2.ts.short$goog)
+auto.aapl <- auto.arima(df2.ts.short$aapl)
+```
+
+### 15.5.3 Plotting forecasts
+
+We can compare the 90-day-ahead forecasts of each model by looking at their plots:
+
+```{r,eval=FALSE}
+autoplot(forecast(simple.goog, h=90))
+autoplot(forecast(  auto.goog, h=90))
+
+autoplot(forecast(simple.aapl, h=90))
+autoplot(forecast(  auto.aapl, h=90))
+```

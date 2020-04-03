@@ -1,0 +1,222 @@
+---
+title: "8回归参数的联合显著性检验"
+author: "LJJ"
+date: "2020/3/28"
+output: 
+  html_document:
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,fig.show = "hold",fig.align = "center")
+```
+
+The purpose of this in-class lab8 is to practice conducting ***joint*** hypothesis tests of regression parameters in R. We will do this using t-tests and F-tests. The lab8 should be completed in your group. To get credit, upload your .R script to the appropriate place on Canvas. 
+
+## 8.1 For starters
+
+Open up a new R script (named `ICL8_XYZ.R`, where `XYZ` are your initials) and add the usual "preamble" to the top:
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+# Add names of group members HERE
+library(tidyverse)
+library(broom)
+library(wooldridge)
+library(car)
+library(magrittr)
+```
+
+### 8.1.1 Load the data
+
+We'll use a data set on earnings and ability, called `htv`. The data set contains a sample of 1,230 workers.
+
+```{r}
+df <- as_tibble(htv)
+skimr::skim(df)
+```
+
+Check out what's in the data by typing
+
+```{r}
+glimpse(df)
+```
+
+The main variables we're interested in are: **wages**, **education**, **ability**, **parental education**, and **region of residence** (`ne`, `nc`, `west`, and `south`).
+
+### 8.1.2 Create regional factor variable
+
+Let's start by creating a factor variable from the four regional dummies. Borrowing code from lab 6, we have:
+
+```{r}
+df %<>% mutate(region = case_when(ne==1 ~ "Northeast",
+                                  nc==1 ~ "NorthCentral",
+                                  west==1 ~ "West",
+                                  south==1 ~ "South")) %>%
+        mutate(region = factor(region))
+```
+
+or 
+
+```{r}
+df %>% 
+  mutate(region = case_when(ne == 1 ~ "Northeast",
+                            nc == 1 ~ "NorthCentral",
+                            west == 1 ~ "West",
+                            south == 1 ~ "South")) %>% 
+  mutate(region = factor(region))->df
+```
+
+## 8.2 Regression and Hypothesis Testing
+
+Estimate the following regression model:
+
+$$
+educ = \beta_0 + \beta_1 motheduc + \beta_2 fatheduc + \beta_3 abil + \beta_4 abil^2 + \beta_5 region + u
+$$
+
+Note that $abil$ is in standard deviation units. You will need to use a `mutate()` function to create $abil^2$ (not shown here). Call it `abilsq`. $region$ represents the factor variable you created above.[^1]
+
+```{r include=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+df %<>% 
+  mutate(abilsq = abil^2)
+```
+
+```{r}
+df %>% glimpse()
+```
+
+```{r}
+est <- lm(educ ~ motheduc + fatheduc + abil + abilsq + region, data=df)
+summary(est)
+tidy(est)
+```
+
+### 8.2.1 t-test
+
+1. Test the hypothesis that $abil$ has a linear effect on $educ$.
+
+### 8.2.2 F-test (single parameter)
+
+2. Now test that $motheduc$ and $fatheduc$ have equal effects on $educ$. In other words, test 
+
+$$
+H_0: \beta_1=\beta_2 \\
+H_a: \beta_1 \neq \beta_2
+$$
+
+To do this, you will need to obtain $se(\beta_1 - \beta_2)$. Luckily, R will do this for you with the `linearHypothesis()` function in the `car` package:
+
+```{r}
+linearHypothesis(est, "motheduc = fatheduc")
+```
+
+The resulting p-value is that of an F test, but one would get an identical result by using a t-test, since this is a simple hypothesis (see @wooldridge, pp. 125-126).
+
+### 8.2.3 F-test (multiple parameters)
+
+The p-values from the previous regression might indicate that **the three region dummies don't contribute to education.**
+
+3. Test the hypothesis that they don't; i.e. test 
+
+$$
+H_0: \text{all region dummies}=0; \\
+H_a: \text{any region dummy}\neq 0
+$$
+
+The code to do this again comes from the `linearHypothesis()` function. The syntax is to encolose each component hypothesis in quotes and then surround them with `c()`, which is how R creates vectors.
+
+```{r}
+linearHypothesis(est, c("regionNortheast=0", "regionSouth=0", "regionWest =0"))
+```
+
+or, more simply,
+
+```{r}
+linearHypothesis(est, matchCoefs(est,"region"))
+```
+
+Alternatively, you can perform the F-test as follows (no need to put this in your R-script; I'm just showing you how to do it "by hand"):
+
+```{r}
+est.restrict <- lm(educ ~ motheduc + fatheduc + abil + abilsq, data=df)
+Fstat.numerator   <- (deviance(est.restrict)-deviance(est))/3
+Fstat.denominator <- deviance(est)/1222
+Fstat <- Fstat.numerator/Fstat.denominator
+p.value <- 1-pf(Fstat,3,1222)
+```
+
+This gives the exact same answer as the `linearHypothesis()` code.
+
+## 8.3 LinearHypothesis Function Reference
+
+```{r}
+Davis %>% head()
+mod.davis <- lm(weight ~ repwt, data=Davis)
+
+summary(mod.davis)
+```
+
+```{r}
+## the following are equivalent:
+# linearHypothesis(mod.davis, diag(2), c(0,1))
+linearHypothesis(mod.davis, c("(Intercept) = 0", "repwt = 1"))
+# linearHypothesis(mod.davis, c("(Intercept)", "repwt"), c(0,1))
+# linearHypothesis(mod.davis, c("(Intercept)", "repwt = 1"))
+```
+
+```{r}
+## use asymptotic Chi-squared statistic
+linearHypothesis(mod.davis, c("(Intercept) = 0", "repwt = 1"), test = "Chisq")
+```
+
+```{r}
+## the following are equivalent:
+  ## use HC3 standard errors via white.adjust option
+linearHypothesis(mod.davis, c("(Intercept) = 0", "repwt = 1"), 
+    white.adjust = TRUE)
+  ## covariance matrix *function*
+linearHypothesis(mod.davis, c("(Intercept) = 0", "repwt = 1"), vcov = hccm)
+  ## covariance matrix *estimate*
+linearHypothesis(mod.davis, c("(Intercept) = 0", "repwt = 1"), 
+    vcov = hccm(mod.davis, type = "hc3"))
+```
+
+```{r}
+mod.duncan <- lm(prestige ~ income + education, data=Duncan)
+```
+
+```{r}
+## the following are all equivalent:
+# linearHypothesis(mod.duncan, "1*income - 1*education = 0")
+linearHypothesis(mod.duncan, "income = education")
+# linearHypothesis(mod.duncan, "income - education")
+# # linearHypothesis(mod.duncan, "1income - 1education = 0")
+# linearHypothesis(mod.duncan, "0 = 1*income - 1*education")
+# linearHypothesis(mod.duncan, "income-education=0")
+# linearHypothesis(mod.duncan, "1*income - 1*education + 1 = 1")
+# linearHypothesis(mod.duncan, "2income = 2*education")
+```
+
+```{r}
+mod.duncan.2 <- lm(prestige ~ type*(income + education), data=Duncan)
+coefs <- names(coef(mod.duncan.2))
+summary(mod.duncan.2)
+```
+
+```{r}
+## test against the null model (i.e., only the intercept is not set to 0)
+linearHypothesis(mod.duncan.2, coefs[-1]) 
+```
+
+```{r}
+## test all interaction coefficients equal to 0
+# linearHypothesis(mod.duncan.2, coefs[grep(":", coefs)], verbose=TRUE)
+linearHypothesis(mod.duncan.2, matchCoefs(mod.duncan.2, ":"), verbose=TRUE)
+```
+
+## 8.4 References
+
+[^1]: Here the notation of $\beta_5 region$ is not quite right. It more technically should be written $\beta_5 region.NE + \beta_6 region.S + \beta_7 region.W$, where each of the $region.X$ variables is a dummy. The way it is written above, $\beta_5 region$ implies that $\beta_5$ is a vector, not a scalar.
