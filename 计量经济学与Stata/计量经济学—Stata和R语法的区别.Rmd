@@ -1,0 +1,288 @@
+---
+title: "计量经济学—Stata与R的联系和区别"
+author: "LJJ"
+date: "2020/4/1"
+output:
+  html_document:
+    highlight: tango
+    theme: paper
+    toc: yes
+    toc_float:
+      collapsed: yes
+      smooth_scroll: no
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+*R语言*和*Stata*都是计量经济学研究的神器,一个擅长统计和可视化,一个擅长计量,有很多交叉内容,最好两门都学习,对于计量经济学研究会带来很多方便。网上有很多两个软件的比较,其实对于研究生而言,再讨论软件的优劣毫无意义。但是我个人更喜欢R,毕竟可以写书、搭建网站、搭建博客,数据分析更加强大,和Git、Github更容易联结,现在并行处理使得R速度很快,吐槽速度慢应该还在用for循环吧,`*apply`和`*map`系列多好。Stata在计量经济学独树一帜,很多内置包使得计量学习更加容易,更加专业和有针对性。不管学习哪一个,用心就好,而我喜欢捣鼓,喜欢尝试,就把两者在计量经济学领域的操作进行比较,当然,不可能面面俱到,但入门足矣（窃以为哈哈）
+
+该备忘单总结了用于计量经济学分析的常用Stata命令,并提供了它们在R中的等效表达。
+
+## 1.1 介绍
+
+```
+ssc install outreg2
+```
+
+```{r}
+# install.packages("wooldridge")
+# data(package = "wooldridge")
+pacman::p_load(margins,AER,fastDummies,lmtest,tidyverse,plm,estimatr,wooldridge)
+wage1 %>% DT::datatable()
+```
+
+```
+browse               // open browser for loaded data
+describe             // describe structure of loaded data
+summarize            // display summary statistics for all variables in dataset
+list in 1/6          // display first 6 rows
+tabulate educ        // tabulate `educ` variable frequencies
+tabulate educ female // cross-tabulate `educ` and `female` frequencies
+```
+
+```{r}
+# View(wage1) # open browser for loaded `wage1` data
+str(wage1) # describe structure of `wage1` data
+```
+
+```{r}
+summary(wage1) # display summary statistics for `wage1` variables
+```
+
+```{r}
+head(wage1) # display first 6 (default) rows data
+tail(wage1) # display last 6 rows
+```
+
+```{r}
+table(wage1$educ) #tabulate `educ` frequencies
+table("yrs_edu" = wage1$educ, "female" =wage1$female) # tabulate `educ` frequencies name table columns
+```
+
+## 1.2 绘图
+
+```
+hist(wage)              // histogram of `wage` hist(wage), by(nonwhite) //
+scatter(wage educ)     // scatter plot of `wage` by `educ`
+twoway (scatter wage educ) (lfit wage educ) // scatter plot with fitted line
+graph box wage, by(nonwhite)                // boxplot of wage by `nonwhite`
+```
+
+```{r}
+hist(wage1$wage) # histogram of `wage`
+```
+
+
+```{r}
+plot(y = wage1$wage, x = wage1$educ) # scatter plot
+
+abline(lm(wage1$wage~wage1$educ),col="red") # add fitted line toscatterplot
+```
+
+```{r}
+boxplot(wage1$wage~wage1$nonwhite) # boxplot of `wage` by `nonwhite`
+```
+
+## 1.3 OLS模型
+
+```
+reg wage educ                // simple regression of `wage` by `educ` (Results printed automatically).
+reg wage educ if nonwhite==1 // add condition with if statement
+reg wage educ exper, robust  // multiple regression using HC1
+robust standard errors reg wage educ exper,cluster(numdep) // use clustered standard errors
+```
+
+```{r}
+mod1 <- lm(wage ~ educ, data = wage1) # simple regression of `wage` by `educ`, store results in `mod1`
+
+summary(mod1) # print summary of `mod1` results
+
+mod2 <- lm(wage ~ educ, data = wage1[wage1$nonwhite==1, ]) # add condition with if statement`
+
+mod3 <- estimatr::lm_robust(wage ~ educ + exper, data = wage1, se_type = "stata") # multiple regression with HC1 (Stata default) robust standard errors, use {estimatr} package
+
+mod4 <- estimatr::lm_robust(wage ~ educ + exper, data = wage1, clusters = numdep) # use clustered standard errors.
+```
+
+## 1.4 MLE(Logit/Probit/Tobit)模型
+
+```
+logit inlf nwifeinc educ         // estimate logistic regression 
+probit inlf nwifeinc educ        // estimate logistic regression
+tobit hours nwifeinc educ, ll(0) // estimate tobit regression, lower-limit of y censored at zero
+```
+
+```{r}
+mod_log <- glm(inlf~nwifeinc + educ,family=binomial(link="logit"), 
+               data = mroz) # estimate logistic regression
+
+mod_pro <- glm(inlf~nwifeinc + educ,family=binomial(link="probit"),
+               data=mroz) # estimate logistic regression
+
+mod_tob <- AER::tobit(hours ~ nwifeinc + educ, left = 0, 
+                      data = mroz) # estimate tobit regression, lower-limit of y censored at zero, use {AER} package
+```
+
+## 1.5 生成和编辑变量
+
+```
+gen exper2 = exper^2       // create `exper` squared variable
+egen wage_avg = mean(wage) // create average wage variable drop tenursq // 
+drop `tenursq` variable
+keep wage educ exper nonwhite // keep selected variables
+tab numdep, gen(numdep)       // create dummy variables for `numdep` recode exper (1/20 = 1 "1 to 20 years") (21/40 = 2 "21 to 40 years") (41/max = 3 "41+ years"),
+gen(experlvl) // recode `exper` and gen new variable
+```
+
+```{r,eval=FALSE}
+wage1$exper2 <- wage1$exper^2 # create `exper` squared variable 
+
+wage1$wage_avg <- mean(wage1$wage) # create average wage variable
+
+wage1$tenursq <- NULL #drop `tenursq`
+
+wage1 <- wage1[ , c("wage", "educ","exper", "nonwhite")] # keep selected variables
+
+wage1 <- fastDummies::dummy_cols(wage1,select_columns = “numdep”) # create dummy variables for `numdep`, use {fastDummies} package
+
+wage1$experlvl <- 3 # recode `exper`
+
+wage1$experlvl[wage1$exper < 41] <- 2
+
+wage1$experlvl[wage1$exper < 21] <- 1 
+```
+
+## 1.6 统计检验
+
+```
+reg lwage educ exper     // estimation used for examples below 
+estat hettest            // Breusch-Pagan / Cook-Weisberg test for heteroskedasticity
+estat ovtest             // Ramsey RESET test for omitted variables
+ttest wage, by(nonwhite) // independent group t-test, compare means of same variable between
+```
+
+```{r}
+mod <-lm(lwage ~ educ + exper, data = wage1) # estimate used for examples below
+
+lmtest::bptest(mod) # Breusch-Pagan / Cook-Weisberg test for heteroskedasticity using the {lmtest} package
+
+lmtest::resettest(mod) # Ramsey RESET test
+
+t.test(wage ~ nonwhite, data = wage1) # independent group t-test
+```
+
+## 1.8 面板模型
+
+```
+xtset id year         // set `id` as entities (panel) and `year` as time variable
+xtdescribe            // describe pattern of xt data
+xtsum                 // summarize xt data 
+xtreg mrdrte unem, fe // fixed effects regression
+```
+
+```{r}
+plm::is.pbalanced(murder$id,murder$year) # check panel balance with {plm} package
+modfe <- plm::plm(mrdrte ~ unem, 
+                  index = c("id", "year"),
+                  model = "within", 
+                  data = murder) # estimate fixed effects (“within”) model
+summary(modfe) # display results
+```
+
+## 1.8 工具变量
+
+```
+ivreg lwage (educ = fatheduc),first // show results of first stage regression
+etest first                         // test IV and endogenous variable
+ivreg lwage(educ = fatheduc)        // show results of 2SLS directly
+```
+```{r}
+modiv <-AER::ivreg(lwage ~ educ | fatheduc, data = mroz) # estimate 2SLS with {AER} package
+summary(modiv, diagnostics = TRUE) # get diagnostic tests of IV and endogenous variable
+```
+
+## 1.9 Post-estimation
+
+```
+reg wage educ              // estimation used for the following post-estimation commands 
+predict yhat               // get predicted values from last estimation, store as `yhat` 
+predict e, res             // get residuals from last estimation, store as `e`
+```
+```{r}
+mod1 <- lm(wage ~ educ, data = wage1) # estimation used for the following post-estimation commands
+yhat <- predict(mod1) # get predicted values
+e <- residuals(mod1) # get residual
+```
+
+```
+reg lwage educ exper##exper  // estimation used for following postestimation commands
+estimates store mod1         // stores in memory the last estimation results to `mod1`
+margins                      // get average predictive margins
+margins, dydx(*)             // get average marginal effects for all variables
+marginsplot                  // plot marginal effects
+margins, dydx(exper)         // average marginal effects of experience
+margins, at(exper=(1(10)51)) // average predictive margins over `exper` range at 10-year increments
+estimates use mod1           // loads `mod1` back into working memory
+estimates table mod1 mod2    // display table with stored estimation results
+```
+
+```{r}
+mod1 <- lm(lwage ~ educ + exper + I(exper^2), data = wage1) # Note: in R, mathematical expressions inside a formula call must be isolated with `I()`
+
+mod1 %>% summary()
+```
+
+```{r}
+margins::prediction(mod1) # get average predictive margins with {margins} package
+```
+
+```{r}
+m1 <- margins::margins(mod1) # get average marginal effects for all variables
+```
+
+```{r}
+plot(m1) # plot marginal effects
+```
+
+```{r}
+summary(m1) # get detailed summary of marginal effects
+```
+
+```{r}
+margins::prediction(mod1, at = list(exper = seq(1,51,10))) # predictive margins over `exper` range at 10-year increments
+```
+
+```{r}
+stargazer::stargazer(mod1, mod2, type = "text") # use {stargazer} package, with `type=text` to display results within R. Note: `type= ` also can be changed for LaTex and HTML output.
+```
+
+我也是个小白而已,肯定有疏漏和错误之处,只是最近学习的总结而已。总结和温故不比一直学习新知识不重要,一个人不可能在所有领域都有所涉猎,精通自己的领域已经很难、很难。。。总结、温习和学习一直进行时哈哈。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
