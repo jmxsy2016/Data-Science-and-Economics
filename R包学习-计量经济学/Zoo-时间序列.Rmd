@@ -1,0 +1,42 @@
+---
+title: "Zoo-时间序列"
+author: "LJJ"
+date: "2020/4/8"
+output: 
+  html_document:
+    toc: true
+    toc_float:
+      collapsed: true
+      smooth_scroll: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## start
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(zoo)
+z <- seq.Date(ymd(20200210),ymd(20200310),by = "1 day")
+z
+z %>% class()
+```
+
+```{r}
+z
+```
+
+
+
+
+
+
+
+
+
+
+
+

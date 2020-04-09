@@ -1,0 +1,172 @@
+---
+title: "grf-因果推断"
+author: "LJJ"
+date: "2020/4/9"
+output: 
+  html_document:
+    toc: true
+    toc_float:
+      collapsed: true
+      smooth_scroll: false
+  
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Categorical inputs
+
+```{r}
+library(tidyverse)
+library(grf)
+```
+
+```{r}
+# Create a categorical column with brand name
+df <- within(mtcars, {
+  # E.g. 'Mazda RX4' --> 'Mazda'
+  brand <- factor(sapply(rownames(mtcars), function(x) strsplit(x, " ")[[1]][1]))
+})
+df
+x <- c("cyl", "qsec") # Continuous variables
+g <- c("brand")       # Categorical variable
+
+head(df[c(x, g)])
+```
+
+```{r}
+# Solution 1: Transform variable into numbers
+X1 <- within(df[c(x, g)], brand <- as.numeric(brand))
+rf1 <- regression_forest(X1, df$mpg)
+```
+
+```{r}
+# Solution 2: One-hot encoding
+X2 <- model.matrix(~ 0 + ., df[c(x, g)])
+rf2 <- regression_forest(X2, df$mpg)
+```
+
+```{r}
+# Solution 3: 'Means' encoding using the 'sufrep' package
+encoder <- make_encoder(df[x], df$brand, method="means")
+X3 <- encoder(df[x], df$brand)
+rf3 <- regression_forest(X3, df$mpg)
+```
+
+```{r}
+mse1 <- mean(rf1$debiased.error)
+mse2 <- mean(rf2$debiased.error)
+mse3 <- mean(rf3$debiased.error)
+
+print("MSE when representing categorical variables as...")
+#> [1] "MSE when representing categorical variables as..."
+print(paste0("Integers: ", mse1))
+#> [1] "Integers: 15.6969419383279"
+print(paste0("One-hot vectors: ", mse2))
+#> [1] "One-hot vectors: 14.566580518222"
+print(paste0("'Means' encoding [sufrep]: ", mse3))
+#> [1] "'Means' encoding [sufrep]: 14.5550942138715"
+```
+
+## Confidence intervals and the number of trees
+
+```{r}
+n <- 2000
+p <- 10
+X <- matrix(rnorm(n * p), n, p)
+X.test <- matrix(0, 101, p)
+X.test[, 1] <- seq(-2, 2, length.out = 101)
+X.test %>% datatable()
+
+W <- rbinom(n, 1, 0.4 + 0.2 * (X[, 1] > 0))
+
+Y <- pmax(X[, 1], 0) * W + X[, 2] + pmin(X[, 3], 0) + rnorm(n)
+
+num.trees.grid <- c(10, 20, 30, 40, 100, 500, 1000, 2000, 3000, 4000)
+
+median.variances <- c()
+for (num.trees in num.trees.grid) {
+  tau.forest <- causal_forest(X, Y, W, num.trees = num.trees)
+  hn <- median(predict(tau.forest, estimate.variance = TRUE)$variance.estimates, na.rm = TRUE)
+  median.variances <- c(median.variances, hn)
+  print(hn)
+}
+
+map_dbl(num.trees.grid,function(num.trees){
+  tau.forest <- causal_forest(X, Y, W, num.trees = num.trees)
+  hn <- median(predict(tau.forest, estimate.variance = TRUE)$variance.estimates, 
+               na.rm = TRUE)
+  return(hn)
+})->median.variances
+#> [1] 0.1046173
+#> [1] 0.09344524
+#> [1] 0.07327336
+#> [1] 0.07266573
+#> [1] 0.0496021
+#> [1] 0.02753671
+#> [1] 0.02338877
+#> [1] 0.01892714
+#> [1] 0.0201111
+#> [1] 0.01866248
+plot(
+  x = num.trees.grid,
+  y = median.variances,
+  main = "Median prediction variances",
+  xlab = "num.trees"
+)
+lines(num.trees.grid, median.variances)
+```
+
+```{r}
+tibble(num.trees = num.trees.grid,median.variances = median.variances) %>% 
+  ggplot(aes(num.trees,median.variances)) +
+  geom_point(size = 1.8) +
+  geom_line()
+```
+
+## Evaluating a causal forest fit
+
+```{r}
+n <- 2000
+p <- 10
+X <- matrix(rnorm(n * p), n, p)
+
+W <- rbinom(n, 1, 0.4 + 0.2 * (X[, 1] > 0))
+Y <- pmax(X[, 1], 0) * W + X[, 2] + pmin(X[, 3], 0) + rnorm(n)
+cf <- causal_forest(X, Y, W)
+```
+
+```{r}
+hist(e.hat <- cf$W.hat)
+```
+
+```{r}
+test_calibration(cf)
+```
+
+```{r}
+tau.hat <- predict(cf)$predictions
+high.effect <- tau.hat > median(tau.hat)
+ate.high <- average_treatment_effect(cf, subset = high.effect)
+ate.low <- average_treatment_effect(cf, subset = !high.effect)
+```
+
+```{r}
+ate.high[["estimate"]] - ate.low[["estimate"]] +
+  c(-1, 1) * qnorm(0.975) * sqrt(ate.high[["std.err"]]^2 + ate.low[["std.err"]]^2)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
