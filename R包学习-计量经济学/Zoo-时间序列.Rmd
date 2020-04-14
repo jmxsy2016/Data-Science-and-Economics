@@ -29,14 +29,88 @@ z %>% class()
 z
 ```
 
+```{r}
+set.seed(1071)
+data <- tibble(x = seq.Date(from = ymd(20200101),to = ymd(20200531),by = "1 day"),
+               y = 1:length(x),
+               z = 1:length(x))
+data_zoo <- zoo(data,order.by = data$x)
+data_zoo %>% head()
+```
 
+```{r}
+data_zoo %>% class
+data_zoo %>% summary()
+```
 
+```{r}
+AirPassengers
+zoo(AirPassengers,frequency = 12)
+```
 
+```{r}
+zoo(AirPassengers,frequency = 12) %>% frequency()
+AirPassengers %>% frequency()
+```
 
+```{r}
+zooreg(data %>% select(y),order.by = data$x)->data_zooreg
+plot(data_zooreg)
+```
 
+## 合并
 
+```{r}
+z1 <- zooreg(1:10,start = ymd(20040114))
+z1
+z2 <- zooreg(1:10,start = ymd(20050114))
+z2
+rbind(z1,z2)
+```
 
+```{r}
+cbind(z1,z2)  # 时间序列的合并挺有用的
+```
 
+```{r}
+z1 + z2
+```
 
+## 处理NA值
 
+```{r}
+z1[sample(1:10, 3)] <- NA
+z1
+```
+
+```{r}
+na.omit(z1)
+```
+
+```{r}
+na.contiguous(z1)
+```
+
+## 滚动函数
+
+```{r}
+data <- tibble(x = rnorm(10),
+               y = rbinom(10,1,0.5),
+               z = x + y)
+data
+```
+
+```{r}
+zooreg(data,start = ymd(20200409))->Z
+Z
+```
+
+```{r}
+rollapply(Z, 6, mean)
+```
+
+```{r}
+plot(Z)
+auto.arima(Z$x) %>% summary()
+```
 

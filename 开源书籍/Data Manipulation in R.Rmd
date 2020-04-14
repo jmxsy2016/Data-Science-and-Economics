@@ -1,0 +1,1784 @@
+---
+title: "Data Manipulation in R"
+author: "LJJ"
+date: "2020/4/10"
+output:
+   html_document:
+     toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,cache = TRUE)
+```
+
+---
+
+## 数据读取
+
+```{r}
+library(tidyverse)
+library(DT)
+library(lubridate)
+library(stringr)
+library(explore)
+```
+
+### read_csv
+
+```{r,eval=FALSE}
+read_csv("iris.csv",
+         col_names = c("sepal_length","sepal_width","petal_length","petal_width","species"),
+         skip=1)
+```
+
+可以使用`read_delim()`、`read_csv2`或`read_tsv()`来处理具有不同分隔符的类似结构化数据。
+
+### read_excel
+
+```{r,eval=FALSE}
+iris2 <- read_excel("iris.xlsx")
+```
+
+```{r,eval=FALSE}
+iris2 <- read_excel(
+  "iris.xlsx",
+  col_names = c(
+    "sepal_length",
+    "sepal_width",
+    "petal_length",
+    "petal_width",
+    "species"
+  ),
+  skip = 1
+)
+```
+
+### map_df
+
+```{r}
+map_df(list.files(pattern="*.csv"),read_csv)
+```
+
+### 数据库
+
+```{r}
+library(DBI)
+library(odbc)
+```
+
+### 总结
+
+有许多软件包可用于从各种来源读取数据。在本简短的章节中，我们介绍了如何读取`CSV`，`Excel`和`数据库`。 我建议您开始使用的软件包是readr，readxl，DBI和odbc。本章的介绍是最基本的，将在以后的书中更深入地介绍如何使用这些数据源和其他数据源。
+
+---
+
+## 管道
+
+### %>% 
+
+```{r}
+letters %>% 
+  tolower() %>% 
+  length()
+```
+
+```{r}
+iris %>% 
+  head() %>% 
+  nrow()
+```
+
+```{r}
+iris %>% 
+  head()->iris_head
+iris_head
+```
+
+有时，我们遇到的函数不会将键输入作为第一个参数。 这里有些例子：
+
+```{r}
+letterz <- sub("s","z",letters)
+letterz
+```
+
+```{r}
+my_lm <- lm(Sepal.Width ~ Sepal.Length,data = iris)
+my_lm %>% stargazer::stargazer(type = "text")
+```
+
+默认情况下，我们的管道会将对象作为函数的**第一个输入**。为了使用这些混乱的函数，我们需要一种方法来告诉管道在哪里使用我们的输入，而不是依赖于默认值。我们可以通过**句点（.）**来实现。通过将其用作给定参数输入的占位符，我们可以将数据放在函数中的任何位置。因此，我们的两个示例变为：
+
+```{r}
+letters %>% 
+  sub("s","z",.)   # .真是个好东西！！！
+```
+
+```{r}
+iris %>% 
+  lm(Sepal.Width ~ Sepal.Length,data = .) %>%     # 很不错的技巧！！！
+  stargazer::stargazer(type = "text")
+```
+
+使用**％>％运算符**来构建数据管道！！！管道将上一代码的结果放入下一部分代码的第一个参数中。.可以使用来修改默认行为，表示输入应该去哪里。可以使用**->运算符**将管道的结果分配给对象。
+
+### 练习
+
+1. Write a pipeline that samples from the vector LETTERS 200 times and stores the result in a vector called lots_of_LETTERS
+
+```{r}
+LETTERS %>% 
+  sample(200,replace = TRUE)->lots_of_LETTERS
+```
+
+2. Write a pipeline that provides **upper-cased versions** of the column names of the dataset mtcars
+
+```{r}
+mtcars %>% 
+  colnames() %>% 
+  toupper()->colnames(mtcars)
+mtcars %>% kableExtra::kable()
+```
+
+```{r}
+mtcars %>% 
+  colnames() %>% 
+  tolower()->colnames(mtcars)
+mtcars %>% kableExtra::kable()
+```
+
+## 选择数据框列
+
+要从数据集中提取列，我们可以使用`select（）函数`来提供有关我们想要或不想要的列的说明。select（）采用逗号分隔的指令列表。
+
+### select
+
+```{r}
+iris %>% 
+  select(Sepal.Length,Species) %>% 
+  head()
+```
+
+```{r}
+iris %>% 
+  select(-Species) %>% 
+  head()
+```
+
+```{r}
+iris %>% 
+  select(Sepal.Length:Petal.Length) %>% 
+  head()
+```
+
+```{r}
+iris %>% 
+  select(-(Sepal.Length:Petal.Length)) %>% 
+  head()
+```
+
+请注意，如果您排除一列并稍后将其包括在同一select（）中，则不会排除该列。如果在将其包含在select（）中之后排除了该列，则该列将被排除。
+
+```{r}
+iris %>% 
+  select(-Species,Species) %>% 
+  head()
+```
+
+### starts_with
+
+```{r}
+iris %>% 
+  select(starts_with("S")) %>% 
+  head()
+```
+
+### ends_with
+
+```{r}
+iris %>% 
+  select(ends_with("S")) %>% 
+  head()
+```
+
+### contains
+
+```{r}
+iris %>% 
+  select(contains("Se")) %>% 
+  head()
+```
+
+### num_range
+
+```{r}
+tibble(x1 = 1:10,
+       x2 = 2:11,
+       x3 = letters[1:10])->data
+data %>% 
+  select(num_range("x",1:3))
+```
+
+### matches
+
+```{r}
+data %>% 
+  select(matches("x")) %>% 
+  head()
+```
+
+### one_of
+
+```{r}
+data %>% 
+  select(one_of(c("x1","x5")))
+```
+
+### select_if
+
+```{r}
+iris %>% 
+  select_if(~(is.numeric(.)&n_distinct(.)>30)) %>% 
+  head()
+```
+
+### select_at
+
+```{r}
+iris %>% 
+  select_at(.vars = c("Sepal.Length")) %>% 
+  head()
+```
+
+### select_all
+
+```{r}
+iris %>% 
+  select_all() %>% 
+  head()
+```
+
+### 练习
+
+1. Write a select() that gets from the movies data (from ggplot2movies) the columns title through to votes, and Action through to Short
+
+```{r}
+library(ggplot2movies)
+ggplot2movies::movies %>% 
+  select(title:votes,Action:Short) %>% 
+  head()
+```
+
+2. Write a query that brings back the movies dataset without any column that begins with r or m
+
+```{r}
+movies %>% 
+  select(!contains(c("r","m"))) %>% 
+  colnames()
+```
+
+3. [ADVANCED] Write a query that returns columns that have a high degree of missing data (more than 25% of rows are NA) from the movies dataset
+
+```{r}
+movies %>% 
+  select_if(~(mean(is.na(.))>0.25)) %>% 
+  head()
+```
+
+## 选择数据框行
+
+### slice
+
+要根据记录的出现位置从数据集中选择记录，可以使用slice（）函数。slice（）函数采用表示位置的值的向量。 这些可以是包含正值，也可以是排除负值.
+
+```{r}
+iris %>% 
+  slice(1:6)
+```
+
+### n()
+
+```{r}
+iris %>% 
+  slice(1:floor(n()/3)) %>% 
+  count()
+```
+
+### filter
+
+```{r}
+iris %>% 
+  filter(Species == "virginica") %>% 
+  head()
+```
+
+```{r}
+iris %>% 
+  filter(Species == "virginica",Sepal.Length > mean(Sepal.Length)) %>% 
+  head()
+```
+
+### filter_if
+
+```{r}
+iris %>%
+  filter_if(is.numeric,any_vars(abs(. - mean(.))>2*sd(.)))
+```
+
+```{r}
+iris %>% 
+  filter_if(~is.numeric(.)&n_distinct(.)>30,any_vars(.<mean(.))) %>% 
+  head()
+```
+
+### filter_all
+
+```{r}
+iris %>% 
+  filter_all(any_vars(.>7.5),.preserve = TRUE)
+```
+
+- Use the place holder (.) to indicate where a column’s values should be used in a condition
+- The place holder can be used multiple times in a condition
+- If the condition must be TRUE for all columns, then we wrap our condition in all_vars()
+- If only one column needs to return a TRUE then we wrap it in any_vars()
+
+```{r}
+mtcars %>% 
+  filter_all(all_vars(.>0.8))
+```
+
+```{r}
+mtcars %>% 
+  filter_all(any_vars(.>400))
+```
+
+### filter_at
+
+```{r}
+iris %>% 
+  filter_at(vars(ends_with("Length")), # at这个变量可以用select嘛
+            all_vars(. < mean(.)))     # 有的故意麻烦
+```
+
+or
+
+```{r}
+iris %>% 
+  filter(Sepal.Length < mean(Sepal.Length),Petal.Length < mean(Petal.Length))
+```
+
+### 练习
+
+1. Write a flter that gets all action movies from the movies dataset via the ggplot2movies package
+
+```{r}
+# movies %>% head()
+movies %>% 
+  filter(Action == 1) %>% 
+  select(Action,everything()) %>% 
+  head()
+```
+
+2. Write a flter that removes flms lasting more than 6 hours from the movies dataset
+
+```{r}
+movies %>% 
+  filter(length <= 360) %>% 
+  head()
+```
+
+3. [ADVANCED] Write a filter that checks to see if any of the films don’t have any genres ﬂagged at all
+
+```{r}
+movies %>% 
+  select(Action:Short) %>% 
+  filter_all(all_vars(.== 0))
+```
+
+## 处理数据框的名字
+
+### select
+
+```{r}
+iris %>% 
+  select(sepal.length = Sepal.Length,
+         species = Species) %>% 
+  head()
+```
+
+### select_all
+
+```{r}
+iris %>% 
+  select_all(toupper) %>% 
+  head()
+```
+
+### select_if
+
+```{r}
+iris %>% 
+  select_if(is.numeric,toupper) %>% 
+  head()
+```
+
+### select_at
+
+```{r}
+select_at(mtcars, vars(-contains("ar"), starts_with("c")), toupper) %>% head()
+```
+
+### rename
+
+```{r}
+iris %>% 
+  rename(sepal.length = Sepal.Length,
+         species = Species) %>% 
+  head()
+```
+
+### rename_all
+
+```{r}
+rename_all(mtcars,str_to_lower) %>% head()
+```
+
+### rename_if
+
+```{r}
+iris %>% 
+  rename_if(is.numeric,str_to_upper) %>% head()
+```
+
+### rename_at
+
+```{r}
+iris %>% 
+  rename_at(vars(contains("S")),str_to_upper)
+```
+
+### rownames_to_column
+
+```{r}
+mtcars %>% class()
+mtcars %>% 
+  rownames_to_column() %>% 
+  head()
+```
+
+### 练习
+
+1. Output the movies dataset with the column **budget** changed to **budget_if_known**
+
+```{r}
+movies %>% 
+  rename(budget_if_known = budget) %>% 
+  head()
+```
+
+2. [ADVANCED] Write a query that returns from the movies dataset columns that have a high degree of missing data (more than 25% of rows are NA) and upper case all the output column names
+
+```{r}
+movies %>% 
+  select_if(~(mean(is.na(.))>0.25)) %>% 
+  rename_all(str_to_upper) %>% 
+  head()
+```
+
+## 排序变量
+
+### arrange
+
+```{r}
+iris %>% 
+  arrange(desc(Species),Sepal.Length) %>% 
+  head()   # 默认升序排列数据
+```
+
+您还可以使用arrange_all（），arrange_at（）和arrange_if（）对所有数据进行排序（从左到右）或按符合条件的列进行排序。 您可以为desc提供这些功能，作为要应用的排序顺序行为。
+
+### arrange_all
+
+```{r}
+iris %>% 
+  arrange_all() %>% 
+  head()    # 从左往右排列
+```
+
+### arrange_if
+
+```{r}
+iris %>% 
+  arrange_if(is.numeric,desc) %>% 
+  head()
+```
+
+### arrange_at
+
+```{r}
+iris %>% 
+  arrange_at(vars(contains("S"),Petal.Length),desc) %>% 
+  head()
+```
+
+### select
+
+```{r}
+iris %>% 
+  select(starts_with("P"),everything())  # 把含有P开头的变量排列到前边
+```
+
+### current_vars按照字母顺序排序
+
+要按字母顺序排序，我们需要提取列名，我们可以使用函数current_vars（）完成此操作，然后对名称进行排序。
+
+```{r}
+mtcars %>% 
+  select(sort(tidyselect::peek_vars()))
+```
+
+### 练习
+
+1. Sort the movies data by title in descending order
+
+```{r}
+movies %>% 
+  arrange(desc(title)) %>% 
+  select(title,everything()) %>% 
+  head()
+```
+
+2. [ADVANCED] Sort the movies data by columns containing **only two unique values**
+
+```{r}
+movies %>% 
+  select_if(~(n_distinct(.) == 2)) %>% 
+  arrange_all(desc) %>% 
+  head(100) %>% 
+  DT::datatable()
+```
+
+## 生成和删除若干列数据
+
+### mutate
+
+```{r}
+iris %>% 
+  mutate(Sepal.Area = Sepal.Length * Sepal.Width) %>% 
+  head()
+```
+
+```{r}
+iris %>% 
+  mutate(Sepal.Area = Sepal.Length * Sepal.Width,
+         Sepal.Area.Mean = mean(Sepal.Area)) %>% 
+  select(Sepal.Area,Sepal.Area.Mean,everything()) %>% 
+  head()
+```
+
+```{r}
+iris %>% 
+  mutate(Sepal.Length = Sepal.Length * 10) %>% 
+  head()
+```
+
+```{r}
+iris %>% 
+  mutate(Sepal.Length = NULL) %>% 
+  head()
+```
+
+### row_number
+
+```{r}
+iris %>% 
+  mutate(id = row_number()) %>% 
+  head()
+```
+
+### lag和lead
+
+```{r}
+iris %>% 
+  mutate(Sepal.Length.Lag = dplyr::lag(Sepal.Length),
+         Sepal.Length.Lead = dplyr::lead(Sepal.Length)) %>% 
+  select(Sepal.Length.Lag,Sepal.Length.Lead,everything()) %>% 
+  head()
+```
+
+### case_when
+
+```{r}
+x <- sample(1:5,10,replace = TRUE)
+x
+case_when(x == 1 ~ 100,
+          x == 2 ~ 200,
+          TRUE ~ as.numeric(x)
+          )
+```
+
+```{r}
+iris %>% 
+  mutate(size = 
+           case_when(Sepal.Length > Petal.Length ~ "larger",
+                     Sepal.Length < Petal.Length ~ "Slower",
+                     Sepal.Length == Petal.Length ~ "Equal")
+         ) %>% 
+  head()
+```
+
+### cumall、cumany()和cummean
+
+```{r}
+cumall(2:10 > 1) 
+cumany(1:10 > 1) # 1 3 6 ...
+cummean(1:10)
+```
+
+### transmute
+
+```{r}
+iris %>% 
+  transmute(Sepal.Width = floor(Sepal.Width),
+            Species = case_when(Species == "setosa" ~ str_to_upper(Species),
+                                TRUE ~ as.character(Species))) %>% 
+  head()
+```
+
+### mutate_all
+
+```{r}
+iris %>% 
+  mutate_all(as.character) %>% 
+  head()
+```
+
+### mutate_if
+
+```{r}
+iris %>% 
+  mutate_if(is.numeric,as.character) %>% 
+  head()
+```
+
+### mutate_at
+
+```{r}
+iris %>% 
+  mutate_at(vars(contains("Sp")),as_factor) %>% 
+  head()
+```
+
+```{r}
+iris %>% 
+  mutate_at(vars(Sepal.Length:Petal.Width), ~ . + rnorm(.))
+```
+
+总结：all针对所有列应用某个函数；at针对选择的变量应用某个函数；if根据选择的变量应用某个函数
+
+### 练习
+
+1. Create an irisImperial dataset with the numeric measurements converted to inches (divide by 2.5), and the Species upper-cased.
+
+```{r}
+iris %>% 
+  mutate_if(is.numeric,~ . /2.5) %>% 
+  mutate(Species = str_to_upper(Species)) %>% 
+  head()
+
+# iris %>% 
+  # select_if(is.numeric, ~ ./2.5)  # 这个为甚么错？因为select函数()是选择变量的，对变量数值不能进行处理，反之，mutate是生成变量的，对变量名称不能有影响
+```
+
+2. Add a column to movies that says how much the **length** differs from the **median.**
+
+```{r}
+movies %>% colnames()
+movies %>% 
+  mutate(length_median_sub = (length - median(length))) %>% 
+  select(length_median_sub,everything()) %>% 
+  head()
+```
+
+3. [ADVANCED] Redo your irisImperial code using the mutate_if() function to make the conversion more succinct.
+
+Create an irisImperial dataset with **the numeric measurements converted to inches** (divide by 2.5), and the Species upper-cased.
+
+```{r}
+iris %>% 
+  mutate_if(is.numeric,~ ./2.5) %>%             # .真是好东西！！！
+  mutate(Species = str_to_upper(Species)) %>% 
+  head()
+```
+
+## 处理时间数据
+
+### ymd
+
+```{r}
+library(lubridate)
+ymd_hms(
+  c(
+    "20110604110101",
+    "2011-06-04 11:01:01",
+    "2011/06/04/11/01/01",
+    "2011 june 4th, 11:01:01",
+    "2011%06%04%11%01%01",
+    "04/06/2011 11:01:01",
+    "2011-06-04 11:01:01 PDT",
+    "2011-06-04 11:01:00+1400"
+  )
+)
+```
+
+```{r}
+myDate <- ymd_hms("20110604110101")
+myDate
+myDate %>% date()
+```
+
+### year、month、day等函数
+
+```{r}
+year(myDate)
+month(myDate)
+week(myDate)
+day(myDate)
+hour(myDate)
+minute(myDate)
+second(myDate)
+```
+
+### yday、mday、wday、dday函数
+
+```{r}
+yday(myDate)
+mday(myDate)
+wday(myDate)
+ddays(1)
+dyears(1)
+```
+
+```{r}
+wday(myDate)
+wday(myDate,label = TRUE,abbr = FALSE)
+```
+
+```{r}
+sept <- ymd("20170903")
+sept
+mday(sept) <- 31
+
+feb <- ymd("20160204")
+feb
+mday(feb) <- 31
+feb
+yday(feb) <- 366  # 一年中的最后一天。yday、mday、wday真好用哈哈！
+feb
+```
+
+### 时间加加减减
+
+```{r}
+myDate
+myDate + years(1)
+myDate + months(1)
+myDate + days(1)
+myDate + hours(myDate)
+myDate + minutes(1)
+myDate + seconds(1)
+```
+
+总结：以year为例，year()提取时间年份；years是时间增加若干年；**dyears生成秒时间**
+
+```{r}
+feb <- ymd(20160228)
+feb + years(1)
+feb + dyears(1)
+year(feb)
+```
+
+### 时间格式
+
+```{r}
+a_date <- ymd_hms("20160228161101")
+format(a_date)
+
+format(a_date,"%Y-%m-%d")
+```
+
+```{r}
+format(a_date,"%Y-%m-%d %H:%M:%S")
+
+format(a_date,"%c") #  %c will output in your current locale’s default
+format(a_date,"%D") #  %D will yield an American style short date format
+format(a_date,"%F") #  %F will yield the ISO standard date format
+format(a_date,"%Z")
+format(a_date,"%z") #  %z and %Z allow you to output time zones as either numeric adjustments or time zone abbreviations.
+```
+
+### 其它常见工作场景
+
+```{r}
+x <- seq.Date(from = ymd(20200401),to = ymd(20200410),by = "1 day")
+x
+
+## 得到一月的开始
+floor_date(x, "month")
+floor_date(x, "week")
+```
+
+```{r}
+ceiling_date(x,"month") - days(1) # 上个月的最后一天
+ceiling_date(x,"month") - ddays(1)  # 一天是一样的
+```
+
+```{r}
+ceiling_date(x,"month") - years(1)
+ceiling_date(x,"month") - dyears(1)  # 这个年可就不一样！！！
+```
+
+```{r}
+ymd(c("20171031","20170130")) %m+% months(1)  # dmonths(1)为甚么失败？原来如此！
+```
+
+```{r}
+ymd("20171011") %m+% months(1:4)
+ymd("20171011") + months(1:4)
+```
+
+产生一个月序列。 如果该值不会是月末值，请使用+运算符，否则请使用我们的运算符％m+％强制执行月末行为
+
+```{r}
+ymd("20171031") %m+% months(1:4)
+```
+
+```{r}
+ymd(c("20171028","20171031")) %within% 
+  interval(ymd("20171030"),ymd("20171130"))
+```
+
+```{r}
+int_overlaps(interval(ymd("20171028"), ymd("20171031")),
+             interval(ymd("20171030"), ymd("20171130")))
+```
+
+### 练习
+
+1. Get **the last day** of the previous month for these dates: c("2015, April 29th","2017/01/07","17/08/12")
+
+```{r}
+c("2015, April 29th","2017/01/07","17/08/12") %>% ymd()->x
+x
+floor_date(x,"month")  - days(1)
+```
+
+2. Dates are hard. Try to get a year and a day from **the 29th February 2016** using lubridate – what do you think the right answer should be 1st March 2017 or 2nd March 2017?
+
+```{r}
+dmy("29th February 2016") %>% year()
+dmy("29th February 2016") %>% day()
+
+dmy("29th February 2016") + years(1)
+dmy("29th February 2016") %m+% years(1)
+dmy("29th February 2016") + dyears(1)
+
+dmy("29th February 2016") %m+% years(1) %m+% days(1)
+```
+
+3. Generate a sequence of the frst day of the month for the next 36 months.
+
+```{r}
+(ymd(20200410) + months(1:36)) %>% 
+  floor_date("month")       # floor是舍去，ceiling是进入
+```
+
+```{r}
+seq.Date(from = ymd(20200410),to = ymd(20301010),by = "1 year")  # 结合生成序列好方便哈
+```
+
+## 处理字符串
+
+本章将带您了解一些可以使用的核心功能，以便稍后我们可以在表中使用文本。要深入文本挖掘，字符串处理必须熟练掌握，得心应手。
+
+```{r}
+library(stringr)
+```
+
+```{r}
+simple <- "This IS HOrrib1y typed! "
+numbers <- c("02","11","10","1")
+```
+
+### str_detect
+
+```{r}
+str_detect(simple,"typed")
+```
+
+### str_extract
+
+```{r}
+str_extract(simple,"typed.*")
+```
+
+### str_replace
+
+```{r}
+str_replace(simple,"typed","written")
+str_replace(simple,"r","s")
+str_replace_all(simple,"r","s")
+```
+
+### str_count
+
+```{r}
+str_count(simple,"[iI]")
+```
+
+### 正则表达式
+
+^ $ . \ [] [:type:]
+
+```{r}
+str_extract_all(simple,"[aeiou]")
+```
+
+```{r}
+str_extract_all(simple,"[aeiou].*$")
+```
+
+```{r}
+str_extract_all(simple,"[a-z]")
+```
+
+```{r}
+str_extract_all(simple,"[:punct:]")
+str_extract_all(simple,"^[A-Z]")
+```
+
+```{r}
+str_detect(simple,"r{3}")
+```
+
+提取一个元音字母后面跟着一个“b”的地方
+
+```{r}
+str_extract_all(simple,"[aeiou]b")
+```
+
+```{r}
+str <- c("11245577ljsfakfhsjaue","hfahuifajsueASFEAS","fhsakfieFG123456hfak")
+str
+```
+
+```{r}
+str_extract_all(str,"[0-9]")
+str_extract_all(str,"[^0-9]")
+```
+
+```{r}
+str_extract_all(str,"[a-z]")
+str_extract_all(str,"[A-Z]")
+str_extract_all(str,"[A-z]")
+```
+
+```{r}
+str_extract_all(str,"[A-z0-9]")
+```
+
+### 划分字符串
+
+```{r}
+simple %>% 
+  str_split(boundary("word"))
+
+simple %>% 
+  str_split(boundary("sentence"))
+```
+
+```{r}
+simple %>% 
+  str_split("i|I")
+
+simple %>% 
+  str_split("[iI]")
+```
+
+### 其它常见工作:转化、删除空白字符、排序
+
+```{r}
+simple
+str_to_lower(simple)
+str_to_upper(simple)
+str_to_title(simple)
+str_to_sentence(simple)
+```
+
+```{r}
+str_trim(simple)
+```
+
+```{r}
+numbers
+str_order(numbers,numeric = TRUE)
+str_sort(numbers,numeric = TRUE)
+```
+
+另一个常见的任务是计算出向量中的每个字符串的长度。函数str_length()将返回一个向量，其中包含字符向量中每个元素的长度。
+
+```{r}
+str_length(str)
+```
+
+### 高级字符串处理
+
+```{r}
+strings <- c("A word","Two words","Not three words")
+str_length(string = strings)
+```
+
+```{r}
+str_split(strings,boundary("word"))
+str_split(strings,boundary("sentence"))
+```
+
+然后，如果我们想对每个拆分的单词进行操作，这可能并不总是能为我们带来预期的结果。
+
+```{r}
+str_split(strings,boundary("word")) %>% 
+  str_detect("w")
+```
+
+字符串函数在列表上运行，而不在列表中的位上运行，这对我们没有用。当我们希望将字符串函数应用于列表的内容时，我们可以使用purrr中的map（）函数来实现此目的。map（）函数采用我们要应用的函数的名称以及需要传递的所有其他参数。
+
+```{r}
+library(purrr)
+map(iris,class)   # 第一个参数是数据，第二个参数是函数
+```
+
+```{r}
+strings %>% 
+  str_split(boundary("word")) %>% 
+  map(str_detect,"w")     # 第一个参数是数据，第二个参数是函数，第三个参数是函数的参数
+```
+
+例如：
+
+```{r}
+map(c(10,20,30),function(x){
+  rnorm(x,mean = 0)
+})      # 一个参数
+```
+
+```{r}
+map2(c(1000,1000,1000),c(1,2,3),function(x,y){
+  df <- rnorm(x,mean = y)
+  return(df)
+}) %>% 
+  bind_cols() %>% 
+  map(mean)   # 确实方便
+```
+
+### 因子向量
+
+```{r}
+myString <- c("red","blue","yellow",NA,"red")
+myString
+```
+
+```{r}
+factor(myString)->myFactor  # 默认按照升序排列
+myFactor
+levels(myFactor)
+myFactor %>% 
+  as.numeric()
+```
+
+### fct_count
+
+```{r}
+library(forcats)
+myFactor %>% fct_count()
+```
+
+### fct_explicit_na
+
+```{r}
+fct_explicit_na(myFactor)
+```
+
+### fct_infreq
+
+```{r}
+myFactor %>% fct_infreq() %>% fct_explicit_na()
+```
+
+### fct_lump
+
+您可以使用fct_lump（）合并很少使用的值，以保留最常见的n个值，或者提供为维持该级别必须满足的最小出现率。 或者，您可以提供负值以将最常见的值汇总在一起。
+
+```{r}
+fct_lump(myFactor, n = 1)
+fct_lump(myFactor, prop=.25, other_level = "OTHER")
+fct_lump(myFactor, n=-1, other_level = "other")
+```
+
+### fct_anon
+
+```{r}
+myFactor %>% fct_inorder()
+myFactor %>% fct_inorder %>% fct_anon()
+```
+
+总结：软件包**stringer**和**forcats**使得在R中处理文本数据变得非常容易。这两个软件包都作为tidyverse的一部分，并且取决于您所使用的dydyverse版本，使用library（tidyverse）时可能已经加载了stringr。它们旨在在管道中工作，并具有一致的功能，以str开头的用于字符串和fct开头的用于因子。
+
+```{r}
+x <- c("fhaskjf","fjskfks","fhjsakjf123545fhsj123456789")
+str_c(x,collapse = "")
+x %>% str_length()
+x %>% str_sub(1,9)
+x %>% str_split("[s]") %>% map(str_detect,"f")
+x %>% str_detect("[aeiou]")
+x %>% str_count("f")
+x %>% str_subset("9")
+x %>% str_detect("9",negate = TRUE)
+x %>% str_which("9")
+x %>% str_extract_all("\\d{9}")
+x %>% str_replace_all("f","F")
+```
+
+### 练习
+
+1. Store “the quick brown fox jumps over the lazy dog”
+
+```{r}
+strs <- c("the quick brown fox jumps over the lazy dog")
+```
+
+2. Upper case the string
+
+```{r}
+strs %>% str_to_upper()
+```
+
+3. [ADVANCED] Split the sentence into words and count the number of letters in each word
+
+```{r}
+strs %>% str_split(boundary("word")) %>% map(str_count)
+```
+
+4. Count the records in the gss_cat dataset by survey year
+
+```{r}
+gss_cat %>% map_df(class)
+gss_cat$year %>%
+  factor() %>%
+  fct_count()
+```
+
+5. Revise gss_cat such that there are only three levels of marital status
+
+```{r}
+gss_cat$marital %>% fct_lump(n = 2) %>% fct_count()
+```
+
+6. Race, partyid, religion, and denomination are sensitive values, anonymise them
+
+```{r}
+gss_cat$race<-fct_anon(gss_cat$race)
+gss_cat$relig<-fct_anon(gss_cat$relig)
+gss_cat$denom<-fct_anon(gss_cat$denom)
+gss_cat$partyid<-fct_anon(gss_cat$partyid)
+```
+
+## 汇总数据
+
+### summarise
+
+```{r}
+iris %>% 
+  summarise(mean(Sepal.Width),mean(Sepal.Length))
+```
+
+```{r}
+iris %>% 
+  summarise(Sepal.Length.Mean = mean(Sepal.Length))
+```
+
+- n() to return the number of rows
+- n_distinct() to return the number of unique values in a column
+- first(), last(), and nth() for retrieving values in specifc positions in a column
+
+```{r}
+iris %>%
+  summarise(
+    n = n(),
+    unique = n_distinct(Species),
+    first = first(Species),
+    last = last(Species),
+    `51st` = nth(Species, 51)
+  )
+```
+
+### summarise_all
+
+```{r}
+iris %>% 
+  summarise_all(n_distinct)  # 丢一个函数就可以
+```
+
+### summarise_if
+
+```{r}
+summarise_if(iris,is.numeric,n_distinct)
+```
+
+### summarise_at
+
+```{r}
+iris %>% 
+  summarise_at(vars(contains("S")),n_distinct)
+```
+
+### group_by和summarise
+
+```{r}
+iris %>% 
+  group_by(Species) %>% 
+  summarise(Avg.Sepal.Length = mean(Sepal.Length))
+```
+
+### group_by和mutate
+
+```{r}
+iris %>% 
+  group_by(Species) %>% 
+  mutate(Avg.Sepal.Length = mean(Sepal.Length)) %>% 
+  ungroup(Species) %>% 
+  sample_n(10)
+```
+
+### group_by和slice
+
+```{r}
+iris %>% 
+  group_by(Species) %>% 
+  slice(1:2)
+```
+
+### group_by和arrange
+
+```{r}
+iris %>% 
+  group_by(Species) %>% 
+  arrange(Sepal.Length)   # 反正就是分组后在每个组应用各种函数
+```
+
+### 多个分组
+
+默认情况下，以后的分组会覆盖现有分组，但是您可以使用add参数来添加到现有分组上下文中
+
+```{r}
+iris %>%
+  group_by(Species) %>%
+  mutate(SpeciesN=n()) %>%
+  group_by(Sepal.Length) %>%
+  mutate(Sepal.LengthN=n()) %>% 
+  datatable()
+```
+
+```{r}
+iris %>%
+  group_by(Species) %>%
+  mutate(SpeciesN = n()) %>%
+  group_by(Sepal.Length, add = TRUE) %>%
+  mutate(Sepal.LengthN = n()) %>% 
+  datatable()
+```
+
+### ungroup
+
+如果需要删除分组上下文才能再次在整个表上工作，则可以使用ungroup（）函数。
+
+```{r}
+iris %>% 
+  group_by(Species) %>% 
+  mutate(SpeciesN = n()) %>% 
+  ungroup() %>% 
+  datatable()
+```
+
+### group_by_all
+
+```{r}
+iris %>% 
+  group_by_all() %>% 
+  summarise(nrows = n()) %>% 
+  filter(nrows == 2)
+```
+
+### group_by_if
+
+```{r}
+iris %>% 
+  group_by_if(~n_distinct(.)<25) %>% 
+  summarise(n = n()) %>% 
+  head()
+```
+
+### group_by_at
+
+```{r}
+iris %>% 
+  group_by_at(vars(starts_with("Sp"))) %>% 
+  summarise(n = n())
+```
+
+分组后可以：**排序**、**n()**、**n_distinct**、**生成变量**。使用`summarise（）函数`生成聚合行，或使用`mutate（）`将聚合添加到行中。使用`group_by（）`可以生成聚合或在组内执行操作。可以重复使用`group_by（）`来更改活动的分组上下文，并且如果需要，`ungroup（）`可以删除分组上下文。当然也可以使用`group_by_all（）`，`group_by_at（）`和`group_by_if（）`生成分组。
+
+### 练习
+
+1. Find the min and max values for length in movies
+
+```{r}
+movies %>% 
+  summarise(length.max = max(length,na.rm = TRUE),
+            length.min = min(length,na.rm = TRUE))
+```
+
+2. In a pipeline, find out what proportion of flms are Action movies, Action Comedies, Comedies, and neither Action or Comedy
+
+```{r}
+movies %>% colnames()
+movies %>% 
+  group_by(Action,Comedy) %>% 
+  summarise(n = n()) %>% 
+  mutate(prop = scales::percent(n/sum(n)))
+```
+
+3. [ADVANCED] Get the **range for each numeric variable in movies**. Hint: Range outputs two values so you need to make a custom function that will concatenate the outputs of range
+
+```{r}
+movies %>% 
+  select_if(is.numeric) %>% 
+  mutate(year_range_min = range(year)[1],
+         year_range_max = range(year)[2]) %>% 
+  tidyr::unite(year_range_min,year_range_max,col = year_range,sep = "-") %>% 
+  head()
+```
+
+```{r,eval=FALSE}
+paste(range(movies$year),collapse = "-")   # 提取函数
+movies %>% 
+  select_if(is.numeric) %>% 
+  summarise(~paste(range(.,na.rm = TRUE),collapse = "-")) # 为什么不对？？？难道~.只用于if!
+```
+
+```{r}
+movies %>% 
+  summarise_if(is.numeric,~paste(range(.,na.rm = TRUE),collapse = "-"))
+
+# if at all 三个要熟练应用
+
+movies %>% 
+  summarise_at(vars(contains("r")),~paste(range(.,na.rm = TRUE),collapse = "-"))
+
+movies %>% 
+  select_if(is.numeric) %>% 
+  summarise_all(~paste(range(.,na.rm = TRUE),collapse = "-"))  ## 多个函数要放到list
+```
+
+## 连接数据集
+
+```{r}
+X <- tibble(A = letters[1:3],
+            B = c("t","u","v"),
+            C = 1:3)
+
+Y <- tibble(A = c("a","b","d"),
+            B = c("t","u","w"),
+            D = 3:1)
+X
+Y
+```
+
+### inner_join 
+
+```{r}
+inner_join(X,Y)
+```
+
+### left_join 
+
+```{r}
+left_join(X,Y)
+```
+
+### full_join
+
+```{r}
+full_join(X,Y)
+full_join(X,Y,by = "A")
+```
+
+### anti_join
+
+```{r}
+anti_join(X,Y)
+anti_join(X,Y,by = "A")
+```
+
+### cross_join
+
+```{r}
+cross_join <- function(x, y) {
+  x %>%
+    mutate(dummycol = 1) %>%
+    full_join({
+      y %>%
+        mutate(dummycol = 1)
+    }, by = "dummycol") %>%
+    select(-dummycol)
+}
+cross_join(X,Y)
+```
+
+### bind_cols()
+
+```{r}
+iris[,1:3] %>% 
+  bind_cols(iris[,4:5]) %>% head()
+```
+
+### union两个表都具有相同的结构(联合操作)
+
+如果两个表都具有相同的结构，则我们使用的操作是联合操作，即合并两个数据集。`union（）函数`将删除重复数据，而`union_all（）`将返回完整的行集。这意味着**union（）结果的行数可以少于两个表加在一起的行数**，而union_all（）的行数恰好是两个表加在一起的行数
+
+```{r}
+set.seed(123)
+iris %>% 
+  sample_n(50) %>%
+  dplyr::union(sample_n(iris,75)) %>% 
+  count()
+
+iris %>% 
+  sample_n(50) %>% 
+  dplyr::union_all(sample_n(iris,50)) %>% 
+  count()
+```
+
+### bind_rows数据并不总是具有相同的结构(联合操作)
+
+```{r}
+iris %>% 
+  select(-Species) %>% 
+  sample_n(50) %>% 
+  bind_rows(iris %>% sample_n(100)) %>% 
+  datatable()
+```
+
+如果数据已经存在于内存中各种对象的R中，则可以将它们全部添加到列表中，并使用`bind_rows（）函数`将它们全部组合在一起
+
+```{r}
+iris1 <- iris[1:50,1:4]
+iris2 <- iris[51:100,2:5]
+iris3 <- iris[101:150,2:3]
+list(iris1,iris2,iris3)->to_merge
+to_merge %>% bind_cols() %>% head()  # 行相同
+```
+
+```{r}
+to_merge %>% 
+  bind_rows() %>% 
+  datatable()       # 列不一定相同
+```
+
+```{r}
+map(10:12,function(x){
+  df <- rnorm(10,sd = x) 
+  return(df <- tibble(df = df))# 怎么迭代命名呢？
+}) %>% 
+  bind_cols()
+```
+
+```{r,eval=FALSE}
+str_c("rnorm","x",sep = "_") <- rnorm(10,sd = 10)  ## 这是错误的
+```
+
+在R软件包的tidyverse套件中，有一些强大的技术可以将多个数据集合并为一个数据集。
+
+### 练习
+
+1. Create a summary of the movies data by year that says how many movies were released each year and the average duration
+
+```{r}
+movies %>% colnames()
+movies %>% 
+  group_by(year) %>% 
+  summarise(n = n(),
+            length_mean = mean(length,na.rm = TRUE))->movies_count
+```
+
+2. Add this summary data to the movies table
+
+```{r}
+movies_count %>% 
+  full_join(movies,by = "year") %>% 
+  select(length_mean,n,everything()) %>% 
+  sample_n(10)
+  
+```
+
+```{r}
+movies %>% 
+  filter(year == 2000) %>% 
+  summarise(mean(length))
+```
+
+3. Create a subset of the movies table that has any flm over 300 minutes long, use a join to get everything but those records
+
+```{r}
+movies %>%
+  filter(length >= 300) ->
+  long_movies
+movies %>%
+  anti_join(long_movies) %>% 
+  head()
+```
+
+4. If you didn’t do this in an earlier chapter, use sample_n() to take a thousand records from movies, write the data to CSV with a fle name that contains the current time. Rerun the code multiple times to generate some CSVs. Read any CSVs into a combined dataset called moviessample
+
+```{r,eval=FALSE}
+write_csv(movies %>% sample_n(1000),
+          path = str_c(format(Sys.time(),"%Y%m%d%H%M%S"),".csv",collapse = "")) # formate函数
+```
+
+```{r}
+format(ymd(20201010),"%Y/%m/%d")
+```
+
+## 重构数据
+
+### rownames_to_column
+
+```{r}
+mtcars %>% 
+  rownames_to_column("car")->mtcars2
+```
+
+### gather
+
+```{r}
+mtcars2 %>% 
+  gather(variable,value,-car) %>% 
+  head()
+```
+
+```{r}
+mtcars2 %>% 
+  gather(variable,value,-car) %>% 
+  group_by(variable) %>% 
+  mutate(diff = value - mean(value)) %>% 
+  datatable()
+```
+
+### spread
+
+```{r}
+mtcars2 %>%
+  group_by(cyl, am) %>%
+  summarise(avg=mean(mpg)) %>% 
+  spread(am,avg)
+```
+
+```{r}
+mtcars2 %>%
+  group_by(cyl, am) %>%
+  summarise(avg = round(mean(mpg), 1)) %>%
+  spread(am, avg)
+```
+
+### separate
+
+```{r}
+tibble(measure=c("net 2017","gross 2017")) %>% 
+  separate(measure,c("type","year"))
+```
+
+```{r}
+tibble(measure = c("net 2017", "gross 2017")) %>%
+  separate(measure,
+           c("type", "year"),
+           convert = TRUE,
+           remove = FALSE)
+```
+
+### unite
+
+```{r}
+nycflights13::flights %>% 
+  unite(year,month,day,col = date,sep = "-",remove = FALSE) %>% 
+  mutate(date = ymd(date)) %>% 
+  head()
+```
+
+### 练习
+
+1. Unpivot the who dataset, keeping everything from country to year on each row 
+
+- Use string manipulation to change newrel to new_rel in what used to be column names
+- Use seperate() to split out the measure components as much as possible
+
+```{r}
+data(who)
+who %>% colnames()
+```
+
+```{r}
+who %>% 
+  select(contains("newrel")) %>% 
+  colnames() %>% 
+  str_replace_all(pattern = "newrel",replacement = "new_rel")->names_newrel
+
+who %>% 
+  select(contains("newrel"))->data_newrel
+
+colnames(data_newrel) <- names_newrel
+data_newrel %>% 
+  bind_cols(who %>% select(!contains("newrel"))) %>% colnames()
+```
+
+
+2. Make a table showing country population as a percentage of global population by year using the population dataset
+
+- Calculate the percentage of the worlds population by year for each country
+- Format the percentage
+- Excluding columns as required, pivot the data
+
+```{r}
+population %>% 
+  group_by(year) %>% 
+  mutate(prop = population/sum(population)) %>% 
+  head()
+```
+
+```{r}
+population %>% 
+  group_by(year) %>% 
+  mutate(prop = population/population %>% sum) %>% 
+  mutate(prop = round(prop*10,5)) %>% 
+  mutate(`%` = c("%")) %>% 
+  unite(prop,`%`,col = "prop",sep = "") %>% 
+  head()
+```
+
+```{r}
+population %>% 
+  spread(key = year,
+         value = population) %>% 
+  head()
+  
+```
+
+or
+
+```{r}
+population %>% 
+  group_by(year) %>% 
+  mutate(prop = scales::percent(population/population %>% sum())) %>% 
+  select(country,year,population) %>% 
+  spread(key = year,value = population) %>% 
+  datatable()
+```
+
+## 从R中获取数据
+
+- If you put "./filename.csv" the fle will be written in the current directory as the . denotes the current directory.
+- If you put "../filename.csv" the fle will be written to the directory above the one R is currently working in.
+- If you put "~/filename.csv" the fle will be stored in your home directory. The tilde (~) represents your user home directory.
+- In Windows, your home directory is usually “My documents”.
+- In Linux and Mac, your home directory is your user account’s root directory.
+- RStudio will do code completion for fle structures which can make it easy to specify where to save things
+
+### write_csv
+
+### write_xlsx
+
+### 数据库
+
+```
+dbConn<-dbConnect(odbc(),
+   driver="ODBC Driver 13 for SQL Server",
+   server="mhknbn2kdz.database.windows.net",
+   database="AdventureWorks2012",
+   uid="sqlfamily",
+   pwd="sqlf@m1ly")
+```
+
+将数据写入数据库的函数是dbWriteTable（）。这需要数据库连接，表名以及要写入数据库的数据。
+
+本章介绍如何将数据写入CSV，Excel和数据库。我建议您开始使用的软件包是readr，readxl和writexl。这些都遵循action_file（）的约定，该约定使您轻松记住需要执行的操作。
+
+### 练习
+
+1. Write the dataset movies to CSV
+
+2. Write the dataset movies to a spreadsheet
+
+3. Use sample_n() to take a thousand records from movies,
+
+```{r,eval=FALSE}
+movies %>% 
+  sample_n(1000) %>% 
+  write_csv(str_c(format(Sys.time(),"%Y%m%d%H%M%S"),".csv"))
+```
+
+## 一个数据集 gapminder 
+
+```{r}
+library(gapminder)
+data(gapminder)
+gapminder %>% head()
+```
+
+```{r}
+gapminder %>% 
+  summarise_all(n_distinct)  # 所有变量唯一值个数
+```
+
+```{r}
+gapminder %>% skimr::skim()
+```
+
+```{r}
+gapminder_unfiltered %>% 
+  summarise_all(n_distinct)
+```
+
+```{r}
+gapminder_unfiltered %>% explore::describe()
+```
+
+```{r}
+gapminder_unfiltered %>%
+  left_join(gapminder) %>% 
+  head()
+```
+
+## 结束了！开始总结ggplot2！
+
+- dplyr for core data manipulation
+- tidyr for pivoting and unpivoting data
+- stringr for text manipulation
+- forcats for working with factors
+- readr for reading ﬂat fles
+- readxl for reading Excel data
+- writexl for writing Excel data
+- magrittr gives you the data pipeline operator (%>%) although many packages will load this up for you
+
+
+
+
+
+

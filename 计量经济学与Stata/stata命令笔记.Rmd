@@ -1,0 +1,70 @@
+---
+title: "stata命令笔记"
+author: "LJJ"
+date: "2020/4/12"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```
+edit:显示数据集
+
+```
+
+```{r}
+library(tidyverse)
+mpg %>%
+  group_by(cyl) %>%
+  summarise_if(is.numeric, list(min = min, max = max))
+```
+
+
+```{r}
+mtcars %>% 
+  map(class)
+```
+
+
+```{r}
+data <- tibble(x = 1:10,
+               y = 1:10,
+               z  = 1:10,
+               m = rep(c("a","b"),times = 5),
+               w = factor(rep(1:2,each = 5)))
+```
+
+
+```{r}
+data %>% 
+  group_by(m) %>% 
+  summarise_if(is.numeric,list(min = min,max = max,sd= sd))
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
