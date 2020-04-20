@@ -1,0 +1,156 @@
+---
+title: "Bootstrapping方法"
+author: "LJJ"
+date: "2020/4/16"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+font-family: Times New Roman
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## boot
+
+自助法的优点之一是它几乎可以被用于所有情形，而并不要求复杂的数学计算。在R中使用自助法只需要两个步骤。第一，创建一个计算感兴趣的统计盘的函数。第二，用boot包中的 boot()函数，通过反复地从数据集中有放回地抽取观测值来执行自助法。
+
+```{r}
+library(tidyverse)
+library(skimr)
+library(boot)
+library(ISLR)
+```
+
+## 估计统计量的精度
+
+```{r}
+data("Portfolio")
+```
+
+```{r}
+Portfolio %>% skimr::skim() -> data_sum
+data_sum
+```
+
+```{r}
+Portfolio %>% head()
+```
+
+```{r}
+alpha_fn <- function(data,index){
+  X = data$X[index]
+  Y = data$Y[index]
+  return((var(Y) - cov(X,Y))/(var(X) + var(Y) - 2*cov(X,Y)))
+}
+```
+
+```{r}
+alpha_fn(Portfolio,1:100)  # 真实参数
+```
+
+下面的命令用 sample()函数来随机地从 1 到 100 中有放回地选取 100 个观测。这稳当于创建了一个新的自助法数据集，然后在新的数据袋上重新计算$\hat\alpha$. 
+
+```{r}
+set.seed(123)
+alpha_fn(Portfolio,sample(100,100,replace = TRUE))
+```
+
+```{r}
+boot(Portfolio,alpha_fn,R = 1000)
+```
+
+## 估计线性回归模型的精度
+
+```{r}
+boot_fn <- function(data,index){
+  return(coef(lm(mpg ~ horsepower,data = data,subset = index)))
+}
+```
+
+```{r}
+boot_fn(data = Auto,index = 1:392)
+```
+
+```{r}
+set.seed(1)
+boot_fn(Auto,sample(392,392,replace = TRUE))
+```
+
+```{r}
+boot(Auto,boot_fn,1000)->boot_result
+boot.ci(boot_result,type = "bca")
+plot(boot_result)
+```
+
+```{r}
+lm(mpg ~ horsepower,data = Auto) %>% broom::tidy()
+```
+
+## 来自quick R的案例分析
+
+```{r}
+# Bootstrap 95% CI for R-Squared
+# function to obtain R-Squared from the data
+rsq <- function(formula, data, indices) {
+  d <- data[indices, ] # allows boot to select sample
+  fit <- lm(formula, data = d)
+  return(summary(fit)$r.square)
+}
+
+# bootstrapping with 1000 replications
+results <- boot(
+  data = mtcars,  # 数据
+  statistic = rsq, # 函数
+  R = 1000, # boot数目
+  formula = mpg ~ wt + disp  # 公式
+)
+
+# view results
+results
+
+plot(results)
+
+# get 95% confidence interval
+boot.ci(results, type = "bca")
+```
+
+在上面的例子中，函数rsq返回一个数字并启动。ci返回单个置信区间。您提供的统计函数也可以返回一个向量。在下一个例子中，我们得到了三个模型回归系数(截距、汽车重量、位移)的95% CI。在本例中，我们向plot()和boot添加了一个索引参数。ci()表示要分析bootobject$t中的哪一列。
+
+```{r}
+# function to obtain regression weights
+bs <- function(formula, data, indices) {
+  d <- data[indices, ] # allows boot to select sample
+  fit <- lm(formula, data = d)
+  return(coef(fit))
+}
+
+# bootstrapping with 1000 replications
+results <- boot(
+  data = mtcars,
+  statistic = bs,
+  R = 1000,
+  formula = mpg ~ wt + disp
+)
+
+# view results
+results
+plot(results, index = 1) # intercept
+plot(results, index = 2) # wt
+plot(results, index = 3) # disp
+
+# get 95% confidence intervals
+boot.ci(results, type = "bca", index = 1) # intercept
+boot.ci(results, type = "bca", index = 2) # wt
+boot.ci(results, type = "bca", index = 3) # disp
+```
+
+boot()函数可以生成非参数重采样和参数重采样。对于非参数bootstrap，重采样方法包括普通重采样法、平衡重采样法、对偶重采样法和置换重采样法。对于非参数引导，支持分层重采样。还可以指定重采样权值的重要性。
+
+## 更多资源
+
+参见[Quick R](https://www.statmethods.net/advstats/bootstrapping.html)
+
+
