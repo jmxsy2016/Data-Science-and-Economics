@@ -1,0 +1,101 @@
+---
+title: "批量读取Excel数据"
+author: "LJJ"
+date: "2020/4/14"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,fig.align = "center",fig.show = "hold")
+```
+
+## 加载包
+
+```{r}
+library(tidyverse)
+library(purrr)
+library(readxl)
+library(here)
+library(writexl)
+library(furrr)
+library(tictoc)
+```
+
+## 生成100个Excel文件
+
+```{r}
+data <- tibble(x = 1:60,
+               y = 2 + x + rnorm(60))
+
+data %>% 
+  ggplot(aes(x,y)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+```
+
+```{r}
+x = 1:10
+map(x,function(x){
+  return(x)
+})->df
+df   # 最终形成一个列表
+
+df %>% bind_cols()
+```
+
+```{r}
+x <- as.character(1:100)
+x
+```
+
+```{r,eval=FALSE}
+tic()
+map(x,function(x){
+  write_xlsx(data,path = str_c(here::here(),"/R高级编程","/data/",x,".xlsx"))
+})
+toc()
+```
+
+## 读取100个Excel文件
+
+```{r}
+x <- as.character(1:100)
+
+tic()
+map(x,function(x){
+  data <- read_excel(str_c(here::here(),"/R高级编程/data/",x,".xlsx"))
+  return(data)
+})->df
+toc()
+```
+
+Great!!!
+
+## 合并数据
+
+```{r}
+df %>% 
+  bind_rows() %>% 
+  datatable()
+```
+
+$$
+y = 2 + x + rnorm(60)
+$$
+
+```{r}
+df %>% 
+  bind_rows() %>% 
+  group_by(x) %>% 
+  summarise(mean_y = mean(y))->df1
+
+df1 %>% 
+  ggplot(aes(x,mean_y)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+```
+
+
