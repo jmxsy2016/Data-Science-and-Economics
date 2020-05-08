@@ -27,6 +27,13 @@
 ---
 ## 数据科学与经济学
 
+- [初始R语言](https://raw.githack.com/uo-ec510-2020-spring/lectures/master/01-intro/01-intro.html#1)
+- [版本控制——git](https://raw.githack.com/uo-ec510-2020-spring/lectures/master/02-git/02-git.html#1)
+- [学会shell操作](https://raw.githack.com/uo-ec510-2020-spring/lectures/master/03-shell/03-shell.html#1)
+- [数据清洗——tidyverse](https://raw.githack.com/uo-ec510-2020-spring/lectures/master/04-tidyverse/04-tidyverse.html#1)
+- [数据清洗——data.table](https://raw.githack.com/uo-ec510-2020-spring/lectures/master/05-datatable/05-datatable.html#1)
+- [爬虫1——Server-side和CSS](https://raw.githack.com/uo-ec510-2020-spring/lectures/master/07-web-css/07-web-css.html)
+
 ---
 ## 机器学习与因果推断
 

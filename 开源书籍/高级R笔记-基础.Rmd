@@ -1,0 +1,524 @@
+---
+title: "高级R笔记-基础"
+author: "ljj"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    highlight: espresso
+    theme: cerulean
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+    toc_depth: 5
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  fig.show = "hold",
+  fig.align = "center",
+  tidy = TRUE,
+  results = "hold",
+  cache = FALSE
+)
+```
+
+## 加载经常用的R包
+
+```{r,warning=FALSE,message=FALSE}
+library(pacman)
+library(magrittr)
+p_load(tidyverse,stringr,DT,skimr,DataExplorer,grf,glmnet,caret,tidytext,
+       explore,patchwork,ggrepel,ggcorrplot,gghighlight,ggthemes,fpp2,
+       forecast,magrittr,readxl,writexl,listviewer,car,tseries,vtable)
+# install.packages("lobstr")
+library(lobstr)
+```
+
+## 名称和值
+
+```{r}
+df <- data.frame(runif(3), runif(3))
+names(df) <- c(1, 2)
+df
+df$`3` <- df$`1` + df$`2`
+df
+```
+
+```{r}
+x <- runif(1e6)
+y <- list(x, x, x)
+object.size(x)
+object.size(y)
+```
+
+```{r}
+a <- c(1, 5, 3, 2)
+b <- a
+b[[1]] <- 10
+a
+b
+```
+
+```{r}
+x <- c(1, 2, 3)
+y <- x
+```
+
+您可以使用lobstr :: obj_addr（）访问对象的标识符。这样做可以使您看到x和y都指向相同的标识符：
+
+```{r}
+obj_addr(x)
+obj_addr(y)
+```
+
+```{r}
+mean %>% obj_addr()
+base::mean %>% obj_addr()
+get("mean") %>% obj_addr()
+evalq(mean) %>% obj_addr()
+match.fun("mean") %>% obj_addr()
+```
+
+```{r}
+make.names(c("a and b", "a-and-b"), unique = FALSE)
+make.names(c("a and b", "a_and_b"), unique = TRUE)
+make.names(c("a and b", "a_and_b"), unique = TRUE, allow_ = FALSE)
+make.names(c("", "X"), unique = TRUE)
+```
+
+## 向量
+
+```{r}
+x <- c(1, 2, 3)
+y <- x
+y
+y[[3]] <- 4
+x
+```
+
+```{r}
+x <- list(1:10)
+x
+x[[2]] <- x
+x
+```
+
+```{r}
+c(1, FALSE)
+c("a", 1)
+c(TRUE, 1L)
+```
+
+对于原子向量，**类型**是整个向量的属性：所有元素都必须是同一类型。当您尝试组合不同类型时，它们将以固定顺序强制执行：**字符→double→整数→逻辑**。例如，将一个字符和一个整数组合会产生一个字符：
+
+```{r}
+c(FALSE, NA_character_)
+```
+
+```{r}
+setNames(1:3,letters[1:3])
+```
+
+```{r}
+x <- 1:10
+dim(x)
+```
+
+最重要的矢量属性之一是class，它是S3对象系统的基础。具有class属性会将对象转换为S3对象，这意味着当传递给泛型函数时，其行为将与常规向量不同。每个S3对象都建立在基本类型之上，并且通常将其他信息存储在其他属性中。在第13章中，您将学习S3对象系统的详细信息以及如何创建自己的S3类。
+
+在本节中，我们将讨论基本R中使用的四个重要的S3向量：分类数据，其中值来自记录在因子向量中的一组固定水平。日期（具有日期分辨率），记录在“日期”向量中。日期时间（具有秒或亚秒级的分辨率），存储在POSIXct向量中。持续时间，存储在difftime向量中。
+
+```{r}
+l1 <- list(
+  1:3, 
+  "a", 
+  c(TRUE, FALSE, TRUE), 
+  c(2.3, 5.9)
+)
+l1
+class(l1)
+typeof(l1)
+```
+
+```{r}
+str(l1)
+```
+
+```{r}
+lobstr::obj_size(mtcars)
+lobstr::obj_size(mtcars,mtcars,mtcars)
+```
+
+```{r}
+l4 <- list(list(a = 1, b = 2), c(3, 4))
+l4
+l4[[1]][1]
+```
+
+```{r}
+l <- list(1:3, "a", TRUE, 1.0)
+l
+dim(l) <- c(2, 2)
+l
+l[[1,1]]
+```
+
+```{r}
+df1 <- data.frame(x = 1:3, y = letters[1:3])
+df1
+df1 %>% class()
+df1 %>% str()
+df1 %>% attributes()
+```
+
+```{r}
+df2 <- tibble(x = 1:3,y = letters[1:3])
+df2
+df2 %>% class()
+df2 %>% attributes()
+```
+
+虽然数据帧会自动转换非语法名称（除非check.names=FALSE），但小标题不会（尽管它们确实会打印由`包围的非语法名称）。
+
+```{r}
+names(data.frame(`1` = 1))
+names(data.frame(`1` = 1,check.names = FALSE))
+names(tibble(`1` = 1))
+```
+
+```{r}
+data.frame(x = 1:4, y = 1:2)
+# data.frame(x = 1:4, y = 1:3)
+# Error in data.frame(x = 1:4, y = 1:3) : 参数值意味着不同的行数: 4, 3
+tibble(x = 1:4, y = 1)
+# tibble(x = 1:4, y = 1:2)
+# 错误: Tibble columns must have compatible sizes. * Size 4: Existing data. * Size 2: Column `y`. i Only values of size one are recycled.
+```
+
+```{r}
+set.seed(1)
+tibble(x = 1:10,
+       y = 1 + x + rnorm(10)) %>%  # 直接加减
+  lm(y ~ x, data = .) %>% 
+  summary()                        # 小样本
+set.seed(1)
+tibble(x = 1:1000,
+       y = 1 + x + rnorm(1000)) %>%
+  lm(y ~ x, data = .) %>% 
+  summary() # 大样本
+```
+
+如果将数据帧视为类似于矩阵的2D结构，则行名称自然会出现：列（变量）具有名称，因此行（观测）也应如此。大多数矩阵都是数字，因此有一个存储字符标签的位置很重要。 但这与矩阵的类比具有误导性，因为**矩阵具有数据帧所不具备的重要属性**：它们是可转置的。在矩阵中，行和列是可互换的，**转置矩阵会为您提供另一个矩阵**（再次转置会为您提供原始矩阵）。但是，对于数据帧，行和列是不可互换的：数据帧的转置不是数据帧。
+
+行名不受欢迎的三个原因是：元数据是数据，因此以与其余数据不同的方式存储它根本不是一个好主意。 这也意味着您需要学习一套新的工具来处理行名。您将无法使用已经掌握的有关操作列的知识。行名对于标记行而言是一个较差的抽象，因为它们仅在可以用单个字符串标识行时才起作用。在许多情况下，这会失败，例如，当您要通过非字符向量（例如时间点）或多个向量（例如位置，由纬度和经度编码）来标识行时。行名必须唯一，因此任何重复的行（例如，自举）都将创建新的行名。如果要匹配转换前后的行，则需要执行复杂的字符串操作。
+
+```{r}
+df3 <- data.frame(
+  age = c(35, 27, 18),
+  hair = c("blond", "brown", "black"),
+  row.names = c("Bob", "Susan", "Sam")
+)
+df3
+df3 %>% colnames()
+df3 %>% names()
+df3 %>% rownames()
+df3[,c(1,1,1)]
+df3[c(1,1,1),]
+```
+
+```{r}
+mtcars %>% as_tibble() %>% DT::datatable()
+mtcars %>% DT::datatable()
+mtcars %>% as_tibble(rownames = "rownames") %>% DT::datatable()
+```
+
+```{r}
+dplyr::starwars
+```
+
+```{r}
+mtcars %>% colnames()
+mtcars["mpg"]
+mtcars[,"mpg"]
+```
+
+```{r}
+mtcars[,1]
+mtcars[,1:2]
+mtcars[1]
+```
+
+```{r}
+mtcars["mpg"]          # 当成列表，提取mpg元素
+mtcars[["mpg"]]        # 当成列表，提取mpg元素值，适合循环遍历
+```
+
+```{r}
+df <- data.frame()
+```
+
+通过属性可以将任意其他元数据关联到任何对象。您可以使用attr（x，“y”）和attr（x，“ y”）<-value获取并设置单个属性；或者您可以使用attributes（）一次获取并设置所有属性。
+
+列表的元素可以是任何类型（甚至是列表）。原子向量的元素都是同一类型。同样，矩阵的每个元素都必须是同一类型。在数据框中，不同的列可以具有不同的类型。您可以通过将维度分配给列表来创建列表数组。您可以使用`df$x<-matrix（）`或在创建新的数据帧data.frame（x=I（matrix（）））时使用I（）来使矩阵成为数据帧的列。
+
+## 子集
+
+```{r}
+x <- c(2.1, 4.2, 3.3, 5.4)
+x[c(3,1)]
+x[order(x)]
+x[c(1,1)]
+```
+
+```{r}
+x[-1]
+x[c(TRUE,TRUE,FALSE,FALSE)]
+x[]
+```
+
+子集列表的工作方式与子集原子向量的工作方式相同。使用[会返回一个列表；[[和$可以提取列表的元素.
+
+```{r}
+df <- data.frame(x = 1:3, y = 3:1, z = letters[1:3])
+df %>% 
+  filter(x == 2)
+df %>% 
+  slice(c(1,3))
+df %>% 
+  select(y,z)
+```
+
+```{r}
+df[,"z",drop = FALSE]
+```
+
+```{r}
+ggplot2movies::movies %>% is.na() %>% mean()
+```
+
+[[在使用列表时最重要，因为用设置列表的子集[总是返回较小的列表。为了使这一点更容易理解，我们可以使用一个隐喻：
+
+>如果list x是一列载有物体的火车，那么x[[5]]汽车5中的物体就是该物体。x[4:6]是一列4-6的汽车。
+
+![](/高级R第二版/高级R笔记-基础_files/list火车隐喻.png)
+
+虽然在使用[[列表时必须使用，但我也建议在每次要提取单个值时将其与原子向量一起使用。例如，代替编写：
+
+```{r}
+x <- 1:100
+out <- 0
+for (i in 1:100) {
+  out[i+1] <- x[i] + out[i]
+}
+out
+```
+
+```{r}
+for (i in 1:100) {
+  out[[i+1]] <- x[[i]] + out[[i]]
+}
+out
+```
+
+or
+
+```{r}
+cumsum(1:100)
+```
+
+```{r}
+x <- list(
+  a = list(1, 2, 3),
+  b = list(3, 4, 5)
+)
+
+purrr::pluck(x, "a", 1)
+
+purrr::pluck(x, "c", 1)
+
+purrr::pluck(x, "c", 1, .default = NA)
+```
+
+```{r}
+map(x,1)
+```
+
+S4对象还需要两个附加的子集运算符：（`@`等效于`$`）和slot()（等效于[[）。`@`比限制更严格`$`.
+
+```{r}
+rep(1:10,1:10)
+setdiff(1:10,1)
+```
+
+```{r}
+(x1 <- 1:10 %% 2 == 0)
+(x2 <- which(x1))
+(y1 <- 1:10 %% 5 == 0)
+(y2 <- which(y1))
+```
+
+```{r}
+# X & Y <-> intersect(x, y)
+x1 & y1
+intersect(x2, y2)
+
+# X | Y <-> union(x, y)
+x1 | y1
+union(x2, y2)
+
+# X & !Y <-> setdiff(x, y)
+x1 & !y1
+#>  [1] FALSE  TRUE FALSE  TRUE FALSE  TRUE FALSE  TRUE FALSE FALSE
+setdiff(x2, y2)
+# xor(X, Y) <-> setdiff(union(x, y), intersect(x, y))
+xor(x1, y1)
+#>  [1] FALSE  TRUE FALSE  TRUE  TRUE  TRUE FALSE  TRUE FALSE FALSE
+setdiff(union(x2, y2), intersect(x2, y2))
+#> [1] 2 4 6 8 5
+```
+
+```{r}
+mtcars %>% 
+  slice(1:10)
+
+mtcars %>% 
+  sample_n(10)
+```
+
+正整数选择元素在特定位置，负整数删除元素；逻辑向量将元素保持在对应的位置TRUE;字符向量选择名称匹配的元素。
+
+[选择子列表：它总是返回一个列表。如果将它与单个正整数一起使用，它将返回长度为一的列表。[[在列表中选择一个元素。`$`是一个方便的简写：`x$y`等效于`x[["y"]]`。
+
+使用drop = FALSE如果您进行子集矩阵，阵列或数据帧，并要保留原来的尺寸。在函数内部进行子集设置时，几乎应该始终使用它。
+
+```{r}
+mtcars[,1,drop = FALSE]
+```
+
+如果x为矩阵，x[] <- 0则将每个元素替换为0，并保持相同的行数和列数。相反，x<-0用值0完全替换矩阵。
+
+```{r}
+order(c(1,5,6,10,2))
+```
+
+## 控制流
+
+```{r}
+x <- 1
+if(x > 5){
+  cat("x大于5")
+}else if(x < 5){
+  cat("x小于5")
+}else{
+  cat("x等于5")
+}
+```
+
+```{r}
+if_else(1:10 > 5,TRUE,FALSE)
+```
+
+```{r}
+x <- c(1:10,NA)
+case_when(x > 5 ~ "大于5",
+          x < 5 ~ "小于5",
+          x == 5 ~ "等于5",
+          TRUE ~ as.character(x))
+```
+
+```{r}
+x <- 10
+y <- if(x){
+  print(3)
+}
+```
+
+```{r}
+# x <- NA
+y <- if(x){
+  print(3)
+}
+# Error in if (x) { : 需要TRUE/FALSE值的地方不可以用缺少值
+```
+
+```{r}
+x <- FALSE
+y <- if(x){
+  print(3)
+}
+```
+
+```{r}
+x <- 9
+switch("x", x = , y = 2, z = 3)
+```
+
+```
+if (condition) true_action
+if (condition) true_action else false_action
+```
+如果condition为TRUE，true_action则进行评估；否则为。如果condition为FALSE，false_action则评估可选值。
+
+```{r}
+x_option <- function(x) {
+  if (x == "a") {
+    "option 1"
+  } else if (x == "b") {
+    "option 2" 
+  } else if (x == "c") {
+    "option 3"
+  } else {
+    stop("Invalid `x` value")
+  }
+}
+```
+
+```{r}
+x_option <- function(x) {
+  switch(x,
+    a = "option 1",
+    b = "option 2",
+    c = "option 3",
+    stop("Invalid `x` value")
+  )
+}
+```
+
+```{r}
+for (i in 1:3) {
+  print(i)
+}
+```
+
+```{r}
+means <- c(1, 50, 20)
+out <- vector("list", length(means))
+out
+for (i in 1:length(means)) {
+  out[[i]] <- rnorm(10, means[[i]])
+}
+```
+
+```{r}
+xs <- lubridate::ymd(20201010,20201111)
+for (i in seq_along(xs)) {
+  print(xs[[i]])
+}
+```
+
+一般来说，你不应该需要使用for的数据分析任务的循环，因为`map()`和`apply()`已经对大多数问题提供更小的灵活的解决方案。
+
+```{r}
+x <- numeric()
+out <- vector("list", length(x))
+for (i in 1:length(x)) {
+  out[i] <- x[i] ^ 2
+}
+out
+```
+
+

@@ -1,0 +1,1371 @@
+---
+title: "高级R笔记-基础"
+author: "ljj"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    highlight: espresso
+    theme: cerulean
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+    toc_depth: 5
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  fig.show = "hold",
+  fig.align = "center",
+  tidy = TRUE,
+  results = "hold",
+  cache = TRUE
+)
+```
+
+## 加载经常用的R包
+
+```{r,warning=FALSE,message=FALSE}
+library(pacman)
+library(magrittr)
+p_load(tidyverse,stringr,DT,skimr,DataExplorer,grf,glmnet,caret,tidytext,
+       explore,patchwork,ggrepel,ggcorrplot,gghighlight,ggthemes,fpp2,
+       forecast,magrittr,readxl,writexl,listviewer,car,tseries,vtable)
+# install.packages("lobstr")
+library(lobstr)
+```
+
+## 名称和值
+
+```{r}
+df <- data.frame(runif(3), runif(3))
+names(df) <- c(1, 2)
+df
+df$`3` <- df$`1` + df$`2`
+df
+```
+
+```{r}
+x <- runif(1e6)
+y <- list(x, x, x)
+object.size(x)
+object.size(y)
+```
+
+```{r}
+a <- c(1, 5, 3, 2)
+b <- a
+b[[1]] <- 10
+a
+b
+```
+
+```{r}
+x <- c(1, 2, 3)
+y <- x
+```
+
+您可以使用lobstr :: obj_addr（）访问对象的标识符。这样做可以使您看到x和y都指向相同的标识符：
+
+```{r}
+obj_addr(x)
+obj_addr(y)
+```
+
+```{r}
+mean %>% obj_addr()
+base::mean %>% obj_addr()
+get("mean") %>% obj_addr()
+evalq(mean) %>% obj_addr()
+match.fun("mean") %>% obj_addr()
+```
+
+```{r}
+make.names(c("a and b", "a-and-b"), unique = FALSE)
+make.names(c("a and b", "a_and_b"), unique = TRUE)
+make.names(c("a and b", "a_and_b"), unique = TRUE, allow_ = FALSE)
+make.names(c("", "X"), unique = TRUE)
+```
+
+## 向量
+
+```{r}
+x <- c(1, 2, 3)
+y <- x
+y
+y[[3]] <- 4
+x
+```
+
+```{r}
+x <- list(1:10)
+x
+x[[2]] <- x
+x
+```
+
+```{r}
+c(1, FALSE)
+c("a", 1)
+c(TRUE, 1L)
+```
+
+对于原子向量，**类型**是整个向量的属性：所有元素都必须是同一类型。当您尝试组合不同类型时，它们将以固定顺序强制执行：**字符→double→整数→逻辑**。例如，将一个字符和一个整数组合会产生一个字符：
+
+```{r}
+c(FALSE, NA_character_)
+```
+
+```{r}
+setNames(1:3,letters[1:3])
+```
+
+```{r}
+x <- 1:10
+dim(x)
+```
+
+最重要的矢量属性之一是class，它是S3对象系统的基础。具有class属性会将对象转换为S3对象，这意味着当传递给泛型函数时，其行为将与常规向量不同。每个S3对象都建立在基本类型之上，并且通常将其他信息存储在其他属性中。在第13章中，您将学习S3对象系统的详细信息以及如何创建自己的S3类。
+
+在本节中，我们将讨论基本R中使用的四个重要的S3向量：分类数据，其中值来自记录在因子向量中的一组固定水平。日期（具有日期分辨率），记录在“日期”向量中。日期时间（具有秒或亚秒级的分辨率），存储在POSIXct向量中。持续时间，存储在difftime向量中。
+
+```{r}
+l1 <- list(
+  1:3, 
+  "a", 
+  c(TRUE, FALSE, TRUE), 
+  c(2.3, 5.9)
+)
+l1
+class(l1)
+typeof(l1)
+```
+
+```{r}
+str(l1)
+```
+
+```{r}
+lobstr::obj_size(mtcars)
+lobstr::obj_size(mtcars,mtcars,mtcars)
+```
+
+```{r}
+l4 <- list(list(a = 1, b = 2), c(3, 4))
+l4
+l4[[1]][1]
+```
+
+```{r}
+l <- list(1:3, "a", TRUE, 1.0)
+l
+dim(l) <- c(2, 2)
+l
+l[[1,1]]
+```
+
+```{r}
+df1 <- data.frame(x = 1:3, y = letters[1:3])
+df1
+df1 %>% class()
+df1 %>% str()
+df1 %>% attributes()
+```
+
+```{r}
+df2 <- tibble(x = 1:3,y = letters[1:3])
+df2
+df2 %>% class()
+df2 %>% attributes()
+```
+
+虽然数据帧会自动转换非语法名称（除非check.names=FALSE），但小标题不会（尽管它们确实会打印由`包围的非语法名称）。
+
+```{r}
+names(data.frame(`1` = 1))
+names(data.frame(`1` = 1,check.names = FALSE))
+names(tibble(`1` = 1))
+```
+
+```{r}
+data.frame(x = 1:4, y = 1:2)
+# data.frame(x = 1:4, y = 1:3)
+# Error in data.frame(x = 1:4, y = 1:3) : 参数值意味着不同的行数: 4, 3
+tibble(x = 1:4, y = 1)
+# tibble(x = 1:4, y = 1:2)
+# 错误: Tibble columns must have compatible sizes. * Size 4: Existing data. * Size 2: Column `y`. i Only values of size one are recycled.
+```
+
+```{r}
+set.seed(1)
+tibble(x = 1:10,
+       y = 1 + x + rnorm(10)) %>%  # 直接加减
+  lm(y ~ x, data = .) %>% 
+  summary()                        # 小样本
+set.seed(1)
+tibble(x = 1:1000,
+       y = 1 + x + rnorm(1000)) %>%
+  lm(y ~ x, data = .) %>% 
+  summary() # 大样本
+```
+
+如果将数据帧视为类似于矩阵的2D结构，则行名称自然会出现：列（变量）具有名称，因此行（观测）也应如此。大多数矩阵都是数字，因此有一个存储字符标签的位置很重要。 但这与矩阵的类比具有误导性，因为**矩阵具有数据帧所不具备的重要属性**：它们是可转置的。在矩阵中，行和列是可互换的，**转置矩阵会为您提供另一个矩阵**（再次转置会为您提供原始矩阵）。但是，对于数据帧，行和列是不可互换的：数据帧的转置不是数据帧。
+
+行名不受欢迎的三个原因是：元数据是数据，因此以与其余数据不同的方式存储它根本不是一个好主意。 这也意味着您需要学习一套新的工具来处理行名。您将无法使用已经掌握的有关操作列的知识。行名对于标记行而言是一个较差的抽象，因为它们仅在可以用单个字符串标识行时才起作用。在许多情况下，这会失败，例如，当您要通过非字符向量（例如时间点）或多个向量（例如位置，由纬度和经度编码）来标识行时。行名必须唯一，因此任何重复的行（例如，自举）都将创建新的行名。如果要匹配转换前后的行，则需要执行复杂的字符串操作。
+
+```{r}
+df3 <- data.frame(
+  age = c(35, 27, 18),
+  hair = c("blond", "brown", "black"),
+  row.names = c("Bob", "Susan", "Sam")
+)
+df3
+df3 %>% colnames()
+df3 %>% names()
+df3 %>% rownames()
+df3[,c(1,1,1)]
+df3[c(1,1,1),]
+```
+
+```{r}
+mtcars %>% as_tibble() %>% DT::datatable()
+mtcars %>% DT::datatable()
+mtcars %>% as_tibble(rownames = "rownames") %>% DT::datatable()
+```
+
+```{r}
+dplyr::starwars
+```
+
+```{r}
+mtcars %>% colnames()
+mtcars["mpg"]
+mtcars[,"mpg"]
+```
+
+```{r}
+mtcars[,1]
+mtcars[,1:2]
+mtcars[1]
+```
+
+```{r}
+mtcars["mpg"]          # 当成列表，提取mpg元素
+mtcars[["mpg"]]        # 当成列表，提取mpg元素值，适合循环遍历
+```
+
+```{r}
+df <- data.frame()
+```
+
+通过属性可以将任意其他元数据关联到任何对象。您可以使用attr（x，“y”）和attr（x，“ y”）<-value获取并设置单个属性；或者您可以使用attributes（）一次获取并设置所有属性。
+
+列表的元素可以是任何类型（甚至是列表）。原子向量的元素都是同一类型。同样，矩阵的每个元素都必须是同一类型。在数据框中，不同的列可以具有不同的类型。您可以通过将维度分配给列表来创建列表数组。您可以使用`df$x<-matrix（）`或在创建新的数据帧data.frame（x=I（matrix（）））时使用I（）来使矩阵成为数据帧的列。
+
+## 子集
+
+```{r}
+x <- c(2.1, 4.2, 3.3, 5.4)
+x[c(3,1)]
+x[order(x)]
+x[c(1,1)]
+```
+
+```{r}
+x[-1]
+x[c(TRUE,TRUE,FALSE,FALSE)]
+x[]
+```
+
+子集列表的工作方式与子集原子向量的工作方式相同。使用[会返回一个列表；[[和$可以提取列表的元素.
+
+```{r}
+df <- data.frame(x = 1:3, y = 3:1, z = letters[1:3])
+df %>% 
+  filter(x == 2)
+df %>% 
+  slice(c(1,3))
+df %>% 
+  select(y,z)
+```
+
+```{r}
+df[,"z",drop = FALSE]
+```
+
+```{r}
+ggplot2movies::movies %>% is.na() %>% mean()
+```
+
+[[在使用列表时最重要，因为用设置列表的子集[总是返回较小的列表。为了使这一点更容易理解，我们可以使用一个隐喻：
+
+>如果list x是一列载有物体的火车，那么x[[5]]汽车5中的物体就是该物体。x[4:6]是一列4-6的汽车。
+
+```{r}
+# knitr::include_graphics(str_c(here::here(),
+#                               "/开源书籍/高级R第二版/list火车隐喻.png"))
+```
+
+虽然在使用[[列表时必须使用，但我也建议在每次要提取单个值时将其与原子向量一起使用。例如，代替编写：
+
+```{r}
+x <- 1:100
+out <- 0
+for (i in 1:100) {
+  out[i+1] <- x[i] + out[i]
+}
+out
+```
+
+```{r}
+for (i in 1:100) {
+  out[[i+1]] <- x[[i]] + out[[i]]
+}
+out
+```
+
+or
+
+```{r}
+cumsum(1:100)
+```
+
+```{r}
+x <- list(
+  a = list(1, 2, 3),
+  b = list(3, 4, 5)
+)
+
+purrr::pluck(x, "a", 1)
+
+purrr::pluck(x, "c", 1)
+
+purrr::pluck(x, "c", 1, .default = NA)
+```
+
+```{r}
+map(x,1)
+```
+
+S4对象还需要两个附加的子集运算符：（`@`等效于`$`）和slot()（等效于[[）。`@`比限制更严格`$`.
+
+```{r}
+rep(1:10,1:10)
+setdiff(1:10,1)
+```
+
+```{r}
+(x1 <- 1:10 %% 2 == 0)
+(x2 <- which(x1))
+(y1 <- 1:10 %% 5 == 0)
+(y2 <- which(y1))
+```
+
+```{r}
+# X & Y <-> intersect(x, y)
+x1 & y1
+intersect(x2, y2)
+
+# X | Y <-> union(x, y)
+x1 | y1
+union(x2, y2)
+
+# X & !Y <-> setdiff(x, y)
+x1 & !y1
+#>  [1] FALSE  TRUE FALSE  TRUE FALSE  TRUE FALSE  TRUE FALSE FALSE
+setdiff(x2, y2)
+# xor(X, Y) <-> setdiff(union(x, y), intersect(x, y))
+xor(x1, y1)
+#>  [1] FALSE  TRUE FALSE  TRUE  TRUE  TRUE FALSE  TRUE FALSE FALSE
+setdiff(union(x2, y2), intersect(x2, y2))
+#> [1] 2 4 6 8 5
+```
+
+```{r}
+mtcars %>% 
+  slice(1:10)
+
+mtcars %>% 
+  sample_n(10)
+```
+
+正整数选择元素在特定位置，负整数删除元素；逻辑向量将元素保持在对应的位置TRUE;字符向量选择名称匹配的元素。
+
+[选择子列表：它总是返回一个列表。如果将它与单个正整数一起使用，它将返回长度为一的列表。[[在列表中选择一个元素。`$`是一个方便的简写：`x$y`等效于`x[["y"]]`。
+
+使用drop = FALSE如果您进行子集矩阵，阵列或数据帧，并要保留原来的尺寸。在函数内部进行子集设置时，几乎应该始终使用它。
+
+```{r}
+mtcars[,1,drop = FALSE]
+```
+
+如果x为矩阵，x[] <- 0则将每个元素替换为0，并保持相同的行数和列数。相反，x<-0用值0完全替换矩阵。
+
+```{r}
+order(c(1,5,6,10,2))
+```
+
+
+## 控制流
+
+```{r}
+x <- 1
+if(x > 5){
+  cat("x大于5")
+}else if(x < 5){
+  cat("x小于5")
+}else{
+  cat("x等于5")
+}
+```
+
+```{r}
+if_else(1:10 > 5,TRUE,FALSE)
+```
+
+```{r}
+x <- c(1:10,NA)
+case_when(x > 5 ~ "大于5",
+          x < 5 ~ "小于5",
+          x == 5 ~ "等于5",
+          TRUE ~ as.character(x))
+```
+
+```{r}
+x <- 10
+y <- if(x){
+  print(3)
+}
+```
+
+```{r}
+# x <- NA
+y <- if(x){
+  print(3)
+}
+# Error in if (x) { : 需要TRUE/FALSE值的地方不可以用缺少值
+```
+
+```{r}
+x <- FALSE
+y <- if(x){
+  print(3)
+}
+```
+
+```{r}
+x <- 9
+switch("x", x = , y = 2, z = 3)
+```
+
+```
+if (condition) true_action
+if (condition) true_action else false_action
+```
+如果condition为TRUE，true_action则进行评估；否则为。如果condition为FALSE，false_action则评估可选值。
+
+```{r}
+x_option <- function(x) {
+  if (x == "a") {
+    "option 1"
+  } else if (x == "b") {
+    "option 2" 
+  } else if (x == "c") {
+    "option 3"
+  } else {
+    stop("Invalid `x` value")
+  }
+}
+```
+
+```{r}
+x_option <- function(x) {
+  switch(x,
+    a = "option 1",
+    b = "option 2",
+    c = "option 3",
+    stop("Invalid `x` value")
+  )
+}
+```
+
+```{r}
+for (i in 1:3) {
+  print(i)
+}
+```
+
+```{r}
+means <- c(1, 50, 20)
+out <- vector("list", length(means))
+out
+for (i in 1:length(means)) {
+  out[[i]] <- rnorm(10, means[[i]])
+}
+```
+
+```{r}
+xs <- lubridate::ymd(20201010,20201111)
+for (i in seq_along(xs)) {
+  print(xs[[i]])
+}
+```
+
+一般来说，你不应该需要使用for的数据分析任务的循环，因为`map()`和`apply()`已经对大多数问题提供更小的灵活的解决方案。
+
+```{r}
+x <- numeric()
+out <- vector("list", length(x))
+for (i in 1:length(x)) {
+  out[i] <- x[i] ^ 2
+}
+out
+```
+
+## 函数
+
+如果您正在阅读本书，则可能已经创建了许多R函数，并且知道如何使用它们来减少代码中的重复。在本章中，您将学习如何将非正式的工作知识转变为更严格的理论理解。尽管您会在此过程中看到一些有趣的技巧和技术，但请记住，您将在这里学到的内容对于理解本书稍后讨论的更高级的主题非常重要。
+
+```{r}
+x <- 10
+f1 <- function(x) {
+  function() {
+    x + 10
+  }
+}
+f1(1)
+f1(1)()
+```
+
+```{r}
+`+`(1, `*`(2, 3))
+
+add_multi <- function(x,y,z){
+  data <- x + y*z
+  return(data)
+}
+
+add_multi(1,2,3)
+```
+
+```{r}
+f2 <- function(a, b) {
+  a * 10
+}
+f2(10, stop("This is an error!"))
+```
+
+函数是对象，就像矢量是对象一样。
+
+```{r}
+add <- function(x,y){
+  x + y
+}
+add(10,20)
+```
+
+函数三部分：
+
+```{r}
+add %>% formals()  # 参数
+```
+
+```{r}
+add %>% body()  # 函数体
+```
+
+```{r}
+add %>% environment()  # 环境
+```
+
+```{r}
+attr(add,"srcref")
+```
+
+函数具有三个组成部分的规则是一个例外。诸如sum()和的原始函数[直接调用C代码。
+
+```{r}
+sum
+`[`
+```
+
+```{r}
+typeof(sum)
+typeof(`[`)
+```
+
+这些函数主要是在C，不R，所以它们的存在formals()，body()和environment()都是NULL：
+
+尽管您几乎总是创建一个函数，然后将其绑定到一个名称，但是绑定步骤不是必需的。如果您选择不给函数命名，则会得到一个匿名函数。当不需花力气找出一个名字时，这很有用：
+
+```{r}
+map(mtcars,function(x){
+  length(unique(x))
+})
+```
+
+```{r}
+map(mtcars,n_distinct)
+```
+
+一个很好的经验法则是匿名函数应该放在一行上，不需要使用{}。查看您的代码。您在哪里可以使用匿名函数而不是命名函数？您应该在哪里使用命名函数而不是匿名函数？
+
+```{r}
+is.function(add)
+is_function(add)
+```
+
+```{r}
+x <- 10
+g01 <- function() {
+  x <- 20
+  x
+}
+
+g01()
+```
+
+在本节中，您将学习范围界定的正式规则以及其中一些更细微的细节。对作用域的更深入了解将帮助您使用更高级的功能编程工具，甚至最终可以编写将R代码转换为其他语言的工具。
+
+如果在另一个函数中定义一个函数，则适用相同的规则。首先，R查找当前函数的内部。然后，它查看该函数的定义位置（依此类推，一直到全局环境）。最后，它会查找其他已加载的软件包。
+
+```{r}
+x <- 1                # 全局参数
+g04 <- function() {
+  y <- 2              # 局部参数
+  i <- function() {
+    z <- 3            # 局部参数
+    c(x, y, z)
+  }
+  i()
+}
+g04()
+```
+
+```{r}
+g09 <- function(x) x + 100
+g10 <- function() {
+  g09 <- 10
+  g09(g09)
+}
+g10()
+#> [1] 110
+```
+
+为了记录，将相同的名称用于不同的事物会造成混淆，最好避免！！！
+
+```{r}
+g11 <- function(){
+  if(!exists("a")){
+    a <- 1
+  } else {
+    a <- a + 1
+  }
+  print(a)
+}
+
+g11()
+g11()
+```
+
+您可能会惊讶于g11()总是返回相同的值。发生这种情况是因为每次调用一个函数都会创建一个**新环境**来承载其执行。这意味着一个函数无法告诉上一次运行它发生了什么。**每个调用是完全独立的**。在10.2.4节中，我们将介绍一些解决方法。
+
+```{r}
+c <- 10
+c(c = c)
+```
+
+在R中，函数参数是延迟计算的：仅在访问时才计算。例如，此代码不会产生错误，因为x从未使用过：
+
+如果您的函数将函数用作参数，则需要某种方式将其他参数传递给该函数。在此示例中，lapply() 用于...传递na.rm给mean()：
+
+```{r}
+mtcars %>% map(class) %>% unlist()
+```
+
+```{r}
+mtcars %>% 
+  map(mean,na.rm = TRUE)
+```
+
+## 环境
+
+本章将使用rlang函数来处理环境，因为它使我们能够专注于环境的本质，而不是偶然的细节
+
+```{r}
+library(rlang)
+```
+
+通常，环境类似于命名列表，但有四个重要例外：
+
+- 每个名称都必须唯一。
+- 环境中的名称没有顺序。
+- 环境有一个父级。
+- 修改后不会复制环境。
+
+```{r}
+e1 <- env(
+  a = FALSE,
+  b = "a",
+  c = 2.3,
+  d = 1:3,
+)
+e1
+env_print(e1)
+env_names(e1)
+```
+
+当前环境，或`current_env()`当前正在其中执行代码的环境。当您进行交互式实验时，通常是全局环境或`global_env()`。全局环境有时称为“工作区”，因为它是所有交互式（即函数外部）计算发生的地方。
+
+```{r}
+identical(global_env(), current_env())
+```
+
+在下面的代码中，e2a是e2b的父级。
+
+## 条件
+
+
+```{r}
+map(1:10,function(i){data %>% filter(z %in% i)})
+```
+
+
+
+
+
+
+```{r}
+map(1:10,function(y){diamonds %>% slice(y)}) %>% bind_rows()
+```
+
+```{r}
+# stop("This is what an error looks like")
+warning("This is what a warning looks like")
+message("This is what a message looks like")
+#> This is what a message looks like
+```
+
+```{r}
+fw <- function() {
+  cat("1\n")
+  warning("W1")
+  cat("2\n")
+  warning("W2")
+  cat("3\n")
+  warning("W3")
+}
+fw()
+```
+
+```{r}
+cat("hello world")
+```
+
+```{r}
+message("hello world")
+```
+
+```{r}
+f2 <- function(x) {
+  try(log(x))
+  10
+}
+f2("a")
+#> Error in log(x) : non-numeric argument to mathematical function
+#> [1] 10
+```
+
+## 函数式编程-函数
+
+R本质上是功能语言。这意味着它具有某些技术特性，但更重要的是，它使自己适合于以功能为中心的问题解决方式。下面，我将简要概述函数式语言的技术定义，但在本书中，我将主要关注函数式编程的风格，因为我认为它非常适合您通常遇到的问题类型做数据分析。
+
+首先，函数式语言具有一流的函数，这些函数的行为类似于任何其他数据结构。在R中，这意味着您可以使用可以使用向量执行的函数来完成许多事情：可以将它们分配给变量，将它们存储在列表中，将它们作为参数传递给其他函数，在函数内部创建它们，以及甚至将它们作为函数的结果返回。
+
+其次，许多函数式语言要求函数必须是纯函数。如果一个函数满足两个属性，则该函数是纯函数：
+
+- 输出仅取决于输入，即，如果再次使用相同的输入调用它，则将获得相同的输出。这不包括功能，如runif()， read.csv()或Sys.time()可返回不同的值。
+- 该函数没有副作用，例如更改全局变量的值，写入磁盘或显示在屏幕上。这不包括功能，如print()，write.csv()和<-。
+
+单纯的函数更容易推论，但显然有很大的缺点：想象一下进行数据分析时，您将无法生成随机数或无法从磁盘读取文件。
+
+严格来讲，R不是函数式编程语言，因为它不需要您编写纯函数。但是，你当然可以采用实用的风格在你的部分代码：您不具备写纯函数，但你经常应该。以我的经验，将代码划分为极其纯净或极其不纯净的函数往往会导致代码更易于理解并扩展到新的情况。
+
+很难确切地描述什么是功能样式，但是通常我认为这意味着将一个大问题分解成较小的部分，然后使用一个功能或多个功能组合来解决每个部分。使用功能样式时，您努力将问题的组成部分分解为独立运行的独立功能。每种功能本身简单易懂。复杂性通过以各种方式组合功能来处理。
+
+```{r}
+randomise <- function(f) f(runif(1e3))
+randomise(mean)
+#> [1] 0.506
+randomise(mean)
+#> [1] 0.501
+randomise(sum)
+#> [1] 489
+```
+
+本章将重点介绍purrr软件包提供的功能（Henry和Wickham2018a）。这些功能具有一致的界面，与多年来已经有机地增长的基本思想相比，它们更易于理解关键思想。接下来，我将比较和对比基本R函数，然后在本章中结束对没有Purrr等效项的基本函数的讨论。
+
+```{r}
+triple <- function(i){
+  i * 3
+}
+map(1:3,triple)
+```
+
+```{r}
+map(mtcars,typeof)
+map_chr(mtcars,typeof)
+map_lgl(mtcars,is.double)
+map_int(mtcars,n_distinct)
+mtcars %>% map_dbl(mean)
+```
+
+注意！！！
+
+```{r,eval=FALSE}
+pair <- function(x) c(x, x)
+map_dbl(1:2, pair)
+#> Error: Result 1 must be a single double, not an integer vector of length 2
+```
+
+```{r}
+map(1:2,pair)
+```
+
+```{r}
+map(mtcars,mean,na.rm = TRUE) %>% unlist()->x
+x
+```
+
+map函数还具有从purrr ::pluck（）支持的从向量中提取元素的快捷方式。 您可以使用字符向量按名称选择元素，使用整数向量按位置选择，或使用列表按名称和位置选择。这些对于使用深度嵌套的列表非常有用，而嵌套列表通常在使用JSON时会出现。
+
+```{r}
+x <- list(
+  list(-1, x = 1, y = c(2), z = "a"),
+  list(-2, x = 4, y = c(5, 6), z = "b"),
+  list(-3, x = 8, y = c(9, 10, 11))
+)
+
+# Select by name
+map_dbl(x, "x")
+
+# Or by position
+map_dbl(x, 1)
+
+# Or by both
+map_dbl(x, list("y", 1))
+```
+
+```
+# You'll get an error if a component doesn't exist:map_chr(x, "z")
+#> Error: Result 3 must be a single string, not NULL of length 0
+```
+
+```{r}
+# Unless you supply a .default value
+map_chr(x, "z", .default = NA)
+#> [1] "a" "b" NA
+```
+
+```{r}
+map(list(1:10,c(1:5,NA)),function(i){
+  mean(i,na.rm = TRUE)
+})
+```
+
+将其他参数传递给您要调用的函数通常很方便。 例如，您可能想要将na.rm = TRUE传递给mean（）。 一种实现方法是使用匿名函数：
+
+```{r}
+map(list(1:10,c(1:5,NA)),~mean(.x,na.rm = TRUE))
+```
+
+```{r}
+map(list(1:10,c(1:5,NA)),mean,na.rm = TRUE)
+```
+
+```{r}
+map2(1:5,1:5,sum)
+```
+
+但是，我建议在代码中写出全名，因为这样更易于阅读。map（x，mean，0.1）是完全有效的代码，但是将调用mean（x[[1]]，0.1），因此它依赖于读者记住mean（）的第二个参数是trim。为避免对阅读器的大脑造成不必要的负担，请友善并写下map（x，mean，trim = 0.1）。
+
+map（1：3，〜runif（2））是用于生成随机数的有用模式，而map（1：3，runif（2））则不是。 为什么不？ 您能解释一下为什么它返回结果吗？
+
+```{r}
+map(1:3,~runif(2))
+```
+
+```{r}
+map(1:3,runif(2))
+```
+
+```{r}
+map(1:3,function(i){runif(2)})
+```
+
+使用适当的map（）函数可以：计算数字数据框中每一列的标准偏差。
+
+```{r}
+map(mtcars,sd) %>% unlist()
+```
+
+计算混合数据框中每个数字列的标准偏差。（提示：您需要分两个步骤进行操作。）
+
+```{r}
+diamonds %>% 
+  select_if(is.numeric) %>% 
+  map(sd) %>% 
+  unlist()
+```
+
+```{r}
+diamonds %>% 
+  select_if(is.numeric) %>% 
+  map_dbl(sd)
+```
+
+```{r}
+diamonds %>%
+  map_if(is.numeric, ~sd(.x))->x
+listviewer::jsonedit(x)
+```
+
+计算数据框中每个因子的级别数
+
+```{r}
+diamonds %>% 
+  select_if(is.factor) %>% 
+  map(n_distinct)
+
+diamonds %>% 
+  select_if(is.factor) %>% 
+  map(~n_distinct(levels(.x)))
+```
+
+```{r}
+formulas <- list(
+  mpg ~ disp,
+  mpg ~ I(1 / disp),
+  mpg ~ disp + wt,
+  mpg ~ I(1 / disp) + wt
+)
+map(formulas,function(i){
+  lm_fit <- lm(i,data = mtcars)
+  summary(lm_fit)
+})
+```
+
+```{r}
+map(1:10,function(i){
+  df <- mtcars[sample(nrow(mtcars),replace = TRUE),]
+  lm_fit <- lm(mpg~disp,data = df)
+  lm_fit %>% summary()
+})->x
+
+map(x,"r.squared")
+```
+
+在继续探索更多map变体之前，让我们快速看一下您如何倾向于使用多个purrr函数来解决一个中等现实的问题：将模型拟合到每个子组并提取模型的系数。 在这个示例中，我将使用基本拆分功能将mtcars数据集分为圆柱数所定义的组：
+
+```{r}
+mtcars %>% 
+  split(.$cyl) %>% 
+  map(function(i){lm(mpg~wt,data = i)}) %>% 
+  map(coef) %>% 
+  map(2)
+```
+
+有趣的是，当您从purrr转移到base应用函数到for循环时，您倾向于在每次迭代中做的越来越多。在purrr中，我们迭代3次（map（），map（），map_dbl（）），使用apply函数迭代两次（lapply（），vapply（）），并使用for循环迭代一次。我喜欢更多但更简单的步骤，因为我认为它使代码更易于理解，以后可以修改。
+
+map（）有23个主要变体。到目前为止，您已经了解了五个（map（），map_lgl（），map_int（），map_dbl（）和map_chr（））。这意味着您还需要学习18（!!）。听起来很多，但是幸运的是，purrr的设计意味着您只需要学习五个新想法：
+
+- 使用modify（）输出与输入相同的类型
+- 使用map2（）迭代两个输入
+- 使用imap（）遍历索引
+- 使用walk（）不返回任何内容
+- 使用pmap（）迭代任意数量的输入。
+
+映射功能族具有正交的输入和输出，这意味着我们可以将所有族组织成矩阵，行中有输入，列中有输出。 连续掌握想法后，您可以将其与任何列结合使用；一旦在某列中掌握了该点子，便可以将其与任何行合并。
+
+parameter            |  List    |	   Atomic       |   Same type  |	   Nothing
+----                 |  ----    |     ----        |   ----       |     ----
+One argument	       |  map()	  |   map_lgl(),…	  |  modify()	   |    walk()
+Two arguments	       |  map2()	|   map2_lgl(),…	|  modify2()	 |    walk2()
+One argument + index |	imap()	|   imap_lgl(),…	|  imodify()	 |    iwalk()
+N arguments          |  pmap()	|   pmap_lgl(),…	|     —        |    pwalk()
+
+```{r}
+df <- tibble(x = 1:3,
+             y = 6:4)
+map(df,~.x*2) %>% bind_cols()
+```
+
+```{r}
+modify(df,~.x * 2)
+```
+
+```{r}
+xs <- map(1:8,~runif(10))
+xs
+xs[[1]][[1]] <- NA
+ws <- map(1:8, ~ rpois(10, 5) + 1)
+ws
+```
+
+```{r}
+map_dbl(xs, mean)
+```
+
+大多数函数都针对返回的值进行调用，因此使用map（）函数捕获并存储该值是有意义的。但是某些函数主要是由于它们的副作用而被调用的（例如cat（），write.csv（）或ggsave（）），因此捕获它们的结果没有任何意义。 以这个简单的示例为例，该示例使用cat（）显示欢迎消息。cat（）返回NULL，因此，虽然map（）起作用（从某种意义上说，它生成了所需的欢迎），但它也返回了list（NULL，NULL）。
+
+```{r}
+welcome <- function(x) {
+  cat("Welcome ", x, "!\n", sep = "")
+}
+names <- c("Hadley", "Jenny")
+
+map(names,welcome)->x
+```
+
+您可以通过将map()的结果分配给一个您从未使用过的变量来避免这个问题，但是这样会混淆代码的意图。相反，purrr提供了walk函数族，这些函数忽略.f的返回值，而在不可见的情况下返回.x
+
+```{r}
+walk(names,welcome)
+```
+
+例如，假设您有一个数据帧列表(我在这里使用split()创建)，您希望将每个数据帧保存到一个单独的CSV文件中。使用walk2()很简单:
+
+```{r}
+imap_chr(iris, ~ paste0("The first value of ", .y, " is ", .x[[1]]))
+```
+
+```{r}
+# x <- map(1:6, ~ sample(1000, 10))
+```
+
+```{r}
+x <- map(1:6, ~ sample(1000, 10))
+imap_chr(x, ~ paste0("The highest value of ", .y, " is ", max(.x)))
+```
+
+```{r}
+map2(1:6,x,~paste0("The highest value of ", .x, " is ", max(.y)))  # better
+```
+
+map2()和pmap()有一个简单的等价性:`map2(x,y,f)`与`pmap(list(x,y)，f)`相同，pmap()与上面使用的map2_dbl(xs, ws, weight .mean)等价:
+
+既然我们已经有了map()和map2()，那么您可能会想到map3()、map4()、map5()……但是您会在哪里停止呢?与将map2()泛化为任意数量的参数不同，purrr对pmap()采取了稍微不同的策略:提供一个包含任意数量参数的列表。在大多数情况下，**这将是一个等长向量的列表**，即非常类似于一个数据帧。
+
+map2()和pmap()有一个简单的等价性:map2(x, y, f)与pmap(list(x, y)， f)相同
+
+使用数据帧调用pmap()通常很方便。创建数据帧的一种简便方法是使用tibble::tribble()，它允许您逐行描述数据帧(而不是通常的逐列描述):将函数的参数看作数据帧是一种非常强大的模式。下面的例子展示了如何用不同的参数绘制随机的均匀数:
+
+```{r}
+params <- tibble::tribble(
+  ~ n, ~ min, ~ max,
+   1L,     0,     1,
+   2L,    10,   100,
+   3L,   100,  1000
+)
+
+pmap(params, runif)
+```
+
+pmap()家族有两个基本的等价物:`Map()`和`mapply()`。两者都有明显的缺点:Map()对所有参数进行矢量化，因此不能提供不变的参数。mapply()是sapply()的多维版本;从概念上讲，它接受Map()的输出并尽可能地简化它。这给了它与sapply()类似的问题。没有与vapply()等价的多输入。
+
+```{r}
+params <- tibble(n = 1:3,
+                 min = c(0,10,100),
+                 max = c(1,100,1000))
+params
+```
+
+```{r}
+pmap(params,runif)
+pmap(list(n = c(100,100),mean = c(10,20),sd = c(2,1)),rnorm) %>% listviewer::jsonedit()
+```
+
+```{r}
+modify(mtcars, 1)
+```
+
+```{r}
+paste0("The first value of ", names(iris)[1], " is ", iris[[1]][[1]])
+```
+
+```{r}
+imap_chr(iris, ~ paste0("The first value of ", .y, " is ", .x[[1]]))
+```
+
+```{r}
+map2(iris,names(iris),function(i,j){
+  paste0("The first value of ", j, " is ", i[[1]])
+}) %>% unlist()
+```
+
+```{r}
+x <- map(1:6,~sample(1000,10))
+x
+```
+
+```{r}
+map2(x,1:length(x),function(i,j){
+  paste0("The highest value of",j," is ",max(i))
+})
+```
+
+```{r}
+map2(x,1:length(x),
+     ~paste0("The highest value of",.y," is ",max(.x)))   # x和y不能换成其它字母！！！
+```
+
+reduce()是一种有用的方法，它可以将一个使用两个输入(一个二进制函数)的函数泛化为使用任意数量的输入。假设您有一个数字向量列表，您希望找到每个元素中出现的值。首先我们生成一些样本数据:
+
+```{r}
+l <- map(1:4,~ sample(1:10,15,replace = TRUE))
+l %>% str()
+```
+
+```{r}
+out <- l[[1]]
+out <- intersect(out, l[[2]])
+out <- intersect(out, l[[3]])
+out <- intersect(out, l[[4]])
+out
+```
+
+reduce()为我们自动化这个解决方案，所以我们可以写:
+
+```{r}
+reduce(l,intersect)
+```
+
+如果我们想要列出至少一个条目中出现的所有元素，我们可以应用相同的思想。我们要做的就是从intersect()切换到union()
+
+```{r}
+reduce(l,union)
+```
+
+```{r}
+accumulate(l,intersect)
+```
+
+```{r}
+accumulate(l,union)
+```
+
+```{r}
+x <- c(1,2,40,12,13)
+reduce(x,`+`)
+accumulate(x,`+`)
+```
+
+```{r}
+reduce(1, `+`)
+reduce("a", `+`)
+```
+
+```{r}
+df <- data.frame(
+  num1 = c(0, 10, 20),
+  num2 = c(5, 6, 7),
+  chr1 = c("a", "b", "c"),
+  stringsAsFactors = FALSE
+)
+map_if(df, is.numeric, mean)
+str(map_if(df, is.numeric, mean))
+```
+
+切勿将apply（）与数据框一起使用。它总是将其强制转换为矩阵，如果您的数据帧包含数字以外的任何内容，则将导致不良结果。
+
+```{r}
+integrate(sin, 0, pi)
+str(uniroot(sin, pi * c(1 / 2, 3 / 2)))
+str(optimise(sin, c(0, 2 * pi)))
+str(optimise(sin, c(0, pi), maximum = TRUE))
+```
+
+```{r}
+str_c(rep(1998:2019,each = 4),"Q",rep(1:4))
+```
+
+
+```{r}
+str_c(rep(1998:2019,each = 4),"Q",rep(1:4)) %>% 
+  view
+```
+
+## 函数式编程-函数运算符
+
+有两个非常有用的函数运算符，既可以帮助您解决常见的重复出现的问题，又可以使您了解函数运算符可以做什么：purrr :: safely（）和memoise :: memoise（）。
+
+```{r}
+x <- list(
+  c(0.512, 0.165, 0.717),
+  c(0.064, 0.781, 0.427),
+  c(0.890, 0.785, 0.495)
+)
+x
+```
+
+```{r}
+out <- NULL
+map(seq_along(x),function(i){out[[i]] <- sum(x[[i]])})
+map(x,sum)
+```
+
+```{r,eval=FALSE}
+x <- list(c(0.512, 0.165, 0.717),
+          c(0.064, 0.781, 0.427),
+          c(0.890, 0.785, 0.495),
+          "oops")
+
+out <- rep(NA_real_, length(x))
+for (i in seq_along(x)) {
+  out[[i]] <- sum(x[[i]])
+}
+# Error in sum(x[[i]]) : 'type'(character)参数不对
+```
+
+如果你对一个函数做同样的事情，你得不到任何输出，这让你很难找出问题出在哪里:
+
+```{r,eval=FALSE}
+map_dbl(x, sum)
+#> Error in .Primitive("sum")(..., na.rm = na.rm): invalid 'type' (character) of
+#> argument
+```
+
+```{r}
+safe_sum <- safely(sum)
+safe_sum
+str(safe_sum(x[[1]]))
+str(safe_sum(x[[4]]))
+```
+
+```{r}
+map(x,safely(sum))
+```
+
+```{r}
+map(x,safely(sum)) %>% purrr::transpose()
+```
+
+您可以在许多不同的情况下使用相同的技术。例如，假设您正在将一个泛型线性模型(GLM)拟合到一个数据帧列表中。glm有时会因为优化问题而失败，但你仍然希望能够尝试适应所有的模型，然后回头看看那些失败的模型:
+
+```{r}
+fit_model <- function(df) {
+  glm(y ~ x1 + x2 * x3, data = df)
+}
+```
+
+```{r,eval=FALSE}
+fit_model <- function(df) {
+  glm(y ~ x1 + x2 * x3, data = df)
+}
+
+models <- transpose(map(datasets, safely(fit_model)))
+ok <- map_lgl(models$error, is.null)
+
+# which data failed to converge?
+datasets[!ok]
+
+# which models were successful?
+models[ok]
+```
+
+另一个方便的函数操作符是memoise::memoise()。它记忆一个函数，这意味着该函数将记住以前的输入并返回缓存的结果。记忆是典型的计算机科学在内存和速度之间权衡的一个例子。一个记忆函数可以运行得快得多，但是因为它存储了所有以前的输入和输出，所以它使用了更多的内存。
+
+```{r}
+slow_function <- function(x){
+  Sys.sleep(3)
+  x * 10 * runif(1)
+}
+```
+
+```{r}
+library(tictoc)
+tic()
+slow_function(1)
+toc()
+```
+
+```{r}
+tic()
+slow_function(1)
+toc()
+```
+
+```{r}
+fast_function <- memoise::memoise(slow_function)
+system.time(print(fast_function(1)))
+
+system.time(print(fast_function(1)))
+```
+
+```{r}
+safe_log <- safely(log)
+safe_log(10)
+safe_log("a")
+```
+
+```{r}
+list("a", 10, 100) %>%
+  map(safe_log) %>%
+  transpose()
+```
+
+```{r}
+# This is a bit easier to work with if you supply a default value
+# of the same type and use the simplify argument to transpose():
+safe_log <- safely(log, otherwise = NA_real_)
+list("a", 10, 100) %>%
+  map(safe_log) %>%
+  transpose() %>%
+  simplify_all()
+```
+
+```{r,eval=FALSE}
+# To replace errors with a default value, use possibly().
+list("a", 10, 100) %>%
+  map_dbl(possibly(log, NA_real_))
+
+# For interactive usage, auto_browse() is useful because it automatically
+# starts a browser() in the right place.
+f <- function(x) {
+  y <- 20
+  if (x > 5) {
+    stop("!")
+  } else {
+    x
+  }
+}
+if (interactive()) {
+  map(1:6, auto_browse(f))
+}
+
+# It doesn't make sense to use auto_browse with primitive functions,
+# because they are implemented in C so there's no useful environment
+# for you to interact with.
+
+```
+
+meomoise()和safe()非常有用，但也非常复杂。在这个案例研究中，您将学习如何创建自己的更简单的函数操作符。假设您有一个命名的url向量，并且希望将每个url下载到磁盘。使用walk2()和file.download()非常简单:
+
+```{r}
+urls <- c(
+  "adv-r" = "https://adv-r.hadley.nz", 
+  "r4ds" = "http://r4ds.had.co.nz/"
+  # and many many more
+)
+path <- paste(tempdir(), names(urls), ".html")
+path
+walk2(urls, path, download.file, quiet = TRUE)
+```
+
+
+
+
+
