@@ -66,11 +66,30 @@ bar(
 ## 305家公司数据
 
 ```{r}
-
+map(ts_code, function(i) {
+  df <- bar(
+    ts_code = i,
+    start_date = "20160101",
+    end_date = "20191231",
+    adj = "hfq",
+    ma = c(5, 10,15,20)
+  ) %>% as_tibble()
+}) -> data
 ```
 
+```{r}
+data_all <- do.call(rbind,data)
+```
 
+## 删除缺失值的行
 
+```{r}
+data_all[complete.cases(data_all),]->data_non
+```
+
+```{r}
+write_csv(data_non,path = "./R高级编程/data1/shenzheng300.csv")
+```
 
 
 

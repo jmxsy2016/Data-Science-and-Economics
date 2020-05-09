@@ -176,16 +176,6 @@ data_tidyverse %>%
   html_text()
 ```
 
-## 爬取豆瓣
-
-```{r}
-data_douban <- read_html("https://book.douban.com/top250?icn=index-book250-all")
-
-data_douban %>% 
-  html_nodes("p.pl") %>% 
-  html_text()
-```
-
 ## 西域网的特种扳手品类(模板)
 
 ### 分析网页结构
@@ -201,15 +191,11 @@ str_c("http://www.ehsy.com/category-16883?","p=",2)
 ### 读取网页
 
 ```{r}
-map(1:15,function(i){
-  url <- str_c("http://www.ehsy.com/category-16883?","p=",i)
-  df <- tibble(url = url)
-}) %>% 
-  bind_rows()->url
+url <- str_c("http://www.ehsy.com/category-16883?","p=",1)
 
 url
 
-data_tianyu <- read_html(url %>% pull(url))
+data_tianyu <- read_html(url)
 ```
 
 ### 定位代码与抽取数据
@@ -229,9 +215,162 @@ name <-
   data_tianyu %>% html_nodes('.p-name .high-light') %>% html_text()
 ```
 
+### 数据的清洗与整合
+
 ```{r}
 result <- data.frame(name,sku,stock,price)
-result
+result %>% 
+  separate(col = price,into = c("fuhao","price"),sep = " ") %>% 
+  mutate(fuhao = NULL)
+```
+
+代码整合
+
+```{r}
+map(1:30,function(i){
+  url <- str_c("http://www.ehsy.com/category-16883?","p=",i)
+  data <- read_html(url)
+  
+  data %>% 
+    html_nodes("div.order.ell span:nth-child(2)") %>% 
+    html_text()-> sku
+  
+  data %>% 
+    html_nodes("div.proTime.ell span:nth-child(2)") %>% 
+    html_text() -> stock
+  
+  data %>% 
+    html_nodes('div.price.ell span.yen') %>% 
+    html_text() -> price
+  
+  data %>% 
+    html_nodes('.p-name .high-light') %>% 
+    html_text() -> name
+  
+  result <- tibble(name = name,
+                   sku = sku,
+                   stock = stock,
+                   price = price)
+}) -> data
+
+do.call(rbind,data) %>% view()
+
+data <- do.call(rbind,data)
+
+data %<>% 
+  separate(col = "price",into = c("fuhao","price"),sep = " ") %>% 
+  mutate(fuhao = NULL)
+
+data %>% datatable()
+```
+
+## 爬取豆瓣
+
+### 分析网页
+
+https://book.douban.com/top250?start=0
+
+https://book.douban.com/top250?start=25
+
+https://book.douban.com/top250?start=50
+
+https://book.douban.com/top250?start=75
+
+### 读取数据
+
+```{r}
+url <- str_c("https://book.douban.com/top250?start=",0)
+data_douban <- read_html(url)
+
+data_douban %>% 
+  html_nodes(".pl2 a") %>% 
+  html_text(trim = TRUE) -> book_name
+
+book_name
+```
+
+```{r}
+data_douban %>% 
+  html_nodes(".rating_nums") %>% 
+  html_text(trim = TRUE) -> book_score
+
+
+data_douban %>% 
+  html_nodes(".star .pl") %>% 
+  html_text(trim = TRUE) -> book_pingfen_people
+
+data_douban %>% 
+  html_nodes("p.pl") %>% 
+  html_text(trim = TRUE) -> book_chubanshe
+
+
+```
+
+### 整合数据
+
+```{r}
+data_douban_clean <- tibble(book_name,book_chubanshe,
+                            book_pingfen_people,
+                            book_score) %>% janitor::clean_names()
+```
+
+### 整合代码
+
+```{r}
+map(1:10, function(i) {
+  url <- str_c("https://book.douban.com/top250?start=", i)
+  data_douban <- read_html(url)
+  
+  data_douban %>%
+    html_nodes(".pl2 a") %>%
+    html_text(trim = TRUE) -> book_name
+  
+  data_douban %>%
+    html_nodes(".rating_nums") %>%
+    html_text(trim = TRUE) -> book_score
+  
+  
+  data_douban %>%
+    html_nodes(".star .pl") %>%
+    html_text(trim = TRUE) -> book_pingfen_people
+  
+  data_douban %>%
+    html_nodes("p.pl") %>%
+    html_text(trim = TRUE) -> book_chubanshe
+  
+  data_douban_clean <- tibble(book_name, book_chubanshe,
+                              book_pingfen_people,
+                              book_score) %>% janitor::clean_names()
+}) -> data_douban
+```
+
+## 清洗数据（最麻烦）
+
+```{r}
+do.call(rbind,data_douban_clean)-> data_douban
+
+data_douban %>% view
+
+data_douban %>% map(class)
+
+data_douban %>% 
+  mutate(people = str_extract(book_pingfen_people,"[0-9].*[0-9]")) %>% 
+  mutate(book_pingfen_people = NULL) %>% 
+  mutate(author = str_extract(book_chubanshe,".*?[/]")) %>% 
+  mutate(author = str_extract(author,".+[^/]")) %>%
+  mutate(date = str_extract(book_chubanshe,"[0-9].*/")) %>% 
+  mutate(date = str_extract(date,".+[^/]")) %>% 
+  mutate(pub = str_extract(book_chubanshe,"/.+[出版社]")) %>%
+  mutate(pub = str_extract(pub,"[^/].*")) %>%
+  mutate(book_chubanshe = NULL)-> data_250
+```
+
+```{r}
+data %>% view()
+```
+
+```{r}
+write.csv(data_250,"./R高级编程/data1/data_douban250.csv")
 ```
 
 总结：
