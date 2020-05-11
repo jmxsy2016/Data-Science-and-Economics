@@ -48,6 +48,8 @@
 - [purrr教程](https://jmxsy2016.github.io/Data-Science-and-Economics/R高级编程/code/purrr教程.html)
 - [R字符串数据处理——一个实际例子](https://jmxsy2016.github.io/Data-Science-and-Economics/R高级编程/code/R字符串数据处理-一个实际例子.html)
 - [爬虫教程_CSS选择器](https://jmxsy2016.github.io/Data-Science-and-Economics/R高级编程/code/爬虫教程_CSS选择器.html)
+- [janitor包——检查和清理脏数据](https://raw.githack.com/uo-ec510-2020-spring/lectures/master/09-funcs-intro/janitor包——检查和清理脏数据)
+- [Integration: R and Python](https://shawnsanto.com/files/sta323/slides/lec-16b-rpython.html#1)
 
 ---
 
@@ -57,10 +59,13 @@
 
 ## R语言与金融大数据
 
+- [R语言基础知识](https://jmxsy2016.github.io/Data-Science-and-Economics/R语言与金融大数据/R语言基础知识.html)
+
 ---
+
 ## 计量经济学与Stata
 
-
+- [stata与R语言命令](https://jmxsy2016.github.io/Data-Science-and-Economics/计量经济学与Stata/stata2r.pdf)
 
 
 
