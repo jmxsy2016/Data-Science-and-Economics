@@ -1,0 +1,231 @@
+---
+title: "Template_Title"
+author: 
+- affiliation: Dongbei University of Finance & Economics
+  name: Studennt. LJJ
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    highlight: espresso
+    theme: united
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+    toc_depth: 5
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      fig.show = "hold",
+                      fig.align = "center",
+                      tidy = FALSE)
+```
+
+## 加载经常用的R包
+
+```{r,warning=FALSE,message=FALSE}
+library(pacman)
+# 模型
+p_load(tidyverse,grf,glmnet,caret,tidytext,fpp2,
+       forecast,car,tseries,hdm,tidymodels,broom)
+
+# 读数据
+p_load(readxl,writexl,data.table,openxlsx,haven,rvest)
+
+# 数据探索
+p_load(DT,skimr,DataExplorer,explore,vtable,stringr,lubridate)
+
+# 可视化
+p_load(patchwork,ggrepel,ggcorrplot,gghighlight,ggthemes,shiny)
+
+# 其它常用包
+p_load(magrittr,listviewer,devtools,here,janitor,reticulate,jsonlite)
+```
+
+## 探索性数据分析
+
+- **df_status(data)**: Profiling dataset structure
+- **describe(data)**: Numerical and categorical profiling (quantitative)
+- **freq(data)**: Categorical profiling (quantitative and plot).
+- **profiling_num(data)**: Profiling for numerical variables (quantitative)
+- **plot_num(data)**: Profiling for numerical variables (plots)
+
+```{r}
+library(funModeling)
+funModeling::heart_disease %>% datatable()
+heart_disease %>% glimpse()
+heart_disease %>% skimr::skim()
+```
+
+```{r}
+heart_disease %>% vtable::st()
+heart_disease %>% funModeling::df_status()
+```
+
+- q_zeros: quantity of zeros (p_zeros: in percent)
+- q_inf: quantity of infinite values (p_inf: in percent)
+- q_na: quantity of NA (p_na: in percent)
+- type: factor or numeric
+- unique: quantity of unique values
+
+```{r}
+heart_disease$num_vessels_flour %>% table(useNA = "always")
+```
+
+- **Zeros**: Variables with lots of zeros may not be useful for modeling and, in some cases, they may dramatically bias the model.
+- **NA**: Several models automatically exclude rows with NA (**random forest** for example). As a result, the final model can be biased due to several missing rows because of only one variable. For example, if the data contains only one out of 100 variables with 90% of NAs, the model will be training with only 10% of the original rows.
+- **Inf**: Infinite values may lead to an unexpected behavior in some functions in R.
+- **Type**: Some variables are encoded as numbers, but they are codes or categories and the models don’t handle them in the same way.
+- **Unique**: Factor/categorical variables with a high number of different values (~30) tend to do **overfitting** if the categories have low cardinality (decision trees, for example).
+
+```{r}
+my_data_status <- df_status(heart_disease, print_results = F)
+my_data_status
+```
+
+Removing variables with 60% of zero values
+
+```{r}
+my_data_status %>% 
+  filter(p_zeros > 60) %>% 
+  .$variable -> vars_to_remove
+vars_to_remove
+```
+
+```{r}
+heart_disease %>% 
+  select(-one_of(vars_to_remove)) -> heart_disease_2
+heart_disease_2 %>% as_tibble()
+
+heart_disease_2 %>% funModeling::df_status()
+```
+
+```{r}
+my_data_status %>% 
+  arrange(-p_zeros)
+```
+
+获取其他常用统计信息:总行、总列和列名:
+
+```{r}
+heart_disease %>% DataExplorer::introduce()
+heart_disease %>% df_status()
+complete.cases(heart_disease) %>% sum()
+is.na(heart_disease) %>% sum()
+```
+
+```{r}
+colnames(heart_disease)
+```
+
+```{r}
+heart_disease %>% 
+  funModeling::freq(input = c("thal","chest_pain"))
+```
+
+```{r}
+heart_disease %>% 
+  funModeling::freq(input = "chest_pain")
+```
+
+```{r}
+freq(data=heart_disease$thal, plot = FALSE, na.rm = TRUE)
+```
+
+### describe函数
+
+```{r}
+heart_disease %>% Hmisc::describe()
+```
+
+- n: quantity of non-NA rows. 
+- missing: number of missing values. Summing this indicator to n gives us the total number of rows. 
+- unique: number of unique (or distinct) values.
+- Info: an estimator of the amount of information present in the variable and not important at this point.
+- Mean: the classical mean or average.
+- Numbers: .05, .10, .25, .50, .75, .90 and .95 stand for the percentiles. These values are really useful since it helps us to describe the distribution. It will be deeply covered later on, i.e., .05 is the 5th percentile.
+- lowest and highest: the five lowest/highest values. Here, we can **spot outliers and data errors**. For example, if the variable represents a percentage, then it cannot contain negative values.
+
+## skim函数
+
+```{r}
+heart_disease %>% skimr::skim()
+```
+
+```{r}
+skim(iris)
+
+# Use tidyselect
+skim(iris, Species)
+skim(iris, starts_with("Sepal"))
+
+# Skim also works groupwise
+iris %>%
+  dplyr::group_by(Species) %>%
+  skim()
+
+# Which five numeric columns have the greatest mean value?
+# Look in the `numeric.mean` column.
+iris %>%
+  skim() %>%
+  dplyr::select(numeric.mean) %>%
+  dplyr::top_n(5)
+
+# Which of my columns have missing values? Use the base skimmer n_missing.
+iris %>%
+  skim() %>%
+  dplyr::filter(n_missing > 0)
+
+# Use skim_tee to view the skim results and
+# continue using the original data.
+chickwts %>%
+  skim_tee() %>%
+  dplyr::filter(feed == "sunflower")
+
+# Produce a summary without spark graphs
+iris %>%
+  skim_without_charts()
+```
+
+我们可以通过更改bins参数（默认值设置为10）来调整图中使用的条形数量。 例如：plot_num（iris，bins = 20）。
+
+### plot_num函数
+
+```{r}
+plot_num(iris,bins = 20) + 
+  theme(text = element_text(size = 15,family = "Times New Roman"))
+```
+
+建议：到目前为止，这里已经出现了许多数字，甚至在百分位数附录中也有出现。重要的是，您将找到正确的方法来浏览数据。 这可以来自其他指标或其他条件。可以在数据项目的开头运行函数df_status，skim，describe，freq，profiling_num和plot_num。关于数据的正常行为和异常行为，进行两者的研究很重要。为了用一般术语描述数据集，我们应该排除极值：例如，使用range_98变量。排除后平均值应降低。这些分析是单变量的。也就是说，它们没有考虑其他变量（**多变量分析**）。 
+
+## 1.2 相关性和关系
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

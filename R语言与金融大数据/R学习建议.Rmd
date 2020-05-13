@@ -1,0 +1,86 @@
+---
+title: "R学习建议"
+author: 
+- affiliation: Dongbei University of Finance & Economics
+  name: Studennt. LJJ
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    highlight: espresso
+    theme: cosmo
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+    toc_depth: 5
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      fig.show = "hold",
+                      fig.align = "center",
+                      tidy = FALSE)
+```
+
+## 加载经常用的R包
+
+```{r,warning=FALSE,message=FALSE}
+library(pacman)
+# 模型
+p_load(tidyverse,grf,glmnet,caret,tidytext,fpp2,
+       forecast,car,tseries,hdm,tidymodels,broom)
+
+# 读数据
+p_load(readxl,writexl,data.table,openxlsx,haven,rvest)
+
+# 数据探索
+p_load(DT,skimr,DataExplorer,explore,vtable,stringr,lubridate)
+
+# 可视化
+p_load(patchwork,ggrepel,ggcorrplot,gghighlight,ggthemes,shiny)
+
+# 其它常用包
+p_load(magrittr,listviewer,devtools,here,janitor,reticulate,jsonlite)
+```
+
+
+R语言的特点是：功能极其强大；各种辅助软件包千差万别（多达数千种）
+
+函数功能丰富（每个better包中常有几十甚至上百个高价值函数）
+
+基于R语言的特点有以下几条建议
+
+- 1、规避陷阱：慎入群、慎入论坛、慎提问、慎写代码,多思考、多谷歌、多测试
+
+- 2、学习策略：
+  - 循序渐进、多读经典图书
+  - 多读系统帮助；多写测试代码
+  - 站在巨人的肩膀上（不是自己慢慢写代码实现已存在功能）
+
+- 3、初级阶段：
+  - 制订长远学习计划
+  - 坚持读书，读好书
+  - 成体系、成系统的学习R语言：数据分析、数据可视化、计量、金融、机器学习
+
+- 4、中高级阶段：以软件包为核心
+
+- 5、高级方法：
+  - 扫描式学习软件包，重点自己领域的软件包即可
+  - 建立自己的示例代码库，直接调用，定期重构代码
+  - 翻译扩展软件包
+  - 制作电子档（学习笔记）发布
+
+提升金融大数据处理能力的几条建议
+
+- 1、多积累交易品基础知识：外汇、股指、能源、金属、农产品、信用产品、ETF基金。了解的越多，交易盈利的机会越多，风险越小
+
+- 2、多积累极端市场行情的案例：1987年股灾、1994年债券市场崩溃、1997年亚洲金融危机、1998年俄罗斯债务危机、2008年次级债危机
+
+- 3、多积累前辈成功、失败的案例。前辈遇到的情况我们也会遇到，模型是否能够扛住
+
+- 4、多思考成功案例背后的通用模式、模型：很多案例有类似的模式如公司危机模式、季节模式、计划事件模式都可以总结成数学模型
+
+- 5、多积累跨学科模型：气候模型、天体物理模型、神经网络、小波分析等都有可能应用于投资实战，积累的模型越多越能发现新规律
+
+- 6、多积累代码经验、多思考、多测试。不满足于拍脑门、想当然的下结论，而是用实际历史数据说话
+

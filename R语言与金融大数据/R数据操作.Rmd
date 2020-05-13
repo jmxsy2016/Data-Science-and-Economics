@@ -1,0 +1,223 @@
+---
+title: "R数据操作"
+author: 
+- affiliation: Dongbei University of Finance & Economics
+  name: Studennt. LJJ
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    highlight: espresso
+    theme: simplex
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+    toc_depth: 5
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      fig.show = "hold",
+                      fig.align = "center",
+                      tidy = FALSE)
+```
+
+## 加载经常用的R包
+
+```{r,warning=FALSE,message=FALSE}
+library(pacman)
+# 模型
+p_load(tidyverse,grf,glmnet,caret,tidytext,fpp2,
+       forecast,car,tseries,hdm,tidymodels,broom)
+
+# 读数据
+p_load(readxl,writexl,data.table,openxlsx,haven,rvest)
+
+# 数据探索
+p_load(DT,skimr,DataExplorer,explore,vtable,stringr,lubridate)
+
+# 可视化
+p_load(patchwork,ggrepel,ggcorrplot,gghighlight,ggthemes,shiny)
+
+# 其它常用包
+p_load(magrittr,listviewer,devtools,here,janitor,reticulate,jsonlite)
+```
+
+## 访问向量中元素
+
+```{r}
+x <- 1:10;print(x)
+
+print(x[5])   # 下表从1开始，与python从0开始不一致，一定要记住（刚开始我总是混淆）
+
+print(x[-5])
+
+print(x[c(1,5,8)])
+
+print(x[1:5])
+
+print(x[1:5*2])          # 冒号优先级更高，首先得到1-5这5个数据再乘以2
+
+print(x[ x > 5 ])        
+# 逻辑表达式用x中每一个元素计算逻辑表达式的值做索引，得到的是原数组中x大于5的元素
+
+print(mean(x))
+print(x[ x > mean(x) ] ) # 逻辑表达中可以使用函数
+
+
+names(x) <- LETTERS[1:10];print(x)   # 使用字符常数数组给向量命名，再通过变量名访问向量中的元素
+print(x["A"])
+
+# View(x)
+```
+
+```{r}
+# 计算向量的长度
+print(length(x))
+
+# 修改指定位置的向量元素
+x <- 1:10;print(x)
+x[5] <- 100;print(x)
+
+# 追加向量元素增加向量长度
+x <- 1:10;print(x)
+x <- c(x,11,12,13);print(x)
+
+# 直接在向量末尾写入数据
+x <- 1:10;print(x)
+x[length(x)+1] <- 11;print(x)
+```
+
+```{r}
+# 在向量指定位置插入数据
+# 并不是在原来的向量中插入数据而是返回一个新的向量
+# after参数表示在原向量中的那个向量后面插入数据
+x <- 1:10;print(x)
+y <- append(x,11:13,after=0);print(x);print(y)
+y <- append(x,11:13,after=5);print(x);print(y)
+```
+
+## 访问列表
+
+```{r}
+lst <- list(symbols=c("MSFT","KO","CSCO"),
+            price=c(40.40,40.56,23.02),
+            currency="USD",
+            country="USA",
+            type="STOCK" )
+lst   # 月饼盒子
+print(lst[1])  # 看看第一个月饼长啥样
+print(lst$symbols) # 打开名为symbols的月饼，可以开吃哈
+
+print(lst[[1]])        # 打开第一个月饼，开吃
+
+print(lst$symbols[1])  # 打开第一个月饼，吃第一口 ："MSFT"
+print(lst$symbols[[1]]) # 打开第一个月饼，吃第一口 ："MSFT",但是这两口不一样！一个只是想吃，一个是已经吃下去！
+
+```
+
+```{r}
+lst2 <- list(x = 1:10,
+             y = letters,
+             z = list(1:10))
+
+lst2  # 打开月饼盒
+lst2$x # 打开第一个月饼
+lst2["x"] # 拿出来第一个月饼，没有打开
+
+lst2$z  # 打开第三个月饼，发现里边还有一个袋子
+lst2$z[[1]]  # 撕开袋子
+lst2$z[1]    # 拿出了袋子
+
+# 明白了不，[]提取元素，[[]]提取元素内容
+```
+
+```{r}
+# 在列表末尾添加一个新的元素TradeDate
+names(lst)
+lst$TradeDate <- as.Date(rep("2014-4-17",3))
+names(lst)
+
+
+# 在列表任意位置添加一个新的元素
+z <- list(plantform = rep("FXCM",3))
+z
+lst
+lst <- append(lst,z,after=0)
+lst
+names(lst)
+str(lst)
+
+
+# 删除列表中的指定项
+names(lst)
+lst$price <- NULL
+names(lst)
+```
+
+## 访问矩阵
+
+```{r}
+data(EuStockMarkets)
+
+print(head(EuStockMarkets))
+print(class(EuStockMarkets))
+print(summary(EuStockMarkets))
+
+# print(EuStockMarkets[,"DAX"])    # 输出所有行，DAX列数据，直接使用列名称访问
+# print(EuStockMarkets[,1])        
+# 输出所有行，第一列（德国DAX指数）数据，编写大型程序时显然不够直观
+
+# 查看整个矩阵的数据，坏处是还需要手动关闭打开的页面
+# View(EuStockMarkets)
+```
+
+```{r}
+# rowSums()计算矩阵每一行的和生成一个新向量
+rowTotal <- rowSums(EuStockMarkets)
+# 以列方式将每一行和向量接在矩阵之后形成有5列的新矩阵
+EuStockMarkets <- cbind(EuStockMarkets,rowTotal)
+# View(EuStockMarkets)
+
+# colSums()计算矩阵每一列的和生成一个新向量
+colTotal <- colSums(EuStockMarkets)
+colTotal
+
+# 以行方式将每一行和向量接在矩阵之后形成一个有新累加和行的矩阵
+EuStockMarkets <- rbind(EuStockMarkets,colTotal)
+print(tail(EuStockMarkets))
+```
+
+## 访问数据框(一种特殊的列表)
+
+```{r}
+df  <- data.frame(symbols=c("MSFT","KO","CSCO"),
+                  price=c(40.40,40.56,23.02),
+                  currency=rep("USD",3),
+                  country=rep("USA",3),
+                  type=rep("STOCK",3),stringsAsFactors = FALSE)
+df
+
+print(class(df))
+print(typeof(df))
+
+print(df[1,])   # 通过行列号访问数据框的一行
+print(df[2])   # 通过行列号访问数据框的一列
+
+
+print(df$price) # 用列名称是更好、更直观的方式
+
+
+# 如果需要多次访问数据框中的数据列可以将数据框名称加入到搜索路径中
+# 这样就可以直接使用数据列名称
+attach(df)
+
+  print(currency)
+  print(type)
+
+detach(df)
+```
+
+
+
+
