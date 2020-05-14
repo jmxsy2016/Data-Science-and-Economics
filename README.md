@@ -34,6 +34,8 @@
 - [爬虫1——Server-side和CSS](https://raw.githack.com/uo-ec510-2020-spring/lectures/master/07-web-css/07-web-css.html)
 - [爬虫2——客户端和API](https://raw.githack.com/uo-ec510-2020-spring/lectures/master/08-web-api/08-web-api.html)
 - [R函数——介绍基本概念](https://raw.githack.com/uo-ec510-2020-spring/lectures/master/09-funcs-intro/09-funcs-intro.html)
+- [R函数——进阶知识](https://raw.githack.com/uo-ec510-2020-spring/lectures/master/10-funcs-adv/10-funcs-adv.html)
+- [R语言并行运算](https://raw.githack.com/uo-ec510-2020-spring/lectures/master/11-parallel/11-parallel.html)
 
 ---
 
@@ -60,6 +62,11 @@
 ## R语言与金融大数据
 
 - [R语言基础知识](https://jmxsy2016.github.io/Data-Science-and-Economics/R语言与金融大数据/R语言基础知识.html)
+- [R语言数据结构](https://jmxsy2016.github.io/Data-Science-and-Economics/R语言与金融大数据/R常用数据结构.html)
+- [R语言数据操作](https://jmxsy2016.github.io/Data-Science-and-Economics/R语言与金融大数据/R数据操作.html)
+- [R语言基础绘图技术]((https://jmxsy2016.github.io/Data-Science-and-Economics/R语言与金融大数据/R基础绘图技术.html))
+- [R语言数据分析函数](https://jmxsy2016.github.io/Data-Science-and-Economics/R语言与金融大数据/R重要数据分析函数.html)
+- [R语言学习建议](https://jmxsy2016.github.io/Data-Science-and-Economics/R语言与金融大数据/R学习建议.html)
 
 ---
 
