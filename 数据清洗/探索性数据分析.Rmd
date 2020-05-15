@@ -203,9 +203,51 @@ plot_num(iris,bins = 20) +
 
 ## 1.2 相关性和关系
 
+```{r}
+anscombe_data <- read.delim(file="https://goo.gl/mVLz5L", header = T)
+anscombe_data
+```
 
+```{r}
+cor_1 = cor(anscombe_data$x1, anscombe_data$y1)
+cor_2 = cor(anscombe_data$x2, anscombe_data$y2)
+cor_3 = cor(anscombe_data$x3, anscombe_data$y3)
+cor_4 = cor(anscombe_data$x4, anscombe_data$y4)
+```
 
+```{r}
+plot_anscombe <- function(x, y, value, type){
+  p <- ggplot(anscombe_data, aes_string(x = x,y = y))  + 
+    geom_smooth(method='lm', fill=NA) + 
+    geom_point(aes(colour=factor(1), 
+                   fill = factor(1)), 
+                   shape=21, 
+                   size = 2) + 
+    ylim(2, 13) + 
+    xlim(4, 19) + 
+    ggthemes::theme_economist_white() + 
+    theme(legend.position="none") + 
 
+        annotate("text", 
+             x = 12, 
+             y =4.5, 
+             label = sprintf("%s: %s", type, round(value,2)))  
+  
+  return(p)
+}
+plot_anscombe("x1", "y1", cor_1, "R2") +
+  plot_anscombe("x2", "y2", cor_1, "R2") +
+  plot_anscombe("x3", "y3", cor_1, "R2") +
+  plot_anscombe("x4", "y4", cor_1, "R2")
+```
+
+```{r}
+funModeling::cross_plot(heart_disease, 
+           input = "chest_pain",
+           target = "has_heart_disease", 
+           plot_type = "percentual")
+
+```
 
 
 

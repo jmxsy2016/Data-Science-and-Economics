@@ -1,0 +1,302 @@
+---
+title: "11R语言并行计算"
+author: 
+- affiliation: Dongbei University of Finance & Economics
+  name: Studennt. LJJ
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    highlight: haddock
+    theme: flatly
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+    toc_depth: 5
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      fig.show = "hold",
+                      fig.align = "center",
+                      tidy = FALSE)
+```
+
+注意：这是关于编程的三个讲座的第三个。如果还没有，请看一下前两个讲座。我们将在这里讨论的所有内容都不会严重依赖这些早期的讲座。但是，我假设您对R函数和环境通常如何工作有很好的了解。我们今天的目标是通过并行运行它们来大大加快我们的编程任务。
+
+## 加载经常用的R包
+
+```{r,warning=FALSE,message=FALSE}
+library(pacman)
+# 模型
+p_load(tidyverse,grf,glmnet,caret,tidytext,fpp2,
+       forecast,car,tseries,hdm,tidymodels,broom)
+
+# 读数据
+p_load(readxl,writexl,data.table,openxlsx,haven,rvest)
+
+# 数据探索
+p_load(DT,skimr,DataExplorer,explore,vtable,stringr,lubridate)
+
+# 可视化
+p_load(patchwork,ggrepel,ggcorrplot,gghighlight,ggthemes,shiny)
+
+# 其它常用包
+p_load(magrittr,listviewer,devtools,here,janitor,reticulate,jsonlite)
+```
+
+
+```{r}
+## Load and install the packages that we'll be using today
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(tictoc, parallel, pbapply, future, future.apply, tidyverse, hrbrthemes, furrr, RhpcBLASctl, memoise, here)
+
+future::plan(multiprocess)
+```
+
+## Example 1
+
+```{r}
+slow_square <- function(x = 1){
+  Sys.sleep(2)
+  x_sq <- x^2
+  df <- tibble(value = x,value_square = x_sq)
+  return(df)
+}
+
+tic()
+m1 <- map(1:5,slow_square) %>% bind_rows()
+toc()
+```
+
+先缓存，复习上节课知识
+
+```{r}
+cache_dir <- here::here("数据科学与经济学/.rcache")
+slow_square_cache <- memoise::memoise(slow_square,
+                                      cache = cache_filesystem(cache_dir))
+```
+
+```{r}
+tic()
+m2 <- map(1:5,slow_square_cache) %>% bind_rows()
+m2
+toc()
+```
+
+```{r}
+tic()
+m3 <- map(1:5,slow_square_cache) %>% bind_rows()
+m3
+toc()
+```
+
+```{r}
+all_equal(m2,m3)
+```
+
+```{r}
+tic()
+series_ex <- map(1:12,slow_square) %>% bind_rows()
+toc()
+series_ex
+```
+
+在继续之前，值得指出的是，我们进行并行处理的能力取决于可用的CPU核心数量。从 r 获取此信息的最简单方法是使用 `parallel::detectCores()`函数:
+
+```{r}
+parallel::detectCores()
+```
+
+```{r}
+tic()
+future_ex <- furrr::future_map(1:12,slow_square) %>% bind_rows()
+toc()
+future_ex
+```
+
+```{r}
+all_equal(future_ex,series_ex)
+```
+
+对于那些喜欢使用 `purrr::map()`函数族进行迭代的人，十分开心。`furrr`软件包可以让你的代码更快！！！这些并行函数的语法与它们的串行版本相比几乎没有什么变化。我们只需要告诉r我们想要并行运行计划(多进程) ，然后稍微修改对future_map的映射调用!!!
+
+这有多简单？我们几乎不需要更改我们的原始代码，也不需要为那些额外的性能支付一分钱。祝贺自己已经成为**并行编程**的专家。
+
+## Example 2
+
+ols大样本性质-蒙特卡洛模拟
+
+```{r}
+tic()
+set.seed(123)
+x <- runif(10000)
+map_dbl(1:300000,function(i){
+  y <- sample(x,100,replace = TRUE)
+  df_mean <- mean(y)
+}) -> data_mean
+toc()
+```
+
+```{r}
+tic()
+set.seed(123)
+x <- runif(10000)
+furrr::future_map_dbl(1:300000,function(i){
+  y <- sample(x,100,replace = TRUE)
+  df_mean <- mean(y)
+}) -> data_mean2
+toc()
+```
+
+```{r}
+base::all.equal(data_mean,data_mean2)
+```
+
+```{r}
+tibble(x = (data_mean2 - mean(x)) * 10/sqrt(1/12)) %>% 
+  ggplot(aes(x)) +
+  geom_density(col = "red") +
+  geom_vline(xintercept = 0,linetype = 3,col = "blue")# 真的是正态分布！！！
+```
+
+## Example 3
+
+```{r}
+## Set seed (for reproducibility)
+set.seed(1234)
+# Set sample size
+n <- 1e6
+```
+
+```{r}
+our_data <- tibble(x = rnorm(n),e = rnorm(n)) %>% 
+  mutate(y = 2 * x + e)
+
+our_data %>% head()
+```
+
+```{r}
+## Function that draws a sample of 10,000 observations, runs a regression and extracts
+## the coefficient value on the x variable (should be around 2).
+```
+
+```{r}
+bootstrp <- function(i) {
+  sample_data <- sample_n(our_data, size = 1e4, replace = TRUE)
+  ## Run the regression on our sampled data and extract the extract the x coefficient.
+  x_coef <- lm(y ~ x, data = sample_data)$coefficients[2]
+  ## Return value
+  return(tibble(x_coef = x_coef))
+}
+bootstrp(1)
+```
+
+```{r}
+set.seed(123L) ## Optional to ensure that the results are the same
+
+## 10,000-iteration simulation
+tic()
+sim_serial <- map(1:1e4, bootstrp) %>% bind_rows()
+toc(log = TRUE)
+```
+
+45s左右
+
+```{r}
+tic()
+sim_furrr <- furrr::future_map(1:10000,
+                               bootstrp,
+                             .options = future_options(set.seed(123L))) %>% bind_rows()
+toc()
+```
+
+12.03左右！！！
+
+正如我试图强调的那样，future相对较新。当然，它不是在R中实现并行过程的第一种或唯一方法。但是，我认为它提供了一个简单而统一的框架，这使其成为了卓越的选择。而且，我们在此处使用的相同命令将非常巧妙地应用于涉及高性能计算集群的更复杂的设置。当我们进入课程的大数据部分时，我们将亲身体验这一手。
+
+```{r}
+sim_furrr %>%
+  ggplot(aes(x_coef)) +
+  geom_density(col=NA, fill="gray25", alpha=0.3) +
+  geom_vline(xintercept=2, col="red") +
+  labs(
+    title = "Bootstrapping example",
+    x="Coefficient values", y="Density",
+    caption = "Notes: Density based on 10,000 draws with sample size of 10,000 each."
+    )
+```
+
+## How many cores should I use?
+
+如果您在网上查找此问题，就会发现大多数人都建议使用detectCores（）-1。该建议源于您可能希望为其他任务保留一个内核的想法，例如运行Web浏览器或文字处理器。尽管我不同意，但通常会使用所有可用的内核进行并行计算。一方面，我大部分的繁重计算工作都在云中（即在服务器或虚拟机上）进行。 因此，保留一些计算能力毫无意义。其次，当我在本地工作时，我养成了在并行功能运行时关闭所有其他应用程序的习惯。不过，您的里程可能会有所不同。（并记住阿姆达尔定律带来的收益递减）。调用`plan(multiprocess)`自动默认为使用所有内核。您可以通过运行`plan（multiprocess（workers = detectCores（）-1））`来更改它。
+
+以我的经验，**并行计算最糟糕的事情**是它对任何一个节点的故障都非常敏感。一个特别令人沮丧的例子是并行函数趋向于忽略/隐藏关键错误，直到最终它们应该返回输出为止。（“哦，所以您几个小时前遇到了严重错误，但是还是决定继续玩乐吗？谢谢！”。）幸运的是，我们在上一堂课中练习过的所有**防御性编程工具**-捕获用户错误并缓存中间结果-完美地延续到它们的平行等效物。 只要确保您使用持久性缓存即可。
+
+## 缓存和并行计算
+
+**挑战**：通过运行我们上次练习的缓存迭代的并行版本来证明这一点。具体来说，您应该重新创建`mem_square_verbose（）`函数，该函数又依赖于`mem_square_persistent（）`函数。然后，您应该能够运`行future_map_dfr（1:10，mem_square_verbose）`，它将自动返回以前缓存的结果。 之后，尝试`future_map_dfr（1:24，mem_square_verbose）`看看会发生什么。
+
+```{r}
+square <- function(x){
+  x_sq <- x^2
+  x_3 <- x^3
+  x_4 <- x^4
+  x_5 <- x^5
+  tibble(x = x,
+         x2 = x_sq,
+         x3 = x_3,
+         x4 = x_4,
+         x5 = x_5)
+}
+```
+
+没有缓存和并行计算:12.19 sec elapsed
+
+```{r}
+tic()
+data_non <- map(1:10000,square) %>% bind_rows()
+toc()
+```
+
+
+并行计算:3.08 sec elapsed
+
+```{r}
+tic()
+data_parallel <- furrr::future_map(1:10000,square) %>% bind_rows()
+toc()
+```
+
+缓存和并行: 1.99 sec elapsed
+
+```{r}
+cache_dir <- here("数据科学与经济学/.rcache")
+square_mem <- memoise::memoise(square,
+                 cache = memoise::cache_filesystem(cache_dir))
+```
+
+```{r}
+tic()
+data_parallel_cache <- furrr::future_map(1:10000,square_mem) %>% bind_rows()
+toc()
+```
+
+看看时间变化: 11.2 sec elapsed 速度变得更加快！！
+
+```{r}
+tic()
+data_parallel_cache <- furrr::future_map(1:20000,square_mem) %>% bind_rows()
+toc()
+```
+
+不过，这差不多就是我现在想说的关于gpu的内容了。为了科学目的安装和维护一个工作的GPU设置是一个非常复杂的任务。(而且，坦率地说，对于绝大多数计量经济学或数据科学的需求来说，这种做法有些过分了。) 几周后，当我们进入本课程的机器学习部分时，我们可能会再次讨论这个话题。
+
+最后，还有一些在线资源详细介绍了 r 中较老的并行编程方法(foreach、 mclapply、parplysnow 等)。 虽然在我看来，这些方法已经被未来的包生态系统所取代，但是通过理解它们，我们仍然可以收集到许多有价值的信息。
+
+
+
+
+

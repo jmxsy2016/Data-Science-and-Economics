@@ -1,0 +1,306 @@
+---
+title: "10高级R进阶笔记"
+author: 
+- affiliation: Dongbei University of Finance & Economics
+  name: Studennt. LJJ
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    highlight: espresso
+    theme: lumen
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+    toc_depth: 5
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      fig.show = "hold",
+                      fig.align = "center",
+                      tidy = FALSE)
+```
+
+注意: 这是关于编程的三个讲座中的第二个。如果你还没有看过第一堂课，请看一下。今天，我们将在此基础上解决在编写和使用中的函数时出现的一些更高级的问题。特别是，我将重点讨论三个问题:1)函数调试，2)捕获用户错误，3)缓存结果。
+
+## 加载经常用的R包
+
+```{r,warning=FALSE,message=FALSE}
+library(pacman)
+# 模型
+p_load(tidyverse,grf,glmnet,caret,tidytext,fpp2,
+       forecast,car,tseries,hdm,tidymodels,broom)
+
+# 读数据
+p_load(readxl,writexl,data.table,openxlsx,haven,rvest)
+
+# 数据探索
+p_load(DT,skimr,DataExplorer,explore,vtable,stringr,lubridate)
+
+# 可视化
+p_load(patchwork,ggrepel,ggcorrplot,gghighlight,ggthemes,shiny)
+
+# 其它常用包
+p_load(magrittr,listviewer,devtools,here,janitor,reticulate,jsonlite)
+```
+
+```{r}
+library(memoise)
+```
+
+```{r}
+square <- function(x = 1){
+  x_sq <- x^2
+  df <- tibble(value = x,value_squared = x^2)
+  return(df)
+}
+square(10:15)
+```
+
+## Debugging
+
+函数是非常强大和有用的编程工具。他们也容易犯很多错误。有时这是因为我们(或其他人)在编写代码时犯了错误。 有时是因为用户错误(例如无效的输入)。无论如何，这是我们必须开始调试代码的地方，以找出出错的地方和原因
+
+```{r,eval=FALSE}
+square("one")
+# Error in x^2 : 二进列运算符中有非数值参数
+```
+
+```{r,eval=FALSE}
+debugonce(square)
+square(letters)
+```
+
+首先，一个旁白: 当函数失败时，我们并不总是需要手动调用调试器。例如，使用debugonce()。实际上，如果出现错误，RStudio经常会提示您“使用Debug自动重新运行”。当这种情况发生时，你会在你的控制台上看到类似下面这样的截图。(忽略特定的函数和错误消息，而是关注**右边的蓝色图标**。)
+
+```{r,eval=FALSE}
+group_mean(starwars,species,height)
+```
+
+## Catching user errors
+
+这似乎只是一个特别愚蠢的用户错误的例子。然而ーー相信我ーー当你有一个复杂的分析，比如由一系列嵌套的函数组成时，很容易遇到这类问题。(一个函数调用另一个函数，调用另一个函数...)不管出于什么原因，单个函数或迭代可能产生与预期略有不同的输出，这可能导致整个分析崩溃，因为输出不能用于链的下一部分。当您运行多核进程(例如并行的 Monte Carlo 模拟)时，这种情况尤其令人沮丧，因为程序将首先完成整个运行(可能需要几个小时) ，然后在最后告诉您某处有错误且没有结果(即使是有效的迭代!)保留了下来。
+
+```{r,eval=FALSE}
+square("one")
+```
+
+Luckily, there are several approaches to guarding against these kind of mistakes. I’ll briefly run through what I see as the three main options below.
+
+- Function-specific control flow
+- Use **base::tryCatch()**
+- Use **purrr::safely()** and family
+
+```{r}
+square_ifelse <- function(x = 1){
+  if(!is.numeric(x)){
+    message("Sorry, you need to provide a numeric input variable.")
+  } else {
+    x_sq <- x^2
+    df <- tibble(value = x,value_sq = x_sq)
+    return(df)
+  }
+}
+square_ifelse(1:10)
+square_ifelse(letters)
+```
+
+```{r,eval=FALSE}
+square_stop <- 
+  function (x = 1) { 
+    if (!is.numeric(x)) stop("Sorry, you need to provide a numeric input variable.")
+    x_sq <- x^2 
+    df <- tibble(value=x, value_squared=x_sq)
+    return(df) 
+  }
+square_stop("one") ## Triggers a stop error and warning
+```
+
+```{r,eval=FALSE}
+square_trycatch <-
+  function (x = 1) {
+    x_sq <- tryCatch(x^2, error = function(e) NA_real_)
+    df <- tibble(value=x, value_squared=x_sq)
+    return(df)
+  }
+square_trycatch(c(1,2,"one"))
+debugonce(square_trycatch)
+```
+
+## Caching (memoisation)
+
+首先，我们创建一个简单的Square函数的“慢速”版本-等待两秒钟，然后再执行任何操作-我将创造性地称为slow_square（）。当然，这仅是为了模拟计算上昂贵的操作，但是基本原理将保持不变。
+
+```{r}
+tictoc::tic()
+slow_square <- function(x){
+  Sys.sleep(3)
+  x_sq <- x^2
+  df <- tibble(value = x,value_square = x_sq)
+  return(df)
+}
+map(1:5,slow_square) %>% bind_rows()
+tictoc::toc()
+```
+
+```{r}
+library(memoise) ## Already loaded
+mem_square <- memoise(slow_square)
+tictoc::tic()
+m1 <- map(1:5,mem_square) %>% bind_rows()
+tictoc::toc()
+```
+
+正如预期的那样，这需要15秒钟，因为在每个迭代期间都要强制等待3秒钟。现在，我们尝试再次调用这个函数(遍历完全相同的输入并保存到一个新的 m2对象) ，看看缓存是否有用... ..。
+
+```{r}
+tictoc::tic()
+m2 <- map(1:5,mem_square) %>% bind_rows()
+tictoc::toc()
+```
+
+并且做到了！ 我们只需要不到一秒钟的时间，因为我们根本不需要再次运行。相反，我们只是简单地回顾了先前保存（即记忆化）的结果。只是为了证明我们确实节省了有意义的输出，这里是两个数据帧以及m2的打印输出的比较。
+
+```{r}
+all_equal(m1,m2)
+m2
+```
+
+最后，请注意，我们的缓存功能足够聪明，可以掩盖先前缓存的结果和非缓存的结果。例如，考虑如果我在x输入向量中再包含五个数字，会发生什么情况。
+
+```{r}
+tictoc::tic()
+m3 <- map(1:10,mem_square) %>% bind_rows()
+tictoc::toc()
+m3
+```
+
+不出所料，这只花了（5×3=）15秒即可从头开始生成新结果，而先前的结果则从缓存中调出。您可以将前面的示例视为现实情况，在这种情况下，您的程序在运行过程中会崩溃或停止，但您无需一开始就重新启动。这类中断的发生频率超出您的预期，尤其是当您使用复杂的分析和高性能计算工具（例如，可抢占节点或VM实例）时。对缓存很聪明，为我节省了很多时间，它可以为您做同样的事情。
+
+### Aside 1: Caching across R sessions
+
+上一段省略了一个重要的警告：默认的`memoise（）`缓存仅对**当前R会话有效**。通过浏览该函数的帮助文档，您可以更清楚地看到这一点，您将在其中注意到内部`cache=cache_memory（）`参数。要启用跨会话（包括计算机崩溃时）持续存在的缓存，您需要使用`cache=cache_filesystem（PATH）`指定专用的缓存目录。该目录可以位于系统上的任何位置（或者实际上位于链接的云存储服务上），甚至可以为不同的项目提供多个缓存目录。 我唯一的适度建议是使用**.rcache /命名模式**来使事情井井有条。
+
+```{r}
+## Cache directory path (which I've already created)
+cache_dir <- here("数据科学与经济学/.rcache")
+
+## (Re-)memoise our function with the persistent cache location
+mem_square_persistent <- memoise(slow_square, cache = cache_filesystem(cache_dir))
+```
+
+```{r}
+# mem_square_persistent <- memoise(slow_square, cache = cache_filesystem(cache_dir))
+m4 <- map(1:5, mem_square_persistent) %>% bind_rows()
+m4
+```
+
+```{r}
+tictoc::tic()
+m5 <- map(1:7,mem_square_persistent) %>% bind_rows()
+m5
+tictoc::toc()
+```
+
+6秒搞定！！！
+
+```{r}
+map(1:7,mem_square_persistent) %>% bind_rows()
+```
+
+**Bottom line**: Specify a **dedicated cache directory** for complex or time-consuming analyses that you want to be able to access across R sessions.
+
+一个例子(模板)
+
+```{r}
+muban <- function(x){
+  Sys.sleep(2)
+  x_sq <- x^2
+  x_3 <- x^3
+  x_4 <- x^4
+  x_5 <- x^5
+  df <- tibble(value = x,
+         value_square = x_sq,
+         value_3 = x_3,
+         value_4 = x_4,
+         value_5 = x_5)
+  return(df)
+}
+
+tictoc::tic()
+muban_value1 <- map(1:10,muban) %>% bind_rows()
+tictoc::toc()  #  20.34 sec elapsed
+```
+
+没有缓存
+
+```{r}
+tictoc::tic()
+muban_value2 <- map(1:10,muban) %>% bind_rows()
+tictoc::toc()
+```
+
+```{r}
+all_equal(muban_value1,muban_value2)
+```
+
+开始缓存
+
+缓存目录
+
+```{r}
+muban_cache <- memoise::memoise(muban, cache = cache_filesystem(cache_dir))
+```
+
+运行代码
+
+```{r}
+tictoc::tic()
+muban_value3 <- map(1:10,muban_cache) %>% bind_rows()
+tictoc::toc()
+```
+
+再次运行代码
+
+```{r}
+tictoc::tic()
+muban_value4 <- map(1:10,muban_cache) %>% bind_rows()
+tictoc::toc()  # 0.04 sec elapsed
+```
+
+```{r}
+all_equal(muban_value3,muban_value4)
+```
+
+### Aside 2: Verbose output
+
+
+这是 vebose 函数的一个例子。在编织的RMarkdown文档中，输出可能不那么令人印象深刻，但我发现实时反馈在实时会话中非常有用。 (你自己试试。)
+
+```{r}
+mem_square_verbose <- function(x) {
+    ## 1. Load cached data if already generated
+    if (has_cache(mem_square_persistent)(x)) {
+      cat("Loading cached data for x =", x, "\n")
+      my_data <- mem_square_persistent(x)
+      return(my_data)
+    }
+    
+    ## 2. Generate new data if cache not available
+    cat("Generating data from scratch for x =", x, "...")
+    my_data <- mem_square_persistent(x)
+    cat("ok\n")
+    
+    return(my_data)
+  }
+```
+
+```{r}
+system.time(m5 <- map_df(1:10, mem_square_verbose))
+m5
+```
+
+
+
+
