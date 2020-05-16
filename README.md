@@ -39,7 +39,9 @@
 
 ---
 
-## 机器学习与因果推断
+## Machine Learning and Causal Inference 
+
+- [python安装教程](https://jmxsy2016.github.io/Data-Science-and-Economics/Machine_Learning_and_Causal_Inference/Python安装.pdf )
 
 ---
 
@@ -64,7 +66,7 @@
 - [R语言基础知识](https://jmxsy2016.github.io/Data-Science-and-Economics/R语言与金融大数据/R语言基础知识.html)
 - [R语言数据结构](https://jmxsy2016.github.io/Data-Science-and-Economics/R语言与金融大数据/R常用数据结构.html)
 - [R语言数据操作](https://jmxsy2016.github.io/Data-Science-and-Economics/R语言与金融大数据/R数据操作.html)
-- [R语言基础绘图技术]((https://jmxsy2016.github.io/Data-Science-and-Economics/R语言与金融大数据/R基础绘图技术.html))
+- [R语言基础绘图技术](https://jmxsy2016.github.io/Data-Science-and-Economics/R语言与金融大数据/R基础绘图技术.html)
 - [R语言数据分析函数](https://jmxsy2016.github.io/Data-Science-and-Economics/R语言与金融大数据/R重要数据分析函数.html)
 - [R语言学习建议](https://jmxsy2016.github.io/Data-Science-and-Economics/R语言与金融大数据/R学习建议.html)
 
