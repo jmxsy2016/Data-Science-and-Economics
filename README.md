@@ -76,7 +76,9 @@
 
 - [stata与R语言命令](https://jmxsy2016.github.io/Data-Science-and-Economics/计量经济学与Stata/stata2r.pdf)
 
+## 开源书籍
 
+- [Happy Git and GitHub for the useR](https://happygitwithr.com/index.html)
 
 
 
