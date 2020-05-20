@@ -76,9 +76,35 @@
 
 - [stata与R语言命令](https://jmxsy2016.github.io/Data-Science-and-Economics/计量经济学与Stata/stata2r.pdf)
 
-## 开源书籍
+---
+
+## 开源书籍和程序包
+
+### 书籍
 
 - [Happy Git and GitHub for the useR](https://happygitwithr.com/index.html)
+- [R packages](https://r-pkgs.org/workflows101.html)
+
+### 程序包
+
+- [beepr](https://cran.r-project.org/web/packages/beepr/beepr.pdf):如果您想在例如脚本完成时收到通知，该声音会很有用
+- [available](https://cran.r-project.org/web/packages/available/available.pdf):检查包标题是否可用，适当且有趣
+- [similiars](https://github.com/davidsjoberg/similiars):similars的目标是将字符串匹配到另一个向量中最相似的字符串。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

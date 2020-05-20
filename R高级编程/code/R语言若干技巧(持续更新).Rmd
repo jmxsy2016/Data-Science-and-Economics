@@ -62,7 +62,7 @@ devtools::install_github("rstudio/addinexamples", type = "source")
 
 安装完这个软件包后，你应该看到Addins工具栏菜单中填充了这个软件包导出的Addins:当然，最好是通过**快捷键插入%in%**，而不是通过点击菜单，所以让我们来学习如何将这个插件绑定到快捷键。首先，单击**BrowseAddins...**浏览当前可用的所有Addins。在对话框的左下角，你会看到键盘快捷键...按钮。单击此处，修改键盘快捷方式小部件将被打开，并过滤到当前的 addins 集。让我们将Insert% In% 绑定到**Ctrl + Alt + Shift + k**
 
-
+## 重要快捷键
 
 
 
