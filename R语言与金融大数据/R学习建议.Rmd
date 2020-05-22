@@ -7,7 +7,7 @@ date: "`r Sys.Date()`"
 output: 
   html_document:
     highlight: espresso
-    theme: cosmo
+    theme: paper
     toc: true
     toc_float:
       collapsed: false
@@ -43,12 +43,13 @@ p_load(patchwork,ggrepel,ggcorrplot,gghighlight,ggthemes,shiny)
 p_load(magrittr,listviewer,devtools,here,janitor,reticulate,jsonlite)
 ```
 
+## R语言学习建议
 
 R语言的特点是：功能极其强大；各种辅助软件包千差万别（多达数千种）
 
 函数功能丰富（每个better包中常有几十甚至上百个高价值函数）
 
-基于R语言的特点有以下几条建议
+基于R语言的特点有以下几条建议：
 
 - 1、规避陷阱：慎入群、慎入论坛、慎提问、慎写代码,多思考、多谷歌、多测试
 
@@ -83,4 +84,33 @@ R语言的特点是：功能极其强大；各种辅助软件包千差万别（�
 - 5、多积累跨学科模型：气候模型、天体物理模型、神经网络、小波分析等都有可能应用于投资实战，积累的模型越多越能发现新规律
 
 - 6、多积累代码经验、多思考、多测试。不满足于拍脑门、想当然的下结论，而是用实际历史数据说话
+
+R语言学习建议
+
+* 使用IDE，除非你是六指琴魔
+* 建立project
+* 勿用getwd和rm(list = lm())，千万记住，会让沟通的人崩溃！
+* 多使用快捷键，例如；Command + Tab (Mac OS)或 Alt + Tab (Windows)、Alt + i
+* 使用`here package`
+* [命名要深思熟虑](https://speakerdeck.com/jennybc/how-to-name-files?slide=11)
+* **.Renviron:**定义敏感信息，如API键(如GitHub或twitter)，以及R特定的环境变量，如历史大小(R_HISTSIZE=100000)和默认库位置R_LIBS_USER。语句：`usethis::edit_r_environ()`
+* **.Rprofile.**语句：`usethis::edit_r_profile()`
+* binary packages：`install.packages()`
+* source package:`install.github()`
+* **Rtools** installation
+  - Do not select the box for **“Add rtools to system PATH”**, devtools and RStudio should put Rtools on the PATH automatically when it is needed.
+  - Do select the box for **“Save version information to registry”** (it should be selected by default).
+* Install a source package:`devtools::install_dev("dplyr")` will install the development version of dplyr. `devtools::install_github("jimhester/lookup")` will install Jim’s lookup package (which is not on CRAN), and `devtools::install_version("readr", "1.0.0")` will install readr 1.0.0.
+ 
+
+
+
+
+
+
+
+
+
+
+
 
