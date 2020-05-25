@@ -1,0 +1,157 @@
+---
+title: "Magick 软件包: r 中的高级图像处理"
+# subtitle: "Lecture title"
+author: 
+- affiliation: Dongbei University of Finance & Economics
+  name: Studennt. LJJ
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    theme: flatly
+    highlight: haddock
+    # code_folding: show
+    toc: yes
+    toc_depth: 5
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+    keep_md: false
+    keep_tex: false 
+editor_options: 
+  chunk_output_type: console
+---
+
+## 加载经常用的R包
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      fig.show = "hold",
+                      fig.align = "center",
+                      tidy = FALSE)
+```
+
+```{r,warning=FALSE,message=FALSE}
+library(pacman)
+# 读数据
+p_load(readxl,writexl,data.table,openxlsx,haven,rvest)
+```
+
+```{r,warning=FALSE,message=FALSE}
+# 数据探索
+p_load(tidyverse,DT,skimr,DataExplorer,explore,vtable,stringr,lubridate)
+```
+
+```{r,eval=FALSE,warning=FALSE,message=FALSE}
+# 模型
+p_load(tidyverse,grf,glmnet,caret,tidytext,fpp2,forecast,car,tseries,hdm,tidymodels,broom)
+```
+
+```{r,eval=FALSE,warning=FALSE,message=FALSE}
+# 可视化
+p_load(patchwork,ggrepel,ggcorrplot,gghighlight,ggthemes,shiny)
+```
+
+```{r,eval=FALSE,warning=FALSE,message=FALSE}
+# 其它常用包
+p_load(magrittr,listviewer,devtools,here,janitor,reticulate,jsonlite)
+```
+
+## 加载Magick软件包
+
+```{r}
+library(magick)
+```
+
+## image_read函数
+
+```{r}
+tiger <- magick::image_read('./R包学习-计量经济学/tiger.svg')
+print(tiger)
+magick::image_info(tiger)
+```
+
+```{r}
+# Example image
+# frink <- image_read("https://jeroen.github.io/images/frink.png")
+frink <- image_read("./R包学习-计量经济学/frink.png")
+print(frink)
+```
+
+## image_trim函数
+
+```{r}
+frink
+image_trim(frink)
+```
+
+## image_crop函数
+
+```{r}
+image_crop(frink,"100 x 550 + 50")
+```
+
+## image_scale函数
+
+```{r}
+image_scale(frink,"300")
+image_scale(frink,"x300")
+```
+
+## image_rotate函数
+
+```{r}
+image_rotate(frink,degrees = 45)
+```
+
+## image_flip函数
+
+```{r}
+image_flip(frink)
+```
+
+## image_flop函数
+
+```{r}
+image_flop(frink)
+```
+
+## image_modulate函数：Brightness, Saturation, Hue
+
+```{r}
+image_modulate(frink,brightness = 80,saturation = 120,hue = 90)
+```
+
+## image_fill函数
+
+```{r}
+image_fill(frink,color = "red",point = "+100+200",fuzz = 10)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

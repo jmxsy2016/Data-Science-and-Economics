@@ -61,7 +61,7 @@ x <- rnorm(100,10,5)
 plot(x)
 
 # 绘制1000个正态分布随机数的频数直方图
-x <- rnorm(1000,30,10)
+x <- rnorm(10000,30,10)
 hist(x)
 
 # 使用核密度估计函数density()，在直方图上绘制密度曲线
@@ -82,7 +82,7 @@ x <- rnorm(10,30,10);barplot(x)
 box() # 在当前图上加个方框
 
 # 绘制饼图
-x <-1:5;pie(x,col=rainbow(5))
+x <-1:8;pie(x,col=rainbow(8))
 box()
 ```
 
@@ -97,6 +97,7 @@ boxplot(x)
 ```{r}
 # 绘制向日葵图
 data(iris)
+iris
 sunflowerplot(iris[,3:4])
 
 # 绘制矩阵或数据框的二元图
@@ -110,10 +111,10 @@ pairs(iris[1:4],
 ```{r}
 # 绘制QQ图
 # 如果向量为正态分布则数据点基本在一条直线上
-x <- rnorm(500,10,5);qqnorm(x)
+x <- rnorm(50000,10,5);qqnorm(x)
 
 # 根据指定函数绘制指定范围的曲线图
-curve(sin, -2*pi, 2*pi, xname = "t")
+curve(cos, -2*pi, 2*pi, xname = "t")
 ```
 
 ```{r}
@@ -133,7 +134,7 @@ plot(x,y,
 points(x,y,col="blue")
 lines(x,y,col="red")
 
-text(5,max(y),"随机数据点")           # 在指定坐标位置放置文本
+text(5,5,"随机数据点")           # 在指定坐标位置放置文本
 
 mtext("横轴下方文字",side=1)          # 横轴、纵轴上放置文字
 mtext("纵轴左方文字",side=2)
@@ -169,7 +170,7 @@ polygon(c(20,10,30,40,45),c(-10,0,15,4,-10)) # 在高级图形内部绘制多边
 
 ```{r}
 # 生成一个绘图窗口在其中绘制图形后用savePlot()函数保存
-# windows()
+windows()
 plot(1:10)
 rect(1, 5, 3, 7, col="blue")
 # savePlot("test01", type="jpg",device=dev.cur(),restoreConsole=TRUE)

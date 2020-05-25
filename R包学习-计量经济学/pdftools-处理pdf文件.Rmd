@@ -1,0 +1,89 @@
+---
+title: "pdftools-处理pdf文件"
+# subtitle: "Lecture title"
+author: 
+- affiliation: Dongbei University of Finance & Economics
+  name: Studennt. LJJ
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    theme: flatly
+    highlight: haddock
+    # code_folding: show
+    toc: yes
+    toc_depth: 5
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+    keep_md: false
+    keep_tex: false 
+---
+
+## 加载经常用的R包
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      fig.show = "hold",
+                      fig.align = "center",
+                      tidy = FALSE)
+```
+
+```{r,warning=FALSE,message=FALSE}
+library(pacman)
+# 读数据
+p_load(readxl,writexl,data.table,openxlsx,haven,rvest)
+```
+
+```{r,warning=FALSE,message=FALSE}
+# 数据探索
+p_load(tidyverse,DT,skimr,DataExplorer,explore,vtable,stringr,lubridate)
+```
+
+```{r,eval=FALSE,warning=FALSE,message=FALSE}
+# 模型
+p_load(tidyverse,grf,glmnet,caret,tidytext,fpp2,forecast,car,tseries,hdm,tidymodels,broom)
+```
+
+```{r,eval=FALSE,warning=FALSE,message=FALSE}
+# 可视化
+p_load(patchwork,ggrepel,ggcorrplot,gghighlight,ggthemes,shiny)
+```
+
+```{r,eval=FALSE,warning=FALSE,message=FALSE}
+# 其它常用包
+p_load(magrittr,listviewer,devtools,here,janitor,reticulate,jsonlite)
+```
+
+## 开始
+
+```{r}
+library(pdftools)
+download.file("http://arxiv.org/pdf/1403.2805.pdf","1403.2805.pdf",mode = "wb")
+```
+
+```{r}
+txt <- pdf_text("1403.2805.pdf")
+```
+
+first page text
+
+```{r}
+cat(txt[1])
+```
+
+second page text
+
+```{r}
+cat(txt[2])
+```
+
+```{r}
+toc <- pdf_toc("1403.2805.pdf")
+jsonlite::toJSON(toc, auto_unbox = TRUE, pretty = TRUE)
+```
+
+
+
+
+
+

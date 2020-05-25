@@ -1,0 +1,497 @@
+---
+title: "R包开发笔记"
+# subtitle: "Lecture title"
+author: 
+- affiliation: Dongbei University of Finance & Economics
+  name: Studennt. LJJ
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    theme: flatly
+    highlight: haddock
+    # code_folding: show
+    toc: yes
+    toc_depth: 5
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+    keep_md: false
+    keep_tex: false 
+---
+
+## 加载经常用的R包
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      fig.show = "hold",
+                      fig.align = "center",
+                      tidy = FALSE)
+```
+
+```{r,warning=FALSE,message=FALSE}
+library(pacman)
+# 读数据
+p_load(readxl,writexl,data.table,openxlsx,haven,rvest)
+```
+
+```{r,warning=FALSE,message=FALSE}
+# 数据探索
+p_load(tidyverse,DT,skimr,DataExplorer,explore,vtable,stringr,lubridate)
+```
+
+```{r,eval=FALSE,warning=FALSE,message=FALSE}
+# 模型
+p_load(tidyverse,grf,glmnet,caret,tidytext,fpp2,forecast,car,tseries,hdm,tidymodels,broom)
+```
+
+```{r,eval=FALSE,warning=FALSE,message=FALSE}
+# 可视化
+p_load(patchwork,ggrepel,ggcorrplot,gghighlight,ggthemes,shiny)
+```
+
+```{r,eval=FALSE,warning=FALSE,message=FALSE}
+# 其它常用包
+p_load(magrittr,listviewer,devtools,here,janitor,reticulate,jsonlite)
+```
+
+## 2 流程
+
+### Toy package: foofactors
+
+### create_package()
+
+```
+create_package("~/path/to/foofactors")
+```
+
+In the file browser, go to **More > Show Hidden** Files to toggle the visibility of hidden files (a.k.a. “dotfiles”). A select few are visible all the time, but sometimes you want to see them all.
+
+RStudio can initialize a Git repository, in any Project, even if it’s not an R package, as long you’ve set up RStudio + Git integration. Do **Tools > Version Control > Project Setup**. Then choose Version control system: Git and initialize a new git repository for this project.
+
+### use_git()
+
+### write the first function
+
+### use_r("fbind")
+
+### load_all()
+
+使函数可利用，尽管这些R包没有存在于全局环境。
+
+```
+exists("fbind", where = ".GlobalEnv", inherits = FALSE)
+#> [1] FALSE
+```
+
+我们编写了第一个函数fbind()来连接两个因子。
+我们使用load_all()快速地使这个函数可用于交互式使用，就像我们构建并安装了foofactors并通过库(foofactors)将其附加在一起一样。
+
+RStudio exposes `load_all()` in the Build menu, in the **Build pane** via **More > Load All**, and in keyboard shortcuts **Ctrl + Shift + L** (Windows & Linux) or Cmd + Shift + L (macOS).
+
+### check()
+
+RStudio exposes `check()` in the Build menu, in the **Build pane via Check**, and in keyboard shortcuts **Ctrl + Shift + E** (Windows & Linux) or Cmd + Shift + E (macOS).
+
+### use_mit_license()
+
+For foofactors, we use the **MIT license**. This requires specification in **DESCRIPTION** and an additional file called **LICENSE**, naming the copyright holder and year. We’ll use the helper `use_mit_license()`. Substitute your name here.
+
+### Code > Insert roxygen skeleton
+
+```
+#' Bind two factors
+#'
+#' Create a new factor from two existing factors, where the new factor's levels
+#' are the union of the levels of the input factors.
+#'
+#' @param a factor
+#' @param b factor
+#'
+#' @return factor
+#' @export
+#' @examples
+#' fbind(iris$Species[c(1, 51, 101)], PlantGrowth$group[c(1, 11, 21)])
+```
+
+### Edit DESCRIPTION
+
+### use_mit_license()
+
+```{r}
+use_mit_license("Jane Doe")
+```
+
+### Document()
+
+RStudio exposes `document()` in the Build menu, in the **Build pane via More > Document**, and in keyboard shortcuts Ctrl + Shift + D (Windows & Linux) or Cmd + Shift + D (macOS)
+
+### NAMESPACE changes
+
+### check() again 
+
+### install()
+
+现在，我们可以像其他任何软件包一样附加和使用foofactor。 让我们从顶部回顾一下我们的小例子。 这是重新启动R会话并确保工作区干净的好时机。
+
+```{r}
+library(foofactors)
+
+a <- factor(c("character", "hits", "your", "eyeballs"))
+b <- factor(c("but", "integer", "where it", "counts"))
+
+fbind(a, b)
+#> [1] character hits      your      eyeballs  but       integer   where it 
+#> [8] counts   
+#> Levels: but character counts eyeballs hits integer where it your
+```
+
+RStudio exposes similar functionality in the **Build menu** and in the Build pane **via Install and Restart**.
+
+Now we can attach and use foofactors like any other package. Let’s revisit our small example from the top. This is a good time to **restart your R session and ensure you have a clean workspace**.
+
+**OK!这样一个包就成功建立了！**
+
+### use_testthat()
+
+The helper `use_test()` opens and/or creates a test file. You can provide the **file’s basename** or, if you are editing the relevant source file in RStudio, it will be automatically generated. Since this book is built non-interactively, we must **provide the basename explicitly**:
+
+### load_all()
+
+### test()
+
+RStudio exposes `test()` in the Build menu, in the **Build pane via More > Test package**, and in keyboard shortcuts **Ctrl + Shift + T** (Windows & Linux) or Cmd + Shift + T (macOS).
+
+### use_package()
+
+### use_github()
+
+### use_readme_rmd()
+
+### 添加函数
+
+### load_all()
+
+### The end: check() and install()
+
+foofactors should have **no errors, warnings or notes**. This would be a good time to **re-build and install** if properly. *And celebrate!*
+
+其实，写包不难，剩下的就是慢慢修改完善，没有最好，只有更好！
+
+## 3 系统设置
+
+但是随着在每个R会话中反复附加`devtool`，它变得越来越严重。因此，我们强烈建议将`devtools`附加到您的`.Rprofile`启动文件中，如下所示：
+
+```
+if (interactive()) {
+  suppressMessages(require(devtools))
+}
+```
+
+### Rtools
+
+On Windows the collection of tools needed for building packages from source is called **Rtools**.
+
+**Rtools** is NOT an R package. It is NOT installed with install.packages(). Instead, download it from <https://cran.r-project.org/bin/windows/Rtools/> and run the installer.
+
+During the **Rtools installation** you may see a window asking you to “Select Additional Tasks”.
+
+- *Do not* select the box for **“Edit the system PATH”**. devtools and RStudio should put Rtools on the PATH automatically when it is needed.
+- *Do* select the box for **“Save version information to registry”**. It should be selected by default.
+
+## 4 包的结构和状态
+
+### Source package
+
+### Bundled package
+
+我们会在需要的时候提到何时需要向`.Rbuildignore`添加文件。 请记住，`usethis :: use_build_ignore（）`是管理此文件的一种有吸引力的方法。
+
+### Binary package
+
+### Installed package
+
+### In-memory package
+
+`library（）`并不是一种反复调整和测试正在开发的程序包的好方法，因为它仅适用于已安装的程序包。在5.4节中，您将学习`devtools::load_all（）`如何通过允许您将源包直接加载到内存中来加速开发。
+
+### Package libraries
+
+您的计算机上可以有多个库。实际上，许多人已经这样做了，尤其是在Windows上。 您可以使用`.libPaths（）`查看当前处于活动状态的库。
+
+## 5 基本开发流程
+
+### create a package
+
+选择一个易于使用Google的唯一名称。 这样一来，潜在用户就可以轻松找到您的软件包（及相关资源），并查看谁在使用它。
+
+- 不要选择CRAN或Bioconductor上已经使用的名称。您可能还需要考虑其他一些类型的名称冲突：
+- 同时使用大写和小写字母：这样做会使程序包名称难以键入，甚至难以记住。例如，很难记住是Rgtk2还是RGTK2或RGtk2。
+- 优先使用可发音的名称，这样人们就可以轻松地谈论您的包裹，并有一种在脑海中聆听的方式。
+- 找到引起问题的单词，然后对其进行修改，使其具有独特性：
+
+同时遵守上述所有建议是不可能的，因此显然您需要进行一些权衡。`available软件包`具有一个称为`available（）`的函数，可从多个角度帮助您评估潜在的软件包名称：
+
+检查有效性:
+
+- 检查CRAN，Bioconductor等上的可用性。
+- 搜索各种网站以帮助您发现任何意想不到的含义。在交互式会话中，您在浏览器选项卡中打开了上面看到的URL。
+- 尝试报告姓名是正面还是负面的情绪。
+
+*不要使用*`package.skeleton（）`创建一个程序包。因为R附带了此函数，所以您可能会想使用它，但是它会创建一个程序包，该程序包会立即因R CMD构建而引发错误。 它预期的开发过程不同于我们在此处使用的开发过程，因此，修复此破碎的初始状态只会使使用`devtools`（尤其是`roxygen2`）的人员不必要的工作。使用`create_package（）`。
+
+### Rstudio Projects
+
+devtools与RStudio携手合作，我们认为RStudio是大多数R用户的最佳开发环境。需要明确的是，您可以不使用RStudio而使用devtools，也可以不使用devtools在RStudio中开发软件包。但是存在一种特殊的双向关系，这使得将**devtools和RStudio一起使用非常有益**。
+
+从第4.2节中，您已经知道**源软件包**位于计算机上的目录中。我们强烈建议每个源程序包也是一个**RStudio项目**。 以下是一些收益：
+
+```{r,eval=FALSE}
+# these should usually be the same (or unset)
+proj_sitrep()
+#> *   working_directory: '/Users/jenny/rrr/readxl'
+#> * active_usethis_proj: '/Users/jenny/rrr/readxl'
+#> * active_rstudio_proj: '/Users/jenny/rrr/readxl'
+```
+
+### 工作目录和文件路径规则
+
+如果您是R包开发的新手，则没有足够的依据来支持或拒绝该建议。但是那些有经验的人可能会觉得有些沮丧。在子目录（例如test/）中工作时，我们应该如何表达路径？随着相关性的提高，我们将向您展示如何利用路径构建助手，例如`testthat :: test_path（）`来确定执行时的路径。
+
+### 使用load_all()测试
+
+可以说`load_all（）`函数是devtools工作流程中最重要的部分。
+
+`load_all（）`的主要优点：
+
+- 您可以快速进行迭代，从而鼓励探索和逐步发展。
+- 对于具有已编译代码的软件包，此迭代加速特别明显。
+- 您可以在命名空间机制下进行交互开发，该命名空间机制可以准确地模拟某人使用已安装的程序包时的情况：您可以直接调用自己的内部函数，而无需使用:::，也不需要尝试在全局工作区中临时定义函数。
+- 您也可以从导入到`NAMESPACE`的其他包中调用函数，而不必尝试通过`library（）`附加这些依赖项。
+- `load_all（）`消除了开发流程中的麻烦，并消除了使用替代方法的诱惑，该替代方法通常会导致命名空间和依赖项管理方面的错误。
+
+`devtools::load_all（）`是`pkgload::load_all（）`的包装，它增加了一些用户友好性。您不太可能以编程方式或在另一个软件包中使用`load_all（）`，但如果这样做，则可能应直接使用`pkgload :: load_all（）`。
+
+## 6 R代码
+
+不要使用library（）或require（）。 这些修改搜索路径，影响全局环境中可用的功能。 最好使用DESCRIPTION指定包装的要求，如下一章所述。 这也可以确保在安装软件包时已安装了那些软件包。
+
+## 7 Package metadata
+
+describe文件的工作是存储有关程序包的重要元数据。 首次开始编写程序包时，通常会使用这些元数据来记录运行程序包所需的程序包。 但是，随着时间的流逝，您开始与他人共享软件包，元数据文件变得越来越重要，因为它指定了谁可以使用它（许可证）以及如果有问题可以与谁联系（您！）。
+
+```
+Imports:
+    dplyr,
+    ggvis
+```
+
+```{r}
+Suggests:
+    dplyr,
+    ggvis
+```
+
+导入：必须存在此处列出的软件包才能使您的软件包正常工作。 实际上，无论何时安装软件包，这些软件包（如果尚不存在）都将安装在您的计算机上（devtools :: load_all（）还会检查软件包是否已安装）。
+
+如果您使用其他软件包中的许多功能，则这很冗长。  ::也有一些轻微的性能损失（大约5µs，因此只有数百万次调用该函数才有意义）。 您将了解在命名空间导入中的其他包中调用函数的其他方法。
+
+建议：您的包裹可以使用这些包裹，但不需要。 您可能会使用建议的软件包（例如数据集）来运行测试，构建小插图，或者可能只有一个函数需要该软件包。
+
+将“导入和建议”添加到程序包中的最简单方法是使用usethis :: use_package（）。 这会自动将它们放在“ DESCRIPTION”中的正确位置，并提醒您如何使用它们。
+
+```
+usethis::use_package("dplyr") # Defaults to imports
+#> Adding dplyr to Imports
+#> Refer to functions with dplyr::fun()
+usethis::use_package("dplyr", "Suggests")
+#> Adding dplyr to Suggests
+#> Use requireNamespace("dplyr", quietly = TRUE) to test if package is 
+#>  installed, then use dplyr::fun() to refer to functions.
+```
+
+```
+Title: An implementation of the Grammar of Graphics
+Description: An implementation of the grammar of graphics in R. It combines 
+    the advantages of both base and lattice graphics: conditioning and shared 
+    axes are handled automatically, and you can still build up a plot step 
+    by step from multiple data sources. It also implements a sophisticated 
+    multidimensional conditioning system and a consistent interface to map
+    data to aesthetic attributes. See the ggplot2 website for more information, 
+    documentation and examples.
+```
+
+由于Description仅给您少量空间来描述软件包的功能，因此我还建议您包含一个README.md文件，该文件会更深入并显示一些示例。 您将在README.md中了解到这一点。
+
+```
+Authors@R: person("Hadley", "Wickham", email = "hadley@rstudio.com",
+  role = c("aut", "cre"))
+person("Hadley", "Wickham", email = "hadley@rstudio.com", 
+  role = c("aut", "cre"))
+```
+
+```
+Authors@R: c(
+    person("Hadley", "Wickham", email = "hadley@rstudio.com", role = "cre"),
+    person("Winston", "Chang", email = "winston@rstudio.com", role = "aut"))
+```
+
+Licence字段可以是开源许可证的标准缩写，例如GPL-2或BSD，也可以是指向包含更多信息的文件的指针，即文件LICENSE。 仅当您计划发布软件包时，许可证才真正重要。 如果不这样做，则可以忽略此部分。 如果要弄清楚您的软件包不是开源的，请使用License：文件LICENSE，然后创建一个名为LICENSE的文件，其中包含：
+
+```
+numeric_version("1.9") == numeric_version("1.9.0")
+#> [1] TRUE
+numeric_version("1.9.0") < numeric_version("1.10.0")
+#> [1] TRUE
+```
+
+## 8 Object documentation
+
+roxygen2的目标是使编写代码尽可能容易。 与手动编写.Rd文件相比，它具有许多优点：
+
+代码和文档混合在一起，以便在您修改代码时，提醒您也更新文档。
+    Roxygen2动态检查其记录的对象，因此您可以跳过一些原本需要手写的样板。
+    它抽象化了记录不同类型的对象的差异，因此您需要了解的细节更少。
+
+除了生成.Rd文件，roxygen2还可以管理您的NAMESPACE和DESCRIPTION中的Collate字段。 本章讨论.Rd文件和整理字段。  NAMESPACE描述了如何使用roxygen2来管理NAMESPACE，以及为什么要关心它。
+
+```
+#' Add together two numbers.
+#' 
+#' @param x A number.
+#' @param y A number.
+#' @return The sum of \code{x} and \code{y}.
+#' @examples
+#' add(1, 1)
+#' add(10, 1)
+add <- function(x, y) {
+  x + y
+}
+```
+ running devtools::document()will generate a man/add.Rd that looks like
+```
+% Generated by roxygen2 (4.0.0): do not edit by hand
+\name{add}
+\alias{add}
+\title{Add together two numbers}
+\usage{
+add(x, y)
+}
+\arguments{
+  \item{x}{A number}
+
+  \item{y}{A number}
+}
+\value{
+The sum of \code{x} and \code{y}
+}
+\description{
+Add together two numbers
+}
+\examples{
+add(1, 1)
+add(10, 1)
+}
+```
+请注意，您可以预览开发文档，因为devtools会覆盖通常的帮助功能，以教他们如何使用源程序包。 如果未显示该文档，请确保您使用的是devtools，并且已使用devtools :: load_all（）加载了该软件包。）
+
+## 9 Vignettes
+
+```{r}
+usethis::use_vignette("my-vignette")
+```
+
+error = TRUE捕获块中的任何错误并内联显示。 如果您想演示代码抛出错误会发生什么，这将很有用。 每当使用error = TRUE时，您还需要使用purl = FALSE。 这是因为每个小插图都带有一个文件代码，其中包含该小插图中的所有代码。  R必须能够无错误地获取该文件，并且purl = FALSE可以防止将代码插入到该文档中。
+
+```{r, echo = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+  
+您可以使用devtools :: build_vignettes（）从控制台构建所有小插图，但这很少有用。 而是使用devtools :: build（）创建包含附带小插图的软件包。  RStudio的“构建并重新加载”功能不构建小插图来节省时间。 同样，devtools :: install_github（）（和朋友）默认情况下不会构建小插图，因为它们很耗时并且可能需要其他软件包。 您可以使用devtools :: install_github（build_vignettes = TRUE）强制构建。 这还将安装所有建议的软件包。
+
+## 10 Testing
+
+Write a function.
+Load it with Ctrl/Cmd + Shift + L or devtools::load_all().
+Experiment with it in the console to see if it works.
+Rinse and repeat.
+
+```{r}
+usethis::use_testthat()
+```
+
+Create a tests/testthat directory.
+
+Adds testthat to the Suggests field in the DESCRIPTION.
+
+Creates a file tests/testthat.R that runs all your tests when R CMD check runs. (You’ll learn more about that in automated checking.)
+
+Once you’re set up the workflow is simple:
+
+Modify your code or tests.
+
+Test your package with Ctrl/Cmd + Shift + T or devtools::test().
+
+Repeat until all tests pass.
+
+## 11 Namespace
+
+软件包名称空间（记录在NAMESPACE文件中）是构建软件包时比较混乱的部分之一。 这是一个相当高级的主题，总的来说，如果您只是为自己开发软件包，那么就不那么重要了。 但是，如果您打算将程序包提交给CRAN，那么了解名称空间至关重要。 这是因为CRAN要求您的程序包必须与其他程序包完美配合。
+
+## 12 External data
+
+我建议您始终在您的DESCRIPTION中包含LazyData：true。  usethis :: create_package（）为您做到这一点。
+
+## 13 Compiled code
+
+## 14 installed files
+
+惯例是将这种性质的脚本放在inst/、inst/python、inst/perl、inst/ruby等子目录中。如果这些脚本对您的包是必要的，请确保您还将适当的编程语言添加到描述中的SystemRequirements字段中。(这个字段是供人阅读的，所以不要担心如何指定它。)
+
+## 15 Other components
+
+## 16 Git and GitHub
+
+However, it’s a good idea to learn the three most important shell commands:
+
+pwd: print working directory. This tells you which directory you’re currently in.
+cd <name>: change directory. Use cd .. to move up the directory hierarchy.
+ls: list files. Shows all files in the current directory.
+
+## 17 Automated checking
+
+检查软件包的工作流程很简单，但很繁琐：
+
+Run devtools::check(), or press Ctrl/Cmd + Shift + E.
+
+Fix the first problem.
+
+Repeat until there are no more problems.
+
+## 18 releasing a package
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

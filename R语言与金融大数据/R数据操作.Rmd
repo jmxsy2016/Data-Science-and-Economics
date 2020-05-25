@@ -58,16 +58,22 @@ print(x[1:5])
 
 print(x[1:5*2])          # 冒号优先级更高，首先得到1-5这5个数据再乘以2
 
+x > 5
+as.numeric(TRUE)
 print(x[ x > 5 ])        
 # 逻辑表达式用x中每一个元素计算逻辑表达式的值做索引，得到的是原数组中x大于5的元素
 
 print(mean(x))
 print(x[ x > mean(x) ] ) # 逻辑表达中可以使用函数
 
-
+# colnames()
+# rownames()
+LETTERS
+letters
 names(x) <- LETTERS[1:10];print(x)   # 使用字符常数数组给向量命名，再通过变量名访问向量中的元素
-print(x["A"])
 
+print(x["A"])
+x[1]
 # View(x)
 ```
 
@@ -79,6 +85,7 @@ print(length(x))
 x <- 1:10;print(x)
 x[5] <- 100;print(x)
 
+c(1:10,50,16)
 # 追加向量元素增加向量长度
 x <- 1:10;print(x)
 x <- c(x,11,12,13);print(x)
@@ -109,6 +116,9 @@ lst   # 月饼盒子
 print(lst[1])  # 看看第一个月饼长啥样
 print(lst$symbols) # 打开名为symbols的月饼，可以开吃哈
 
+
+
+print(lst$symbols) # 打开名为symbols的月饼，可以开吃哈
 print(lst[[1]])        # 打开第一个月饼，开吃
 
 print(lst$symbols[1])  # 打开第一个月饼，吃第一口 ："MSFT"
@@ -123,9 +133,13 @@ lst2 <- list(x = 1:10,
 
 lst2  # 打开月饼盒
 lst2$x # 打开第一个月饼
+
+
+
 lst2["x"] # 拿出来第一个月饼，没有打开
 
 lst2$z  # 打开第三个月饼，发现里边还有一个袋子
+
 lst2$z[[1]]  # 撕开袋子
 lst2$z[1]    # 拿出了袋子
 
@@ -164,7 +178,7 @@ print(head(EuStockMarkets))
 print(class(EuStockMarkets))
 print(summary(EuStockMarkets))
 
-# print(EuStockMarkets[,"DAX"])    # 输出所有行，DAX列数据，直接使用列名称访问
+print(EuStockMarkets[,"DAX"])    # 输出所有行，DAX列数据，直接使用列名称访问
 # print(EuStockMarkets[,1])        
 # 输出所有行，第一列（德国DAX指数）数据，编写大型程序时显然不够直观
 
@@ -201,21 +215,28 @@ df
 print(class(df))
 print(typeof(df))
 
-print(df[1,])   # 通过行列号访问数据框的一行
-print(df[2])   # 通过行列号访问数据框的一列
+print(df[1,])        # 通过行列号访问数据框的一行
+print(df["price"])   # 通过行列号访问数据框的一列
 
 
 print(df$price) # 用列名称是更好、更直观的方式
 
 
 # 如果需要多次访问数据框中的数据列可以将数据框名称加入到搜索路径中
-# 这样就可以直接使用数据列名称
+# # 这样就可以直接使用数据列名称
+# df1 
+# df
+# df2
 attach(df)
 
   print(currency)
   print(type)
 
 detach(df)
+  
+  
+  
+df$price
 ```
 
 

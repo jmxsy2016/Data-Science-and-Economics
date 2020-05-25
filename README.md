@@ -93,32 +93,31 @@
 
 ### 书籍
 
-- [Happy Git and GitHub for the useR](https://happygitwithr.com/index.html)
-- [R packages](https://r-pkgs.org/workflows101.html)
+- [Happy Git and GitHub for the useR](https://happygitwithr.com/index.html)：版本控制
+- [R packages](https://r-pkgs.org/workflows101.html):R包开发教程
+- [Bookdown: Authoring Books and Technical Documents with R Markdown](https://github.com/rstudio/bookdown):使用Rmarkdown编写书籍和技术文档
+- [Blogdown: Create Blogs and Websites with R Markdown](https://CRAN.R-project.org/package=blogdown):搭建博客和网站
+- [RMarkdown for Scientists](https://rmd4sci.njtierney.com/)：RMarkdown概述
 - [R Markdown: The Definitive Guide](https://bookdown.org/yihui/rmarkdown/):谢益辉代表性著作
+- [R Markdown Cookbook](https://bookdown.org/yihui/rmarkdown-cookbook/):谢益辉代表性著作(在读)
 - [What They Forgot to Teach You About R](https://github.com/rstats-wtf/what-they-forgot):一些不为人知的R和Rstudio技巧 
+- [Interactive web-based data visualization with R, plotly, and shiny](https://plotly-r.com/)：可视化
+- [基于R语言的科研信息分析与服务](https://bookdown.org/wangminjie/R4IS/)
+- [现代科研指北](https://bookdown.org/yufree/sciguide/)(在读)
 
 ---
 
-### 程序包
+### 程序包(小众而有用)
 
 - [beepr](https://cran.r-project.org/web/packages/beepr/beepr.pdf):如果您想在例如脚本完成时收到通知，该声音会很有用
 - [available](https://cran.r-project.org/web/packages/available/available.pdf):检查包标题是否可用，适当且有趣
 - [similiars](https://github.com/davidsjoberg/similiars):similars的目标是将字符串匹配到另一个向量中最相似的字符串。
 - [aringanthemer](https://pkg.garrickadenbuie.com/xaringanthemer/index.html):给你的xaringan幻灯片添加一些xaringer。Rmd文件没有(很多)CSS。(Good!!!)
 - [here](https://cran.r-project.org/web/packages/here/here.pdf):管理文件路径
-
-
-
-
-
-
-
-
-
-
-
-
+- [pdftools](https://docs.ropensci.org/pdftools/):从pdf文件中提取文本和元数据
+- [stargazer](https://cran.r-project.org/web/packages/stargazer/vignettes/stargazer.pdf) [文档](https://jmxsy2016.github.io/Data-Science-and-Economics/R包学习-计量经济学/stargazer.pdf):将模型结果绘制成表格
+- [kableExtra](https://cran.r-project.org/web/packages/kableExtra/index.html):构建漂亮的表
+- [magick包](https://cran.r-project.org/web/packages/magick/vignettes/intro.html),[网站](https://docs.ropensci.org/magick/articles/intro.html)
 
 
 
