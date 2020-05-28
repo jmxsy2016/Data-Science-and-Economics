@@ -20,7 +20,31 @@
 - [14二段最小二乘法估计2SLS](https://jmxsy2016.github.io/Data-Science-and-Economics/计量经济学与R语言/14二段最小二乘法估计-2SLS-.html)              
 - [15时间序列预测](https://jmxsy2016.github.io/Data-Science-and-Economics/计量经济学与R语言/15时间序列预测.html)                        
 - [16混合OLS、随机效应和固定效应估计](https://jmxsy2016.github.io/Data-Science-and-Economics/计量经济学与R语言/16混合OLS、随机效应和固定效应估计.html)     
-- [17DID估计](https://jmxsy2016.github.io/Data-Science-and-Economics/计量经济学与R语言/17DID估计.html)                             
+- [17DID估计](https://jmxsy2016.github.io/Data-Science-and-Economics/计量经济学与R语言/17DID估计.html)
+
+---
+
+## Machine Learning and Causal Inference(`Python` & `R`) 
+
+- [python安装教程](https://jmxsy2016.github.io/Data-Science-and-Economics/Machine_Learning_and_Causal_Inference/Python安装.pdf )
+
+---
+
+## 金融大数据与R语言
+
+- [R语言学习建议](https://jmxsy2016.github.io/Data-Science-and-Economics/R语言与金融大数据/R学习建议.html)
+- [R语言基础知识](https://jmxsy2016.github.io/Data-Science-and-Economics/R语言与金融大数据/R语言基础知识.html)
+- [R语言数据结构](https://jmxsy2016.github.io/Data-Science-and-Economics/R语言与金融大数据/R常用数据结构.html)
+- [R语言数据操作](https://jmxsy2016.github.io/Data-Science-and-Economics/R语言与金融大数据/R数据操作.html)
+- [R语言基础绘图技术](https://jmxsy2016.github.io/Data-Science-and-Economics/R语言与金融大数据/R基础绘图技术.html)
+- [R语言数据分析函数](https://jmxsy2016.github.io/Data-Science-and-Economics/R语言与金融大数据/R重要数据分析函数.html)
+- [xts-处理高频时间序列数据](https://jmxsy2016.github.io/Data-Science-and-Economics/R语言与金融大数据/xts-处理高频时间序列数据.html)
+
+---
+
+## 计量经济学与stata
+
+- [stata与R语言命令](https://jmxsy2016.github.io/Data-Science-and-Economics/计量经济学与Stata/stata2r.pdf)
 
 ---
 
@@ -41,12 +65,6 @@
 
 ---
 
-## Machine Learning and Causal Inference 
-
-- [python安装教程](https://jmxsy2016.github.io/Data-Science-and-Economics/Machine_Learning_and_Causal_Inference/Python安装.pdf )
-
----
-
 ## R高级编程
 
 - [Tidyverse中10个技巧性函数——来源YouTube](https://jmxsy2016.github.io/Data-Science-and-Economics/R高级编程/code/Tidyverse中10个具有技巧性函数.html)
@@ -56,7 +74,7 @@
 - [爬虫教程_CSS选择器](https://jmxsy2016.github.io/Data-Science-and-Economics/R高级编程/code/爬虫教程_CSS选择器.html)
 - [RMarkdown PPT教程](https://rladies.github.io/meetup-presentations_oslo/2020-05-11-rmarkdown_like_a_boss/presentation.html#1)
 - [Integration: R and Python](https://shawnsanto.com/files/sta323/slides/lec-16b-rpython.html#1)
-- [janitor包——检查和清理脏数据](https://jmxsy2016.github.io/Data-Science-and-Economics/R高级编程/code/janitor包——检查和清理脏数据)
+- [如何制作一个PPT](https://jmxsy2016.github.io/Data-Science-and-Economics/R高级编程/code/PPT.html)
 
 ---
 
@@ -65,27 +83,7 @@
 - [如何发布一本书](https://bookdown.org/yihui/rmarkdown/bookdown-publish.html)
 - [如何搭建个人博客](https://bookdown.org/yihui/rmarkdown/rmarkdown-site.html)
 - [如何使用RMarkdown制作幻灯片](https://bookdown.org/yihui/rmarkdown/xaringan-start.html)
-
----
-
-## R包学习-计量经济学
-
----
-
-## R语言与金融大数据
-
-- [R语言基础知识](https://jmxsy2016.github.io/Data-Science-and-Economics/R语言与金融大数据/R语言基础知识.html)
-- [R语言数据结构](https://jmxsy2016.github.io/Data-Science-and-Economics/R语言与金融大数据/R常用数据结构.html)
-- [R语言数据操作](https://jmxsy2016.github.io/Data-Science-and-Economics/R语言与金融大数据/R数据操作.html)
-- [R语言基础绘图技术](https://jmxsy2016.github.io/Data-Science-and-Economics/R语言与金融大数据/R基础绘图技术.html)
-- [R语言数据分析函数](https://jmxsy2016.github.io/Data-Science-and-Economics/R语言与金融大数据/R重要数据分析函数.html)
-- [R语言学习建议](https://jmxsy2016.github.io/Data-Science-and-Economics/R语言与金融大数据/R学习建议.html)
-
----
-
-## 计量经济学与Stata
-
-- [stata与R语言命令](https://jmxsy2016.github.io/Data-Science-and-Economics/计量经济学与Stata/stata2r.pdf)
+- [如何修改RMarkdown的主题](https://www.datadreaming.org/post/r-markdown-theme-gallery/)
 
 ---
 
@@ -116,10 +114,10 @@
 - [here](https://cran.r-project.org/web/packages/here/here.pdf):管理文件路径
 - [pdftools](https://docs.ropensci.org/pdftools/):从pdf文件中提取文本和元数据
 - [stargazer](https://cran.r-project.org/web/packages/stargazer/vignettes/stargazer.pdf) [文档](https://jmxsy2016.github.io/Data-Science-and-Economics/R包学习-计量经济学/stargazer.pdf):将模型结果绘制成表格
-- [kableExtra](https://cran.r-project.org/web/packages/kableExtra/index.html):构建漂亮的表
+- [kableExtra](https://cran.r-project.org/web/packages/kableExtra/index.html):[构建漂亮的表](https://haozhu233.github.io/kableExtra/)
 - [magick包](https://cran.r-project.org/web/packages/magick/vignettes/intro.html),[网站](https://docs.ropensci.org/magick/articles/intro.html)
-
-
+- [printr](https://cran.r-project.org/web/packages/printr/vignettes/printr.html)：打印表格
+- [janitor包——检查和清理脏数据](https://jmxsy2016.github.io/Data-Science-and-Economics/R高级编程/code/janitor包——检查和清理脏数据)
 
 
 

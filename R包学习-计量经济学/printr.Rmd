@@ -1,0 +1,185 @@
+---
+title: "Custom Print Methods"
+# subtitle: "Lecture title"
+author: 
+- affiliation: Dongbei University of Finance & Economics
+  name: Studennt. LJJ
+date: "`r Sys.Date()`"
+# slug: printr
+output: 
+  html_document:
+    theme: cerulean
+    highlight: haddock
+    toc_depth: 5
+    keep_md: false
+    keep_tex: false 
+---
+
+## 1 加载经常用的R包
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      fig.show = "hold",
+                      fig.align = "center",
+                      tidy = FALSE)
+options(width = 80)
+```
+
+```{r,warning=FALSE,message=FALSE}
+library(pacman)
+# 读数据
+p_load(readxl,writexl,data.table,openxlsx,haven,rvest)
+```
+
+```{r,warning=FALSE,message=FALSE}
+# 数据探索
+p_load(tidyverse,DT,skimr,DataExplorer,explore,vtable,stringr,lubridate)
+```
+
+```{r,eval=FALSE,warning=FALSE,message=FALSE}
+# 模型
+p_load(tidyverse,grf,glmnet,caret,tidytext,fpp2,forecast,car,tseries,hdm,tidymodels,broom)
+```
+
+```{r,eval=FALSE,warning=FALSE,message=FALSE}
+# 可视化
+p_load(patchwork,ggrepel,ggcorrplot,gghighlight,ggthemes,shiny)
+```
+
+```{r,eval=FALSE,warning=FALSE,message=FALSE}
+# 其它常用包
+p_load(magrittr,listviewer,devtools,here,janitor,reticulate,jsonlite)
+```
+
+```{r}
+p_load('printr')
+```
+
+The **printr** (read "printer" or "print R") package is a companion package to [**knitr**](https://yihui.org/knitr/). Its main purpose is to extend the S3 generic function `knit_print()` in **knitr**, which is the default value of the
+chunk option `render`, as explained in the vignette [knit_print.html](https://cran.r-project.org/web/packages/knitr/vignettes/knit_print.html).
+
+## 2 Overview
+
+To enable the printing methods defined in this package, just `library(printr)` or `loadNamespace('printr')`
+in a code chunk (in the beginning) of your **knitr** document. Then some objects will be printed differently with what you would have seen in a normal R console.For example:
+
+- matrices, data frames, and contingency tables are printed as tables (LaTeX,
+  HTML, or Markdown, depending on your output format)
+- the help page (from `?foo` or `help(foo)`) can be rendered as HTML, LaTeX, or
+  plain text, and you can also specify which section(s) of the help page to include in the output
+- the results from `browseVignettes()`, `help.search()`, `data()`, and `vignette()` are rendered as tables
+- the package information from `library(help = 'foo')` is rendered as plain text
+
+To disable the printing methods in this package, you can call `detach('package:printr', unload = TRUE)` if you _attached_ the package via `library(printr)` before, or `unloadNamespace('printr')` if you _loaded_ it via
+`loadNamespace('printr')`.
+
+This package aims to be portable in the sense that it should work in most document formats, including `*.Rnw` (R + LaTeX), `*.Rmd` (R Markdown), and `*.Rhtml` (R + HTML) files, etc.
+
+You can find the package source as well as installation instructions on [Github](https://github.com/yihui/printr), and you are welcome to contribute code via pull requests, or file feature requests and bug reports via [Github issues](https://github.com/yihui/printr/issues).
+
+## 3 Examples
+
+First we take a look at a quick example of printing some R objects in the R console:
+
+```{r comment='', prompt=TRUE}
+# R uses plain text representation for data frames/matrices/...
+head(mtcars)
+head(iris)
+```
+
+Then we attach the **printr** package in this R session, and see how things change later:
+
+```{r,message=FALSE}
+library(printr)
+# library(kableExtra)
+```
+
+### 3.1 Matrices/data frames/tables
+
+Matrices and data frames are printed as tables using the `kable()` function in **knitr**:
+
+```{r warning=FALSE}
+options(digits = 4)
+set.seed(123)
+x <-  matrix(rnorm(40), 5)
+x
+# with colunm names
+dimnames(x) = list(NULL, head(LETTERS, ncol(x)))
+x
+# further customization via kable(), e.g. digits and captions
+# kableExtra::kable(x, digits = 2, caption = 'A table produced by printr.') %>% 
+#   kableExtra::kable_styling(full_width = TRUE) %>% 
+#   kableExtra::column_spec(1:8,bold = TRUE,italic = TRUE)
+  
+head(mtcars)
+
+head(iris, 10)
+```
+
+For contingency tables, 1-d tables are printed as a 1-row matrix, 2-d tables are printed an $n \times m$ matrix, and tables of higher dimensions are printed as data frames with frequencies.
+
+```{r}
+x1 <-  sample(letters[1:3], 1000, TRUE)
+x2 <-  sample(letters[1:3], 1000, TRUE)
+x3 <-  sample(letters[1:3], 1000, TRUE)
+table(x1)
+table(x1, x2)
+table(x1, x2, x3)
+```
+
+### 3.2 Search results from `help.search()`
+
+Here are some examples demonstrating the results of `help.search()`, or you can also use `??` to search for a string.
+
+```{r tidy=FALSE}
+??sunflower
+help.search('contourplot')
+help.search('foo', package = 'base')
+help.search('foooooooo', package = 'utils')
+```
+
+In a normal R session, the results will be displayed as an HTML page by default,but normally these functions are meant to be called in an interactive R session, and **knitr** documents are often compiled in non-interactive R sessions, so we changed the printing behavior of these results, and readers will get the basic idea of these functions when reading the **knitr** output. If they want to run these functions by themselves, they can do it in an interactive R session.
+
+### 3.3 Help pages
+
+When you want to read the help page of a certain R object, you normally use `?` or `help()`, which will launch a separate help page from the R session, and require human interaction. Again, we may not desire human interactions in **knitr** documents, so the help pages are printed as static documents here.
+
+```{r tidy=FALSE, comment=''}
+?coef
+```
+
+When help pages are really long, we can use the chunk option `printr.help.sections` to select
+a few sections to display, e.g. we only show the sections `description` and `usage` of the `paste()` function:
+
+```{r tidy=FALSE, printr.help.sections=c('description', 'usage'), comment=''}
+?paste
+```
+
+### 3.4 Vignette/dataset lists
+
+We can print the lists of vignettes and datasets in packages using `vignette()` and `data()`, respectively.
+
+```{r error=TRUE, purl=FALSE}
+vignette(package = 'rpart')
+vignette(package = c('rpart', 'knitr'))
+data(package = 'lattice')
+data(package = c('rpart', 'lattice'))
+data(package = 'knitr')  # no datasets here
+browseVignettes(package = 'knitr')
+```
+
+### 3.5 Package info
+
+A description of a package can be printed via `library(help = 'foo')`:
+
+```{r comment='', R.options=list(width=100)}
+library(help = 'printr')
+```
+
+
+
+
+
+
+
+
