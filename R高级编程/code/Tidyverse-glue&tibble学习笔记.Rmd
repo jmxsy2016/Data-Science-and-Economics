@@ -1,0 +1,121 @@
+---
+title: "Tidyverse-glue&tibble学习笔记"
+# subtitle: "Lecture title"
+author:
+- affiliation: Dongbei University of Finance & Economics
+  name: Studennt. LJJ
+date: '`r Sys.Date()`'
+output:
+  html_document:
+    code_folding: hide
+    highlight: haddock
+    keep_md: no
+    keep_tex: no
+    theme: paper
+    toc: yes
+    toc_depth: 5
+    toc_float:
+      collapsed: no
+      smooth_scroll: yes
+mainfont: Times New Roman
+monofont: Times New Roman
+left:
+- href: index.html
+  text: Home
+- href: other.html
+  text: Other
+right:
+- href: https://github.com
+  text: GitHub
+sansfont: Times New Roman
+always_allow_html: yes
+urlcolor: blue
+editor_options: 
+  chunk_output_type: console
+---
+
+## 加载经常用的R包
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      fig.show = "hold",
+                      fig.align = "center",
+                      tidy = FALSE,
+                      class.source = "bg-warning")
+```
+
+```{r,warning=FALSE,message=FALSE}
+library(pacman)
+# 读数据
+p_load(readxl,writexl,data.table,openxlsx,haven,rvest)
+```
+
+```{r,warning=FALSE,message=FALSE}
+# 数据探索
+p_load(tidyverse,DT,skimr,DataExplorer,explore,vtable,stringr,lubridate)
+```
+
+## glue 
+
+### 小试牛刀
+
+```{r}
+library(glue)
+names <- "Ljj"
+glue("My name is {names}")
+```
+
+```{r}
+iris %>% 
+  as_tibble() %>% 
+  mutate(description = glue("This {Species} has a pental length of {Petal.Length}")) %>% 
+  relocate(description) %>% 
+  print(.,width = 100)
+```
+
+```{r}
+diamonds %>% 
+  mutate(description = glue("The price of x = {x} and y = {y} and z = {z} is {price}")) %>% 
+  relocate(description) %>% 
+  head(100) %>% 
+  datatable()
+```
+
+## tibble 
+
+### enframe
+
+```{r}
+enframe(1:3)
+enframe(c(z = 1, y = 1))
+```
+
+### add_row|ass_column
+
+```{r}
+tibble(x = 1:10,
+       y = letters[1:10]) %>% 
+  add_row(x = 100,y = "A") %>% 
+  add_row(x = 1000, y = "B",.before = 2) %>% 
+  add_row(x = 100000,y = "C",.after = 10)
+```
+
+```{r}
+tibble(x = 1:10,y =letters[1:10]) %>% 
+  add_column(z = LETTERS[1:10]) %>% 
+  add_column(w = rnorm(10),.before = "x")
+```
+
+### rownames_to_column
+
+```{r}
+mtcars %>%
+  rownames_to_column(var = "car") %>% 
+  as_tibble() %>% 
+  print(.,width = 100)  # 不能有列名
+```
+
+
+
+
+

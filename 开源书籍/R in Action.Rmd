@@ -1,0 +1,787 @@
+--- 
+title: "R实战第二版笔记"
+# subtitle: "Lecture title"
+author:
+- affiliation: Dongbei University of Finance & Economics
+  name: Studennt. LI Junjie
+date: '`r Sys.Date()`'
+output:
+  bookdown::html_document2:
+    # code_folding: hide
+    highlight: pygments
+    # highlight: zenburn
+    # highlight: haddock
+    theme: darkly
+    # theme: journal
+    df_print: paged	
+    number_sections: true
+    keep_md: no
+    keep_tex: no
+    toc: yes
+    toc_depth: 5
+    toc_float:
+      collapsed: no
+      smooth_scroll: yes
+    # css: styles.css
+# bibliography: [book.bib, packages.bib]
+# biblio-style: apalike
+link-citations: yes
+sansfont: Times New Roman
+always_allow_html: yes
+urlcolor: "red"
+description: "This is a minimal example of using the bookdown package to write a book. The output format for this example is bookdown::gitbook."
+---
+
+# 加载经常用的R包
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      # fig.show = "hold",
+                      fig.align = "center",
+                      tidy = FALSE)
+```
+
+```{js, echo=FALSE}
+$('.title').css('color', 'red')
+$('.title').css('font-family', 'Times New Roman')
+```
+
+```{css, echo=FALSE}
+*{
+    # font-size: 17px !important;
+    font-family: "Times New Roman" !important;
+    color: rgb(199 237	204)
+}
+::selection {
+   # background: rgb(135 206 255);
+}
+```
+
+```{r,warning=FALSE,message=FALSE}
+library(pacman)
+# 读数据
+p_load(readxl,writexl,data.table,openxlsx,haven,rvest)
+```
+
+```{r,warning=FALSE,message=FALSE}
+# 数据探索
+p_load(tidyverse,DT,skimr,DataExplorer,explore,vtable,stringr,kableExtra,lubridate)
+```
+
+```{r,eval=FALSE,warning=FALSE,message=FALSE}
+# 模型
+p_load(grf,glmnet,caret,tidytext,fpp2,forecast,car,tseries,hdm,tidymodels,broom)
+```
+
+```{r,eval=FALSE,warning=FALSE,message=FALSE}
+# 可视化
+p_load(patchwork,ggrepel,ggcorrplot,gghighlight,ggthemes,shiny)
+```
+
+```{r,eval=TRUE,warning=FALSE,message=FALSE}
+# 其它常用包
+p_load(magrittr,listviewer,devtools,here,janitor,reticulate,jsonlite)
+```
+
+# 入门
+
+## R语言介绍
+
+本章中，我们了解了R的一些优点，正是这些优点吸引了学生、研究者、统计学家以及数据分析师等希望理解数据所具有意义的人。我们从程序的安装出发，讨论了如何通过下载附加包来增强R的功能。探索了R的基本界面，以交互和批处理两种方式运行了R程序，并绘制了一些示例图形。还学习了如何将工作保存到文本和图形文件中。由于R的复杂性，我们花了一些时间来了解如何访问大量现成可用的帮助文档。希望你对这个免费软件的强大之处有了一个总体的感觉。既然已经能够正常运行R，那么是时候把玩你自己的数据了。在下一章中，我们将着眼于R能够处理的各种数据类型，以及如何从文本文件、其他程序和数据库管理系统中导入数据。
+
+```{r,eval=FALSE}
+help.start()
+install.packages("vcd")
+help(package="vcd")
+library(vcd)
+help(Arthritis)
+Arthritis
+example(Arthritis)
+q()
+```
+
+## 创建数据集
+
+```{r}
+X <- matrix(1:25,
+       nrow = 5,
+       byrow = TRUE,
+       dimnames = list(c('A1', 'A2', 'A3', 'A4', 'A5'),
+                       c('B1', 'B2', 'B3', 'B4', 'B5')))
+```
+
+```{r}
+X[1,1]
+X[1:5,1:5]
+X["A1","B1"]
+```
+
+```{r}
+array(1:24,c(2,3,4))
+Y <- array(data = 1:24,
+           dim = c(2, 3, 4),
+           dimnames = list(c(letters[1:2]),
+                           c(LETTERS[1:3]),
+                           c("A1","A2","A3","A4"))
+           )
+Y
+Y[1,1,]                                            
+```
+
+```{r}
+X <- data.frame(x = 1:10,
+                y = letters[1:10],
+                z = LETTERS[1:10],stringsAsFactors = FALSE)
+X
+```
+
+```{r,eval=FALSE}
+with(data = mtcars,expr = {
+  summary(mtcars) %>% print()
+  plot(mpg,disp)
+  plot(mpg,wt)
+})
+```
+
+```{r}
+X <- factor(c("poll","good","excellent"),labels = c("poll","good","excellent"),ordered = TRUE)
+X
+factor(c("poll","good","excellent"),levels = c("poll","good","excellent"),
+       ordered = TRUE) %>% 
+  fct_inorder()
+```
+
+```{r}
+diabetes <- c("Type1", "Type2", "Type1", "Type1")
+diabetes %>% factor()
+```
+
+```{r}
+status <- c("Poor", "Improved", "Excellent", "Poor")
+status %>% factor()
+```
+
+```{r}
+status %>% factor(levels = c("Poor", "Improved", "Excellent"),
+                  labels = 1:3,
+                  ordered = TRUE)
+status
+```
+
+```{r}
+patientID <- c(1, 2, 3, 4)
+age <- c(25, 34, 28, 52)
+diabetes <- c("Type1", "Type2", "Type1", "Type1")
+status <- c("Poor", "Improved", "Excellent", "Poor")
+
+diabetes %>% factor()
+status %>% factor(ordered = TRUE,levels = c("Poor","Improved","Excellent"))
+```
+
+```{r}
+data <- tibble(patientID,age,diabetes,status)
+data %>% str()
+```
+
+```{r}
+g <- "My First List"
+h <- c(25, 26, 18, 39)
+j <- matrix(1:10,nrow = 5)
+k <- c('one','two','three')
+
+mylist <- list(title = g,
+               ages = h,
+               j,
+               k)
+mylist
+```
+
+```{r}
+mylist[1] %>% class()
+mylist[[1]] %>% class()
+mylist[["title"]]
+mylist$title
+```
+
+```{r}
+
+```
+
+```{r}
+set.seed(123)
+# sample(1:2,10,replace = TRUE)
+gender <- factor(sample(1:2,10,replace = TRUE),levels = 1:2,
+                 labels = c("male","female"))
+gender
+```
+
+数据的准备可能是数据分析中最具挑战性的任务之一。我们在本章中概述了R中用于存储数
+据的多种数据结构，以及从键盘和外部来源导入数据的许多可能方式，这是一个不错的起点。特别是，我们将在后续各章中反复地使用**向量**、**矩阵**、**数据框**和**列表**的概念。掌握通过**括号表达式**选取元素的能力，对数据的选择、取子集和变换将是非常重要的。
+
+如你所见，R提供了丰富的函数用以访问外部数据，包括**普通文本文件**、**网页**、**统计软件**、**电子表格**和**数据库**的数据。虽然本章的焦点是将数据导入到R中，你同样也可以将数据从R中导出为这些外部格式。数据的导出在附录C中论及，处理大数据集（GB级到TB级）的方法在附录F中讨论。
+
+将数据集读入R之后，你很有可能需要将其转化为一种更有助于分析的格式（事实上，我发
+现处理数据的紧迫感有助于促进学习）。在第4章，我们将会探索**创建新变量**、**变换**和**重编码**已有变量、合并数据集和选择观测的方法。
+
+在转而探讨数据管理之前，让我们先花些时间在R的绘图上。许多读者都是因为对R绘图怀
+有强烈的兴趣而开始学习R的，为了不让你们久等，我们在下一章将直接讨论图形的创建。关注的重点是管理和定制图形的通用方法，它们在本书余下章节都会用到。
+
+## 图形初阶
+
+可以通过代码或图形用户界面来保存图形。要通过代码保存图形，将绘图语句夹在开启目标图形设备的语句和关闭目标图形设备的语句之间即可。例如，以下代码会将图形保存到当前工作目录中名为mygraph.pdf的PDF文件中:
+
+```{r,eval=FALSE}
+pdf("mygraph.pdf")
+attach(mtcars)
+plot(wt, mpg)
+abline(lm(mpg~wt))
+title("Regression of MPG on Weight")
+detach(mtcars)
+dev.off()
+```
+
+```{r,eval=FALSE}
+x <- c(1:10)
+y <- x
+z <- 10 / x
+opar <- par(no.readonly = TRUE)
+par(mar = c(5, 4, 4, 8) + 0.1)
+plot(
+  x,
+  y,
+  type = "b",
+  pch = 21,
+  col = "red",
+  yaxt = "n",   
+  lty = 3,
+  ann = FALSE
+)
+lines(
+  x,
+  z,
+  type = "b",
+  pch = 22,
+  col = "blue",
+  lty = 2
+)
+axis(
+  2,
+  at = x,
+  labels = x,
+  col.axis = "red",
+  las = 2
+)
+axis(
+  4,
+  at = z,
+  labels = round(z, digits = 2),
+  col.axis = "blue",
+  las = 2,
+  cex.axis = 0.7,
+  tck = -.01
+)
+mtext(
+  "y=1/x",
+  side = 4,
+  line = 3,
+  cex.lab = 1,
+  las = 2,
+  col = "blue"
+)
+title("An Example of Creative Axes",
+      xlab = "X values",
+      ylab = "Y=X")
+par(opar)
+```
+
+```{r,eval=FALSE}
+dose <- c(20, 30, 40, 45, 60)
+drugA <- c(16, 20, 27, 40, 60)
+drugB <- c(15, 18, 25, 31, 40)
+opar <- par(no.readonly = TRUE)
+par(lwd = 2,
+    cex = 1.5,
+    font.lab = 2)
+plot(
+  dose,
+  drugA,
+  type = "b",
+  pch = 15,
+  lty = 1,
+  col = "red",
+  ylim = c(0, 60),
+  main = "Drug A vs. Drug B",
+  xlab = "Drug Dosage",
+  ylab = "Drug Response"
+)
+lines(
+  dose,
+  drugB,
+  type = "b",
+  pch = 17,
+  lty = 2,
+  col = "blue"
+)
+abline(
+  h = c(30),
+  lwd = 1.5,
+  lty = 2,
+  col = "gray"
+)
+library(Hmisc)
+minor.tick(nx = 3,
+           ny = 3,
+           tick.ratio = 0.5)
+legend(
+  "topleft",
+  inset = .05,
+  title = "Drug Type",
+  c("A", "B"),
+  lty = c(1, 2),
+  pch = c(15, 17),
+  col = c("red", "blue")
+)
+par(opar)
+```
+
+```{r,eval=FALSE}
+par(cex=1.5)
+plot(1:7,1:7,type="n")
+text(3,3,"Example of default text")
+text(4,4,family="Times New Roman","Example of mono-spaced text")
+text(5,5,family="serif","Example of serif text")
+```    
+
+本章中，我们回顾了**创建图形**和以各种格式**保存图形**的方法。本章的主体则是关于如何修改R绘制的默认图形，以得到更加有用或更吸引人的图形。你学习了如何**修改一幅图形的坐标轴**、
+**字体**、**绘图符号**、**线条**和**颜色**，以及如何**添加标题**、**副标题**、**标签**、**文本**、**图例**和**参考线**，看到了如何指定图形和边界的大小，以及将多幅图形组合为实用的单幅图形。*本章的焦点*是那些可以应用于所有图形的通用方法（第19章的ggplot2图形是一个例外）。后续各章将着眼于特定的图形类型。例如，第6章介绍了对**单变量绘图**的各种方法；对**变量间关系绘图的方法**将于第11章讨论；在第19章中，我们则讨论高级的绘图方法，包括显示多变量数据的创新性方法。在其他各章中，我们将会讨论对于某些统计方法来说特别实用的数据可视化方法。图形是**现代数据分析**的核心组成部分，所以我将尽力将它们整合到各类统计方法的讨论中。在前一章中，我们讨论了一系列输入或导入数据到R中的方法。遗憾的是，现实数据极少以直接可用的格式出现。下一章，我们将关注如何将数据转换或修改为更有助于分析的形式。
+
+## 基本数据管理
+
+```{r}
+manager <- c(1, 2, 3, 4, 5)
+date <- c("10/24/08", "10/28/08", "10/1/08", "10/12/08", "5/1/09")
+country <- c("US", "US", "UK", "UK", "UK")
+gender <- c("M", "F", "F", "M", "F")
+age <- c(32, 45, 25, 39, 99)
+q1 <- c(5, 3, 3, 3, 2)
+q2 <- c(4, 5, 5, 3, 2)
+q3 <- c(5, 2, 5, 4, 1)
+q4 <- c(5, 5, 5, NA, 2)
+q5 <- c(5, 5, 2, NA, 1)
+leadership <- tibble(
+  manager,date,country,gender,age,q1,q2,q3,q4,q5
+)
+```
+
+```{r}
+leadership %<>%
+  mutate(date = lubridate::mdy(date))
+leadership %<>% 
+  mutate(age = ifelse(age == 99,NA,age)) %>% 
+  mutate(gender = factor(gender,
+                         levels = c("M","F"),
+                         labels = c("Male","Female"))) %>% 
+  mutate(q_mean =  rowMeans(leadership %>% 
+                              select(starts_with("q")),
+                            na.rm = TRUE)) %>% 
+  relocate(manager,starts_with("q"))
+leadership
+```
+```{r}
+leadership %<>% 
+  mutate(age = case_when(
+    age > 75 ~ "Elder",
+    age < 55 ~ "Young",
+    age >= 55 & age <= 77 ~ "Middle"
+  )) %>% 
+  rename(managerID = manager) %>% 
+  rename(testDate = date) %>% 
+  rename_with(toupper,c("q1","q2","q3","q4","q5"))
+```
+
+```{r}
+leadership %>% drop_na() %>% is.na() %>% sum()
+leadership %>% drop_na() 
+```
+
+```{r}
+ymd("20101010") %>% typeof()
+ymd("20101010") %>% class()
+as.Date("1990-10-10","%Y-%m-%d")
+```
+
+```{r}
+is_atomic(1:10)
+is_list(iris)
+is_logical(TRUE)
+```
+
+```{r}
+leadership %>% 
+  arrange(q_mean)
+```
+```{r}
+X <- tibble(x = sample(1:5,5),
+            y = letters[1:5],
+            z = rnorm(5))
+
+Y <- tibble(x = sample(1:5,5),
+            y = letters[c(1:3,6,7)],
+            Z = rnorm(5))
+
+X
+Y
+X %>% bind_rows(Y)
+```
+```{r}
+X %>% inner_join(Y)
+```
+
+```{r}
+X %>% left_join(Y)
+Y %>% left_join(X)
+```
+```{r}
+X %>% full_join(Y)
+```
+
+```{r}
+X %>% anti_join(Y)
+X %>% dplyr::semi_join(Y)
+```
+
+```{r}
+leadership %>% 
+  select(num_range("Q",1:5))
+```
+```{r}
+leadership %>% 
+  filter(gender == "Male",age == "Young")
+```
+
+```{r}
+leadership %>% 
+  filter(testDate < ymd(20090101))
+```
+
+```{r}
+leadership %>% 
+  slice_sample(0.5)
+```
+
+```{r}
+leadership %>% 
+  slice_sample(n = 3)
+```
+
+```{r}
+leadership %>% 
+  filter(between(row_number(),3,n()))
+```
+
+本章讲解了大量的基础知识。首先我们看到了R存储**缺失值**和**日期值**的方式，并探索了它们的多种处理方法。接着学习了如何确定一个对象的数据类型，以及如何将它转换为其他类型。还使用**简单的公式**创建了**新变量**并重**编码**了现有变量。你学习了如何对数据进行排序和对变量进行重命名，学习了如何对数据和其他数据集进行**横向合并**（添加变量）和**纵向合并**（添加观测）。
+
+最后，我们讨论了**如何保留**或**丢弃变量**，以及如何基于一系列的准则选取观测。在下一章中，我们将着眼于R中不计其数的，用于**创建和转换变量的算术函数**、**字符处理函数**和**统计函数**。在探索了控制程序流程的方式之后，你将了解到如何**编写自己的函数**。我们也将探索如何使用这些函数来整合及概括数据。在第5章结束时，你就能掌握管理复杂数据集的多数工具。（无论你走到哪里，都将成为数据分析师艳羡的人物！）
+
+## 高级数据管理
+
+```{r}
+mean1 <- c(10,20,30)
+sigma1 <- diag(c(1,2,3))
+MASS::mvrnorm(10000,mean1,Sigma = sigma1) %>% 
+  as.data.frame() %>% 
+  as_tibble()->data
+data
+l <- list(mean,sd)
+invoke_map(l,
+           x = data[[3]])
+```
+
+```{r}
+X <- matrix(1:24,nrow = 4)
+X
+colMeans(X)
+rowMeans(X)
+colnames(X) <- letters[1:6]
+rownames(X) <- LETTERS[1:4]
+```
+
+```{r}
+X %>% rbind(colSums(X)) %>%
+  cbind(rowSums(X %>% rbind(colSums(X))))
+```
+
+```{r}
+Student <- c("John Davis", "Angela Williams", "Bullwinkle Moose",
+"David Jones", "Janice Markhammer", "Cheryl Cushing",
+"Reuven Ytzrhak", "Greg Knox", "Joel England",
+"Mary Rayburn")
+Math <- c(502, 600, 412, 358, 495, 512, 410, 625, 573, 522)
+Science <- c(95, 99, 80, 82, 75, 85, 80, 95, 89, 86)
+English <- c(25, 22, 18, 15, 20, 28, 15, 30, 27, 18)
+roster <- tibble(Student,Math,Science,English)
+```
+
+```{r}
+roster
+z <- scale(roster[,2:4])
+apply(z,2,mean)
+apply(z, 2, sd)
+```
+
+```{r}
+score <- apply(z, 1, mean)
+roster %>% cbind(
+  apply(z, 1, mean)
+)
+```
+
+```{r}
+y <- quantile(score, c(.8,.6,.4,.2))
+y
+```
+
+```{r}
+# roster <- cbind(roster,score)
+roster %>% 
+  as_tibble() %>% 
+  mutate(grade = case_when(
+    score >= y[[1]] ~ "A",
+    score < y[[1]] & score >= y[[2]] ~ "B",
+    score < y[[2]] & score >= y[[3]] ~ "C",
+    score < y[[3]] & score >= y[[4]] ~ "D",
+    score < y[[4]] ~ "E"
+    ))->roster
+```
+
+```{r}
+roster %>% 
+  separate(col = Student,sep = " ",
+           into = c("Firstname","Lastname"))->roster 
+roster %>% 
+  arrange(Lastname,`Firstname`)
+```
+
+```{r}
+sum1 <- 0
+for (i in 1:10) {
+  sum1 <- sum1 + i
+}
+sum1
+```
+
+```{r}
+sum2 <- 0
+i <- 1
+while(i <= 10){
+  sum2 <- sum2 + i
+  i <- i + 1
+}
+sum2
+```
+
+```{r}
+x <- 1:35
+case_when(x %% 35 == 0 ~ "A",
+          x %% 7 == 0  ~ "B",
+          x %% 5 == 0 ~ "C",
+          TRUE ~ as.character(x)
+          )
+ifelse(x %% 5 == 0,"5的倍数","不是5的倍数")
+```
+
+```{r}
+mtcars1 <- mtcars
+mtcars1 %>% t() %>% datatable()
+mtcars1 %>% t() %>% colnames() %>% all.equal(mtcars1 %>% rownames())
+```
+
+```{r}
+mtcars1 %>% 
+  group_by(cyl,gear) %>% 
+  count()
+```
+
+```{r}
+mtcars1 %>% 
+  group_by(gear,cyl) %>% 
+  summarise(across(everything(),~mean(.x,na.rm = TRUE)))
+```
+
+```{r}
+mtcars1 %>% 
+  group_by(cyl) %>% 
+  summarise(across(everything(),mean))
+```
+
+```{r}
+iris %>% 
+  tidyr::pivot_longer(-Species,names_to = "name",values_to = "value") %>% 
+  datatable()
+```
+
+```{r}
+mtcars %>% 
+  tidyr::pivot_longer(everything()) %>% 
+  datatable()
+```
+
+本章总结了数十种用于处理数据的**数学**、**统计**和**概率**函数。我们看到了如何将这些函数应用到范围广泛的数据对象上，其中包括**向量**、**矩阵**和**数据框**。你学习了**控制流结构**的使用方法：用**循环**重复执行某些语句，或用**分支**在满足某些特定条件时执行另外的语句。然后你编写了自己的函数，并将它们应用到数据上。最后，我们探索了**折叠、整合以及重构数据**(dplyr和tidyr简直是神器！reshape2基本被替代)的多种方法。
+
+既然已经集齐了数据塑形所需的工具，你就准备好告别第一部分并进入激动人心的**数据分析**世界了！在接下来的几章中，我们将探索多种将数据转化为信息的统计方法和图形方法。
+
+# 基本方法
+
+在第一部分中，我们探索了**R环境**，并讨论了如何从广泛的数据源**导入数据**，进行组合和变换，并将数据准备为适合进一步分析的形式。在导入和清理数据后，下一步通常就是逐一探索每个变量了。这将为你提供每个变量分布的信息，对理解样本的特征、识别意外的或有问题的值，以及选择合适的统计方法都是有帮助的。接下来是**每次研究变量中的两个变量**。这可以揭示变量间的基本关系，并且对于建立更复杂的模型来说是有益的第一步。
+
+第二部分关注的是用于获取数据基本信息的**图形技术**和**统计方法**。
+
+- 第6章描述了可视化单个变量分布的方法。对于类别型变量，有条形图、饼图以及比较新的扇形图。对于数值型变量，有直方图、密度图、箱线图、点图和不那么著名的小提琴图（violin plot）。每类图形对于理解单个变量的分布都 是有益的。
+- 第 7 章描述了用于概述**单变量和双变量间关系**的统计方法。这一章使用了一个完整的数据集，以数值型数据的描述性统计分析开始，研究了感兴趣的子集。接下来， 它描述了用于概述类别型数据的**频数分布表和列联表**。这一章以对用于理解两个变量之间关系的方法进行讨论作结尾，包括二元相关关系的探索、卡方检验、 t 检验和非参数方法。
+
+在读完这一部分以后，你将能够使用R中的基本图形和统计方法来**描述数据**、**探索组间差异**，并识别变量间显著的关系。
+
+## 基本图形
+
+```{r}
+mtcars %>% 
+  ggplot(aes(factor(cyl),mpg)) +
+  geom_boxplot(varwidth = TRUE,outlier.color = "red",outlier.shape = 1) +
+  theme(text = element_text(family = enfont)) -> p
+p
+```
+
+```{r}
+mtcars %>% 
+  ggplot(aes(factor(cyl),mpg,fill = factor(am))) +
+  geom_violin() +
+  labs(x = "cyl") +
+  scale_fill_discrete(name = "am") +
+  theme(text = element_text(family = enfont)) -> p
+p
+```
+
+```{r}
+mpg %>% 
+  group_by(class) %>% 
+  count() %>% 
+  as_tibble() %>% 
+  mutate(across(where(is.character),
+                as_factor)) %>% 
+  ggplot(aes(n,fct_reorder(class,n))) +
+  geom_point() +
+  geom_segment(aes(x = 5, xend = n, y = fct_reorder(class, n), yend =  fct_reorder(class, n)),color = "lightgrey") +
+  theme_minimal() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank()) +
+  theme(text = element_text(family = enfont)) -> p
+p
+```
+
+本章我们学习了**描述连续型**和**类别型变量**的方法。我们看到了如何用条形图和饼图（在较小程度上）了解类别型变量的分布，以及如何通过堆砌条形图和分组条形图理解不同类别型输出的组间差异。我们同时探索了**直方图**、**核密度图**、**箱线图**、**轴须图**以及**点图可视化连续型变量**分布的方式。最后，我们探索了使用叠加的**核密度图**、**并列箱线图**和**分组点图可视化**连续型输出变量组间差异的方法。
+
+在后续各章，我们会将对单变量的关注拓展到**双变量**和**多变量图形**中。你将看到同时用图形刻画许多变量间关系的方法，使用的方法包括**散点图**、**多组折线图**、**马赛克图**、**相关图**、 **lattice图形**等等。
+下一章，我们将关注用于描述分布和二元关系的定量统计方法以及一类推断方法，这类**推断方法**可用于评估变量间的关系是真实存在的，还是由于抽样误差导致的。
+
+## 基本统计分析
+
+```{r}
+mtcars %>% skimr::skim()
+```
+```{r}
+mtcars %>% kableExtra::kable() %>% 
+  kableExtra::kable_styling(full_width = TRUE)
+```
+
+```{r}
+mtcars %>% vtable::st()
+mtcars %>% Hmisc::describe()
+```
+
+```{r}
+mtcars %>% DataExplorer::plot_histogram(
+  theme_config = list(text = element_text(family = enfont)))
+```
+
+```{r}
+mtcars %>% DataExplorer::plot_intro(
+  theme_config = list(text = element_text(family = enfont)))
+```
+
+```{r}
+mtcars %>% DataExplorer::plot_correlation(
+  theme_config = list(text = element_text(family = enfont)))
+```
+
+```{r}
+library(ggcorrplot)
+data(mtcars)
+corr <- round(cor(mtcars), 1)
+corr
+
+# Compute a matrix of correlation p-values
+p.mat <- cor_pmat(mtcars)
+p.mat
+
+# --------------------------------
+# using hierarchical clustering
+ggcorrplot(corr, hc.order = TRUE, outline.color = "white")
+
+# Get the lower triangle
+ggcorrplot(corr,
+  hc.order = TRUE, type = "lower",
+  outline.color = "white"
+)
+# Get the upeper triangle
+ggcorrplot(corr,
+  hc.order = TRUE,
+  type = "upper",
+  outline.color = "white",
+  lab = TRUE,
+  p.mat = p.mat
+) +
+  theme(text = element_text(family = enfont))
+```
+
+分组计算统计量
+
+```{r}
+library(e1071)
+mtcars %>% 
+  group_by(am) %>% 
+  summarise(across(everything(),
+                   list(mean = mean,
+                        sd = sd,
+                        median = median,
+                        skewness = skewness,
+                        kurtosis = kurtosis))) %>% 
+  t() %>% 
+  DT::datatable()
+```
+
+```{r}
+p_load(vcd,gmodels)
+table(Arthritis$Treatment,useNA = "always")
+prop.table(table(Arthritis$Improved,useNA = "always"))
+```
+
+```{r}
+mytable <- Arthritis %>% 
+  xtabs(formula = ~Treatment + Improved,data = .)
+mytable
+prop.table(mytable,margin = 2)
+```
+
+```{r}
+gmodels::
+```
+
+
+
+
+
+
+
+
+

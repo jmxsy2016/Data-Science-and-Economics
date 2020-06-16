@@ -85,14 +85,22 @@ R语言的特点是：功能极其强大；各种辅助软件包千差万别（�
 
 - 6、多积累代码经验、多思考、多测试。不满足于拍脑门、想当然的下结论，而是用实际历史数据说话
 
-R语言学习建议
+R语言学习技巧
 
 * 使用IDE，除非你是六指琴魔
 * 建立project
 * 勿用getwd和rm(list = lm())，千万记住，会让沟通的人崩溃！
-* 多使用快捷键，例如；Command + Tab (Mac OS)或 Alt + Tab (Windows)、Alt + i
-* 使用`here package`
+* 多使用快捷键，例如；Command + Tab (Mac OS)或 Alt + Tab (Windows)、Alt + i、Ctrl + Shift + c
+* 使用`here package`：`my_data <- read_csv(here::here(“data”,“my_data_file.csv”))`
 * [命名要深思熟虑](https://speakerdeck.com/jennybc/how-to-name-files?slide=11)
+* R语言的布局
+* Tab键用法
+* 管道
+* %in%
+* ::
+* RStudio addin
+* datapasta
+* 版本控制
 * **.Renviron:**定义敏感信息，如API键(如GitHub或twitter)，以及R特定的环境变量，如历史大小(R_HISTSIZE=100000)和默认库位置R_LIBS_USER。语句：`usethis::edit_r_environ()`
 * **.Rprofile.**语句：`usethis::edit_r_profile()`
 * binary packages：`install.packages()`
@@ -101,7 +109,7 @@ R语言学习建议
   - Do not select the box for **“Add rtools to system PATH”**, devtools and RStudio should put Rtools on the PATH automatically when it is needed.
   - Do select the box for **“Save version information to registry”** (it should be selected by default).
 * Install a source package:`devtools::install_dev("dplyr")` will install the development version of dplyr. `devtools::install_github("jimhester/lookup")` will install Jim’s lookup package (which is not on CRAN), and `devtools::install_version("readr", "1.0.0")` will install readr 1.0.0.
- 
+
 
 
 

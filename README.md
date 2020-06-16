@@ -72,6 +72,7 @@
 - [purrr教程](https://jmxsy2016.github.io/Data-Science-and-Economics/R高级编程/code/purrr教程.html)
 - [R字符串数据处理——一个实际例子](https://jmxsy2016.github.io/Data-Science-and-Economics/R高级编程/code/R字符串数据处理-一个实际例子.html)
 - [爬虫教程_CSS选择器](https://jmxsy2016.github.io/Data-Science-and-Economics/R高级编程/code/爬虫教程_CSS选择器.html)
+- [爬虫完整教程](https://jmxsy2016.github.io/Data-Science-and-Economics/R高级编程/code/R爬虫完整教程.html)
 - [RMarkdown PPT教程](https://rladies.github.io/meetup-presentations_oslo/2020-05-11-rmarkdown_like_a_boss/presentation.html#1)
 - [Integration: R and Python](https://shawnsanto.com/files/sta323/slides/lec-16b-rpython.html#1)
 - [如何制作一个PPT](https://jmxsy2016.github.io/Data-Science-and-Economics/R高级编程/code/PPT.html)
@@ -91,19 +92,26 @@
 
 ### 书籍
 
-- [Happy Git and GitHub for the useR](https://happygitwithr.com/index.html)：版本控制
-- [R packages](https://r-pkgs.org/workflows101.html):R包开发教程
-- [Bookdown: Authoring Books and Technical Documents with R Markdown](https://github.com/rstudio/bookdown):使用Rmarkdown编写书籍和技术文档
-- [Blogdown: Create Blogs and Websites with R Markdown](https://CRAN.R-project.org/package=blogdown):搭建博客和网站
-- [RMarkdown for Scientists](https://rmd4sci.njtierney.com/)：RMarkdown概述
-- [R Markdown: The Definitive Guide](https://bookdown.org/yihui/rmarkdown/):谢益辉代表性著作
-- [R Markdown Cookbook](https://bookdown.org/yihui/rmarkdown-cookbook/):谢益辉代表性著作(在读)
-- [What They Forgot to Teach You About R](https://github.com/rstats-wtf/what-they-forgot):一些不为人知的R和Rstudio技巧 
-- [Interactive web-based data visualization with R, plotly, and shiny](https://plotly-r.com/)：可视化
-- [基于R语言的科研信息分析与服务](https://bookdown.org/wangminjie/R4IS/)
-- [现代科研指北](https://bookdown.org/yufree/sciguide/)(在读)
-
----
+- Hadley Wickham
+  - [Mastering Shiny](https://mastering-shiny.org/index.html)
+  - [R packages](https://r-pkgs.org/workflows101.html):R包开发教程
+  - [R for Data Science](https://r4ds.had.co.nz/)
+  
+- 谢益辉
+  - [Bookdown: Authoring Books and Technical Documents with R Markdown](https://github.com/rstudio/bookdown):使用Rmarkdown编写书籍和技术文档
+  - [Blogdown: Create Blogs and Websites with R Markdown](https://CRAN.R-project.org/package=blogdown):搭建博客和网站
+  - [R Markdown: The Definitive Guide](https://bookdown.org/yihui/rmarkdown/):谢益辉代表性著作
+  - [R Markdown Cookbook](https://bookdown.org/yihui/rmarkdown-cookbook/):谢益辉代表性著作
+  
+- 珍妮
+  - [What They Forgot to Teach You About R](https://github.com/rstats-wtf/what-they-forgot):一些不为人知的R和Rstudio技巧 
+  
+- 其它
+  - [RMarkdown for Scientists](https://rmd4sci.njtierney.com/)：RMarkdown概述
+  - [Interactive web-based data visualization with R, plotly, and shiny](https://plotly-r.com/)：可视化
+  - [基于R语言的科研信息分析与服务](https://bookdown.org/wangminjie/R4IS/)
+  - [现代科研指北](https://bookdown.org/yufree/sciguide/)(在读)
+  - [数据可视化](https://rkabacoff.github.io/datavis/)
 
 ### 程序包(小众而有用)
 
@@ -117,7 +125,24 @@
 - [kableExtra](https://cran.r-project.org/web/packages/kableExtra/index.html):[构建漂亮的表](https://haozhu233.github.io/kableExtra/)
 - [magick包](https://cran.r-project.org/web/packages/magick/vignettes/intro.html),[网站](https://docs.ropensci.org/magick/articles/intro.html)
 - [printr](https://cran.r-project.org/web/packages/printr/vignettes/printr.html)：打印表格
+- [pmdplyr](https://cran.r-project.org/web/packages/pmdplyr/pmdplyr.pdf):dplyr软件包作为基础，使操作面板数据更加容易
+
+### 数据清洗
+
 - [janitor包——检查和清理脏数据](https://jmxsy2016.github.io/Data-Science-and-Economics/R高级编程/code/janitor包——检查和清理脏数据)
+- [datapasta](https://milesmcbain.github.io/datapasta/index.html):剪贴板数据转换为c()和数据框
+- [DataExplorer](https://boxuancui.github.io/DataExplorer/)
+
+### 模型分析
+
+- [gmodels](https://cran.r-project.org/web/packages/gmodels/index.html):Various R programming tools for model fitting.
+
+
+
+
+
+
+
 
 
 
