@@ -69,7 +69,8 @@
 
 - [Tidyverse中10个技巧性函数——来源YouTube](https://jmxsy2016.github.io/Data-Science-and-Economics/R高级编程/code/Tidyverse中10个具有技巧性函数.html)
 - [批量读取Excel数据](https://jmxsy2016.github.io/Data-Science-and-Economics/R高级编程/code/批量读取Excel数据.html)
-- [purrr教程](https://jmxsy2016.github.io/Data-Science-and-Economics/R高级编程/code/purrr教程.html)
+- [purrr教程1](https://jmxsy2016.github.io/Data-Science-and-Economics/R高级编程/code/purrr教程.html)
+- [purrr教程2](https://jmxsy2016.github.io/Data-Science-and-Economics/R高级编程/code/purrr教程2.html)
 - [R字符串数据处理——一个实际例子](https://jmxsy2016.github.io/Data-Science-and-Economics/R高级编程/code/R字符串数据处理-一个实际例子.html)
 - [爬虫教程_CSS选择器](https://jmxsy2016.github.io/Data-Science-and-Economics/R高级编程/code/爬虫教程_CSS选择器.html)
 - [爬虫完整教程](https://jmxsy2016.github.io/Data-Science-and-Economics/R高级编程/code/R爬虫完整教程.html)

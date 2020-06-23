@@ -1,0 +1,237 @@
+--- 
+title: "R实战第二版笔记-中级绘图"
+# subtitle: "Lecture title"
+author:
+- affiliation: Dongbei University of Finance & Economics
+  name: Studennt. LI Junjie
+date: '`r Sys.Date()`'
+output:
+  bookdown::html_document2:
+    # code_folding: hide
+    highlight: pygments
+    # highlight: zenburn
+    # highlight: haddock
+    # theme: darkly
+    theme: journal
+    df_print: paged	
+    number_sections: true
+    keep_md: no
+    keep_tex: no
+    toc: yes
+    toc_depth: 5
+    toc_float:
+      collapsed: no
+      smooth_scroll: yes
+    # css: styles.css
+# bibliography: [book.bib, packages.bib]
+# biblio-style: apalike
+link-citations: yes
+sansfont: Times New Roman
+always_allow_html: yes
+urlcolor: "red"
+description: "This is a minimal example of using the bookdown package to write a book. The output format for this example is bookdown::gitbook."
+---
+
+# 加载经常用的R包
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      fig.show = "hold",
+                      fig.align = "center",
+                      tidy = FALSE,
+                      message = FALSE,
+                      class.source = "bg-warning")
+```
+
+```{js, echo=FALSE}
+$('.title').css('color', 'red')
+$('.title').css('font-family', 'Times New Roman')
+```
+
+```{css, echo=FALSE}
+* {
+    # font-size: 17px !important;
+    font-family: "Times New Roman" !important;
+    # color: rgb(199 237	204)
+}
+::selection {
+   # background: rgb(135 206 255);
+}
+```
+
+```{r,warning=FALSE,message=FALSE}
+library(pacman)
+# 读数据
+p_load(readxl,writexl,data.table,openxlsx,haven,rvest)
+```
+
+```{r,warning=FALSE,message=FALSE}
+# 数据探索
+p_load(tidyverse,DT,skimr,DataExplorer,explore,vtable,stringr,kableExtra,lubridate)
+```
+
+```{r,eval=FALSE,warning=FALSE,message=FALSE}
+# 模型
+p_load(grf,glmnet,caret,tidytext,fpp2,forecast,car,tseries,hdm,tidymodels,broom)
+```
+
+```{r,eval=FALSE,warning=FALSE,message=FALSE}
+# 可视化
+p_load(patchwork,ggrepel,ggcorrplot,gghighlight,ggthemes,shiny)
+```
+
+```{r,eval=TRUE,warning=FALSE,message=FALSE}
+# 其它常用包
+p_load(magrittr,listviewer,devtools,here,janitor,reticulate,jsonlite)
+```
+
+# 散点图
+
+```{r}
+plot(mtcars$wt,mtcars$mpg,
+     main = "Basic Scatter plot of MPG vs. Weight",
+     xlab = "Car Weight (lbs/1000)",
+     ylab = "Miles Per Gallon",
+     pch = 19)
+abline(lm(mtcars$mpg~mtcars$wt), col="red", lwd=2, lty=1)
+lines(lowess(mtcars$wt,mtcars$mpg), col="blue", lwd=2, lty=2)
+```
+
+```{r}
+mtcars %>%
+  ggplot(aes(x = wt, y = mpg)) +
+  geom_point() +
+  geom_smooth(method = "lm", col = "red", se = FALSE,linetype = 1) +
+  geom_smooth(data = mtcars,aes(x = wt, y = mpg),se = FALSE,linetype = 2) +
+  labs(title = "Basic Scatter plot of MPG vs. Weight",
+       x = "Car Weight (lbs/1000)",
+       y = "Miles Per Gallon") +
+  theme(text = element_text(family = enfont),
+        plot.title = element_text(hjust = 0.5))
+  
+```
+
+```{r}
+library(car)
+scatterplot(
+  mpg ~ wt | cyl,
+  data = mtcars,
+  lwd = 2,
+  main = "Scatter Plot of MPG vs. Weight by # Cylinders",
+  xlab = "Weight of Car (lbs/1000)",
+  ylab = "Miles Per Gallon",
+  # id.method = "identify",
+  # labels = row.names(mtcars),
+  boxplots = "xy"
+)
+```
+
+```{r}
+pairs( ~ mpg + disp + drat + wt, data = mtcars,
+       main = "Basic Scatter Plot Matrix")
+```
+
+```{r}
+library(car)
+scatterplotMatrix(
+  ~ mpg + disp + drat + wt,
+  data = mtcars,
+  main = "Scatter Plot Matrix via car Package"
+)
+```
+
+```{r,message=FALSE}
+p_load(scatterplot3d)
+attach(mtcars)
+scatterplot3d(wt, disp, mpg,main="Basic 3D Scatter Plot")
+detach(mtcars)
+```
+
+```{r,message=FALSE}
+attach(mtcars)
+s3d <- scatterplot3d(
+  wt,
+  disp,
+  mpg,
+  pch = 16,
+  highlight.3d = TRUE,
+  type = "h",
+  main = "3D Scatter Plot with Vertical Lines and Regression Plane"
+)
+fit <- lm(mpg ~ wt + disp)
+s3d$plane3d(fit)
+detach(mtcars)
+```
+
+# 相关图
+
+```{r}
+p_load(corrgram)
+corrgram(
+  mtcars,
+  order = TRUE,
+  lower.panel = panel.shade,
+  upper.panel = panel.pie,
+  text.panel = panel.txt,
+  main = "Corrgram of mtcars intercorrelations"
+)
+```
+
+```{r}
+library(ggcorrplot)
+data(mtcars)
+corr <- round(cor(mtcars), 2)
+corr
+
+# Compute a matrix of correlation p-values
+p.mat <- cor_pmat(mtcars)
+p.mat
+ggcorrplot::ggcorrplot(corr,
+                       hc.order = TRUE,
+                       outline.color = "white",
+                       lab = TRUE,
+                       p.mat = p.mat,type = "lower") +
+  theme(text = element_text(family = enfont))
+```
+
+# 马赛克图
+
+```{r}
+ftable(Titanic)
+```
+
+添加选项`shade=TRUE`将根据拟合模型的皮尔逊残差值对图形上色，添加选项`legend=TRUE`将展示残差的图例。
+
+```{r,fig.height=8,fig.width=8}
+p_load(vcd)
+vcd::mosaic(Titanic,shade = TRUE,legend = TRUE)
+```
+
+- (1) 从船员到头等舱，存活率陡然提高；
+- (2) 大部分孩子都处在三等舱和二等舱中；
+- (3) 在头等舱中的大部分女性都存活了下来，而三等舱中仅有一半女性存活； 
+- (4) 船员中女性很少，导致该组的Survived标签重叠（图底部的No和Yes）。
+继续观察，你将发现更多有趣的信息。关注矩形的相对宽度和高度，你还能发现那晚其他什么秘密吗？
+
+本章中，我们学习了许多展示**两个或更多变量间关系**的图形方法，包括**二维**和**三维**散点图、**散点图矩阵**、**气泡图**、**折线图**、**相关系数图**和**马赛克图**。其中一些方法是标准的图形方法，而其他的则相对更新颖。
+
+这样，**图形的定制**（第3章）、**单变量分布的展示**（第6章）、**回归模型的探究**（第8章）和**组间差异的可视化**（第9章）等方法，就构成了你的可视化数据和提取数据信息的完备工具箱。
+
+在后续各章中，通过学习其他专业化技术，比如**潜变量模型图形绘制**（第14章）、**时间序列**（第15章）、**聚类数据**（第16章）和**单条件或多条件变量图形的创建技巧**（第18章），你还可以大幅度提升自己的绘图能力。
+
+下一章，我们将探究**重抽样**和**自助法**。它们都是计算机密集型方法，为你提供了一种分析数据的全新而独特的视角。
+
+
+
+
+
+
+
+
+
+
+
+
+
+

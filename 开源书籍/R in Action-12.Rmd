@@ -1,5 +1,5 @@
 --- 
-title: "R实战第二版笔记"
+title: "R实战第二版笔记-入门和基本方法"
 # subtitle: "Lecture title"
 author:
 - affiliation: Dongbei University of Finance & Economics
@@ -774,14 +774,89 @@ prop.table(mytable,margin = 2)
 ```
 
 ```{r}
-gmodels::
+gmodels::CrossTable(Arthritis$Treatment,Arthritis$Improved)
 ```
 
+```{r}
+states <- state.x77[,1:6]
+cov(states)
+cor(states)
+```
 
+```{r}
+corr <- round(cor(states), 3)
+# corr
 
+# Compute a matrix of correlation p-values
+p.mat <- ggcorrplot::cor_pmat(states)
+p.mat
+```
 
+```{r}
+cor.test(states[,1],states[,2])
+```
 
+```{r}
+ggcorrplot::ggcorrplot(cor(states),
+  hc.order = TRUE, type = "lower",
+  outline.color = "white",
+  ggtheme = ggplot2::theme_gray(base_family = enfont),
+  lab = TRUE,
+  p.mat = p.mat,
+  digits = 3
+) +
+  scale_x_discrete(expand = c(0,0)) +
+  scale_y_discrete(expand = c(0,0)) 
+```
 
+```{r}
+ggm::pcor(c(1,5,2,3,6,4),cov(states))
+```
 
+```{r}
+library(MASS)
+map(UScrime %>% dplyr::select(U1,U2),function(i){
+  mean = mean(i,na.rm = TRUE)
+  sd = sd(i,na.rm = TRUE)
+  df = tibble(mean = mean,sd = sd)
+  return(df)
+}) %>% bind_rows() 
+```
 
+```{r}
+# 非独立样本的t检验假定组间的差异呈正态分布
+t.test(UScrime$U1,UScrime$U2,paired = TRUE)
+```
 
+```{r}
+UScrime %>% 
+  group_by(So) %>% 
+  summarise(So_median = median(Prob))
+# 你可以再次拒绝南方各州和非南方各州监禁率相同的假设（p<0.001）。
+UScrime %>% 
+  wilcox.test(Prob~So,data = .)
+```
+
+```{r}
+map(UScrime,median) %>% bind_cols()
+```
+
+```{r}
+states <- data.frame(state.region = state.region, state.x77) %>% as_tibble()
+```
+
+```{r}
+detach(package:MASS)
+states %>% 
+  select(Illiteracy,state.region) %>% 
+  head()
+```
+
+```{r}
+# 让我们利用Kruskal-Wallis检验回答文盲率的问题。
+states %>% 
+  kruskal.test(Illiteracy ~ state.region,data = .)
+# 显著性检验的结果意味着美国四个地区的文盲率各不相同（p<0.001）。
+```
+
+在本章中，我们评述了R中用于**生成统计概要**和**进行假设检验**的函数。我们关注了**样本统计量**和**频数表**、**独立性检验**和**类别型变量**的相关性度量、定量变量的相关系数（和连带的显著性检验）以及两组或更多组定量结果变量的比较。下一章中，我们将探索**一元回归和多元回归**，讨论的焦点在于如何理解一个预测变量（一元回归）或多个预测变量（多元回归）与某个被预测变量或效标变量（criterion variable）之间的关系。**图形将有助于诊断潜在的问题**、评估和提高模型的拟合精度，并发现数据中意料之外的信息瑰宝。

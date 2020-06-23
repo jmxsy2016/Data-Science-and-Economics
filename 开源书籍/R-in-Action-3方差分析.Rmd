@@ -1,0 +1,158 @@
+--- 
+title: "R实战第二版笔记-方差分析"
+# subtitle: "Lecture title"
+author:
+- affiliation: Dongbei University of Finance & Economics
+  name: Studennt. LI Junjie
+date: '`r Sys.Date()`'
+output:
+  bookdown::html_document2:
+    # code_folding: hide
+    highlight: pygments
+    # highlight: zenburn
+    # highlight: haddock
+    theme: darkly
+    # theme: journal
+    df_print: paged	
+    number_sections: true
+    keep_md: no
+    keep_tex: no
+    toc: yes
+    toc_depth: 5
+    toc_float:
+      collapsed: no
+      smooth_scroll: yes
+    # css: styles.css
+# bibliography: [book.bib, packages.bib]
+# biblio-style: apalike
+link-citations: yes
+sansfont: Times New Roman
+always_allow_html: yes
+urlcolor: "red"
+description: "This is a minimal example of using the bookdown package to write a book. The output format for this example is bookdown::gitbook."
+editor_options: 
+  chunk_output_type: console
+---
+
+# 加载经常用的R包
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      fig.show = "hold",
+                      fig.align = "center",
+                      tidy = FALSE,
+                      class.source = "bg-warning")
+```
+
+```{js, echo=FALSE}
+$('.title').css('color', 'red')
+$('.title').css('font-family', 'Times New Roman')
+```
+
+```{css, echo=FALSE}
+* {
+    # font-size: 17px !important;
+    font-family: "Times New Roman" !important;
+    color: rgb(199 237	204)
+}
+::selection {
+   # background: rgb(135 206 255);
+}
+```
+
+```{r,warning=FALSE,message=FALSE}
+library(pacman)
+# 读数据
+p_load(readxl,writexl,data.table,openxlsx,haven,rvest)
+```
+
+```{r,warning=FALSE,message=FALSE}
+# 数据探索
+p_load(tidyverse,DT,skimr,DataExplorer,explore,vtable,stringr,kableExtra,lubridate)
+```
+
+```{r,eval=FALSE,warning=FALSE,message=FALSE}
+# 模型
+p_load(grf,glmnet,caret,tidytext,fpp2,forecast,car,tseries,hdm,tidymodels,broom)
+```
+
+```{r,eval=FALSE,warning=FALSE,message=FALSE}
+# 可视化
+p_load(patchwork,ggrepel,ggcorrplot,gghighlight,ggthemes,shiny)
+```
+
+```{r,eval=TRUE,warning=FALSE,message=FALSE}
+# 其它常用包
+p_load(magrittr,listviewer,devtools,here,janitor,reticulate,jsonlite)
+```
+
+# 术语
+
+# ANOVO模型拟合
+
+# 单因素方差分析
+
+```{r}
+p_load(multcomp)
+cholesterol
+```
+
+```{r}
+cholesterol %>% 
+  group_by(trt) %>% 
+  summarise(across(response,list(mean = mean,sd = sd)))
+```
+
+```{r}
+ToothGrowth %>% 
+  group_by(supp,dose) %>% 
+  summarise(across(len,
+                   list(mean = mean)))
+```
+
+```{r}
+UScereal %>% 
+  head(20)
+
+UScereal$shelf <- factor(UScereal$shelf)
+
+y <- UScereal %>% 
+  dplyr::select(calories, fat, sugars)
+
+UScereal %>% 
+  group_by(shelf) %>% 
+  summarise(across(c(calories,fat,sugars),
+                   list(mean = ~ mean(.x,na.rm = TRUE))))
+
+cov(y)
+
+fit <- manova(y %>% as.matrix() ~ UScereal$shelf)
+fit %>% summary()
+```
+
+```{r}
+summary.aov(fit)
+```
+
+本章中，我们回顾了基本实验和准实验设计的分析方法，包括ANOVA/ANCOVA/MANOVA。
+然后通过组内和组间设计的示例介绍了基本方法的使用，如单因素ANOVA、单因素ANCOVA、
+双因素ANOVA、重复测量ANOVA和单因素MANOVA。除了这些基本分析，我们还回顾了模型的假设检验，以及应用多重比较过程来进行综合检验的方法。最后，对各种结果可视化方法也进行了探索。如果你对用R分析DOE（Design Of Experiment，实验设计）感兴趣，请参阅“CRAN Task View: Design of Experiments (DoE) & Analysis of Experimental Data”（2009） ①中Groemping提供的方法。第8章(**回归分析**)和第9章(**方差分析**)已经涵盖了各领域研究者常用的统计方法。在下一章中，我们将介绍功效分析。功效分析可以帮助我们在给定置信度的情况下，判断达到要求效果所需的样本大小，这一点对于
+研究设计非常重要。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

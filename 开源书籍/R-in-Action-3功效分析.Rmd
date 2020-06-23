@@ -1,0 +1,92 @@
+--- 
+title: "R实战第二版笔记-方差分析"
+# subtitle: "Lecture title"
+author:
+- affiliation: Dongbei University of Finance & Economics
+  name: Studennt. LI Junjie
+date: '`r Sys.Date()`'
+output:
+  bookdown::html_document2:
+    # code_folding: hide
+    highlight: pygments
+    # highlight: zenburn
+    # highlight: haddock
+    theme: darkly
+    # theme: journal
+    df_print: paged	
+    number_sections: true
+    keep_md: no
+    keep_tex: no
+    toc: yes
+    toc_depth: 5
+    toc_float:
+      collapsed: no
+      smooth_scroll: yes
+    # css: styles.css
+# bibliography: [book.bib, packages.bib]
+# biblio-style: apalike
+link-citations: yes
+sansfont: Times New Roman
+always_allow_html: yes
+urlcolor: "red"
+description: "This is a minimal example of using the bookdown package to write a book. The output format for this example is bookdown::gitbook."
+---
+
+# 加载经常用的R包
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      fig.show = "hold",
+                      fig.align = "center",
+                      tidy = FALSE,
+                      class.source = "bg-warning")
+```
+
+```{js, echo=FALSE}
+$('.title').css('color', 'red')
+$('.title').css('font-family', 'Times New Roman')
+```
+
+```{css, echo=FALSE}
+* {
+    # font-size: 17px !important;
+    font-family: "Times New Roman" !important;
+    color: rgb(199 237	204)
+}
+::selection {
+   # background: rgb(135 206 255);
+}
+```
+
+```{r,warning=FALSE,message=FALSE}
+library(pacman)
+# 读数据
+p_load(readxl,writexl,data.table,openxlsx,haven,rvest)
+```
+
+```{r,warning=FALSE,message=FALSE}
+# 数据探索
+p_load(tidyverse,DT,skimr,DataExplorer,explore,vtable,stringr,kableExtra,lubridate)
+```
+
+```{r,eval=FALSE,warning=FALSE,message=FALSE}
+# 模型
+p_load(grf,glmnet,caret,tidytext,fpp2,forecast,car,tseries,hdm,tidymodels,broom)
+```
+
+```{r,eval=FALSE,warning=FALSE,message=FALSE}
+# 可视化
+p_load(patchwork,ggrepel,ggcorrplot,gghighlight,ggthemes,shiny)
+```
+
+```{r,eval=TRUE,warning=FALSE,message=FALSE}
+# 其它常用包
+p_load(magrittr,listviewer,devtools,here,janitor,reticulate,jsonlite)
+```
+
+在第7章(*基本统计方法*)、第8章(*回归分析*)和第9章(*方差分析*)，我们探索了各种各样的统计假设检验R函数。本章中，我们主要关注研究的筹备阶段。功效分析不仅可以帮助你判断在给定置信度和效应值的前提下所需的样本量，也能说明在给定样本量时检测到要求效应值的概率。对于限定误报效应显著性的可能性（Ⅰ型错误）和正确检测真实效应（功效）的可能性的平衡，你也有了一个直观的了解。
+本章主要内容是pwr包中函数的使用方法。这些函数可以对常见的统计方法（包括t检验、卡方检验、比例检验、 ANOVA和回归）进行功效和样本量的计算。本章最后还介绍了一些专业化的功效分析方法。
+典型的功效分析是一个交互性的过程。研究者会通过改变样本量、效应值、预期显著性水平和预期功效水平等参数，来观测它们对于其他参数的影响。这些结果对于研究的筹备是非常有意义的。过去研究的信息（特别是效应值）可以帮助你在未来设计更有用和高效的研究。功效分析的一个重要附加效益是引起方向性的转变，它鼓励不要仅仅关注于二值型（即效应存在还是不存在）的假设检验，而应该仔细思考效应值增加的意义。期刊编辑越来越多地要求作者在报告研究结果的时候既包含p值又包含效应值。因为它们不仅能够帮助你判断研究的实际意义，还能提供用于未来研究的信息。
+下一章，我们将学习一些**可视化多元关系**的新方法。这些可视化的图形不仅能补充和加强到
+目前为止我们已经讨论过的分析方法，还能为你学习第三部分的高级方法做一些准备。

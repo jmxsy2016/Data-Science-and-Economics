@@ -1,0 +1,224 @@
+--- 
+title: "Introduction to labelled"
+# subtitle: "Lecture title"
+author:
+- affiliation: Dongbei University of Finance & Economics
+  name: Studennt. LI Junjie
+date: '`r Sys.Date()`'
+output:
+  bookdown::html_document2:
+    # code_folding: hide
+    highlight: pygments
+    # highlight: zenburn
+    # highlight: haddock
+    theme: darkly
+    # theme: journal
+    df_print: paged	
+    number_sections: true
+    keep_md: no
+    keep_tex: no
+    toc: yes
+    toc_depth: 5
+    toc_float:
+      collapsed: no
+      smooth_scroll: yes
+    # css: styles.css
+# bibliography: [book.bib, packages.bib]
+# biblio-style: apalike
+link-citations: yes
+sansfont: Times New Roman
+always_allow_html: yes
+urlcolor: "red"
+description: "This is a minimal example of using the bookdown package to write a book. The output format for this example is bookdown::gitbook."
+---
+
+# 加载经常用的R包
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      fig.show = "hold",
+                      fig.align = "center",
+                      tidy = FALSE,
+                      class.source = "bg-warning")
+```
+
+```{js, echo=FALSE}
+$('.title').css('color', 'red')
+$('.title').css('font-family', 'Times New Roman')
+```
+
+```{css, echo=FALSE}
+body {
+    font-size: 17px !important;
+    font-family: "Times New Roman" !important;
+    color: rgb(199 237	204)
+}
+::selection {
+   # background: rgb(135 206 255);
+}
+```
+
+```{r,warning=FALSE,message=FALSE}
+library(pacman)
+# 读数据
+p_load(readxl,writexl,data.table,openxlsx,haven,rvest)
+```
+
+```{r,warning=FALSE,message=FALSE}
+# 数据探索
+p_load(tidyverse,DT,skimr,DataExplorer,explore,vtable,stringr,kableExtra,lubridate)
+```
+
+```{r,eval=FALSE,warning=FALSE,message=FALSE}
+# 模型
+p_load(grf,glmnet,caret,tidytext,fpp2,forecast,car,tseries,hdm,tidymodels,broom)
+```
+
+```{r,eval=FALSE,warning=FALSE,message=FALSE}
+# 可视化
+p_load(patchwork,ggrepel,ggcorrplot,gghighlight,ggthemes,shiny)
+```
+
+```{r,eval=TRUE,warning=FALSE,message=FALSE}
+# 其它常用包
+p_load(magrittr,listviewer,devtools,here,janitor,reticulate,jsonlite)
+```
+
+# Variable labels
+
+```{r}
+library(labelled)
+var_label(iris$Petal.Length) <- "Length of sepal"
+var_label(iris) <- list(Petal.Length = "Length of petal",
+                        Petal.Width = "Width of Petal")
+var_label(iris$Petal.Width)
+```
+
+```{r}
+var_label(iris)
+```
+
+To remove a variable label, use NULL.
+
+```{r}
+var_label(iris$Sepal.Length) <- NULL
+```
+
+```{r}
+# View(iris)
+```
+
+可以通过 look for ()显示和搜索变量名和标签:
+
+```{r}
+look_for(iris)
+look_for(iris,"pet")
+```
+
+```{r}
+look_for(data = iris,details = TRUE)
+```
+
+```{r}
+look_for(mtcars,details = TRUE)
+```
+
+# Value labels
+
+创建带标签的向量的第一种方法是使用标签函数。并不是必须为在矢量中观察到的每个值提供一个标签。您还可以为未观察到的值提供标签。
+
+```{r}
+v <- labelled(c(1,2,2,2,3,9,1,3,2,NA), 
+              c(yes = 1, no = 3, "don't know" = 8, refused = 9))
+v
+```
+
+```{r}
+val_labels(v)
+val_label(v,8)
+```
+
+```{r}
+val_labels(v) <- c(yes = 1,nno = 3,bug = 5)
+v
+val_label(v,3) <- "no"
+val_label(v,5) <- "bugs"
+v
+```
+
+```{r}
+val_label(v,2) <- "maybe"
+v
+```
+
+```{r}
+val_labels(v) <- NULL
+v
+```
+
+```{r}
+val_label(v,1) <- "yes"
+v
+```
+
+Note that applying `val_labels` to a factor will *have no effect*!!
+
+```{r}
+f <- factor(1:3,levels = 1:3)
+f
+
+val_labels(f) <- c(yes = 1,no = 2,bug = 3)
+f
+```
+
+You could also apply value labels to several columns of a data frame.
+
+```{r}
+df <- data.frame(v1 = 1:3, v2 = c(2, 3, 1), v3 = 3:1)
+df
+```
+
+```{r}
+val_label(df, 1) <- "yes"
+df
+```
+
+```{r}
+look_for(df,details = TRUE)
+df$v1 <- haven::as_factor(df$v1)
+df
+```
+
+```{r}
+df <- data.frame(v1 = 1:3, v2 = c(2, 3, 1), v3 = 3:1)
+
+val_label(df, 1) <- "yes"
+val_label(df[, c("v1", "v3")], 2) <- "maybe"
+val_label(df[, c("v2", "v3")], 3) <- "no"
+val_labels(df)
+```
+
+# Sorting value labels
+
+```{r}
+v <- c(1,2,2,2,3,9,1,3,2,NA)
+v
+val_label(v,1) <- "yes"
+val_label(v,3) <- "no"
+val_label(v,9) <- "refused"
+val_label(v,2) <- "maybe"
+val_label(v,8) <- "don't know"
+v
+```
+It could be useful to reorder the **value labels** according to their attached values.
+
+```{r}
+sort_val_labels(v)
+sort_val_labels(v,decreasing = TRUE)
+sort_val_labels(v,according_to = "l")
+```
+
+# User defined missing values (SPSS’s style)
+
+

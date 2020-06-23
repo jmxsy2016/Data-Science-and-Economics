@@ -1,0 +1,460 @@
+--- 
+title: "R实战第二版笔记-ggplot2绘图"
+# subtitle: "Lecture title"
+author:
+- affiliation: Dongbei University of Finance & Economics
+  name: Studennt. LI Junjie
+date: '`r Sys.Date()`'
+output:
+  bookdown::html_document2:
+    # code_folding: hide
+    highlight: pygments
+    # highlight: zenburn
+    # highlight: haddock
+    # theme: darkly
+    theme: journal
+    df_print: paged	
+    number_sections: true
+    keep_md: no
+    keep_tex: no
+    toc: yes
+    toc_depth: 5
+    toc_float:
+      collapsed: no
+      smooth_scroll: yes
+    # css: styles.css
+# bibliography: [book.bib, packages.bib]
+# biblio-style: apalike
+link-citations: yes
+sansfont: Times New Roman
+always_allow_html: yes
+urlcolor: "red"
+description: "This is a minimal example of using the bookdown package to write a book. The output format for this example is bookdown::gitbook."
+editor_options: 
+  chunk_output_type: inline
+---
+
+# 加载经常用的R包
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      fig.show = "hold",
+                      fig.align = "center",
+                      tidy = FALSE,
+                      message = FALSE,
+                      class.source = "bg-warning")
+```
+
+```{js, echo=FALSE}
+$('.title').css('color', 'red')
+$('.title').css('font-family', 'Times New Roman')
+```
+
+```{css, echo=FALSE}
+* {
+    # font-size: 17px !important;
+    font-family: "Times New Roman" !important;
+    # color: rgb(199 237	204)
+}
+::selection {
+   # background: rgb(135 206 255);
+}
+```
+
+```{r,warning=FALSE,message=FALSE}
+library(pacman)
+# 读数据
+p_load(readxl,writexl,data.table,openxlsx,haven,rvest)
+```
+
+```{r,warning=FALSE,message=FALSE}
+# 数据探索
+p_load(tidyverse,DT,skimr,DataExplorer,explore,vtable,stringr,kableExtra,lubridate)
+```
+
+```{r,eval=FALSE,warning=FALSE,message=FALSE}
+# 模型
+p_load(grf,glmnet,caret,tidytext,fpp2,forecast,car,tseries,hdm,tidymodels,broom)
+```
+
+```{r,eval=FALSE,warning=FALSE,message=FALSE}
+# 可视化
+p_load(patchwork,ggrepel,ggcorrplot,gghighlight,ggthemes,shiny)
+```
+
+```{r,eval=TRUE,warning=FALSE,message=FALSE}
+# 其它常用包
+p_load(magrittr,listviewer,devtools,here,janitor,reticulate,jsonlite)
+p_load(car)
+data("Salaries")
+```
+
+# R 中的四种图形系统
+
+基础图形系统由Ross Ihaka编写，每个R都默认安装。
+
+grid图形系统由Paul Murrell（2011）编写，通过grid包安装执行。
+
+lattice包由Deepayan Sarkar（2008）编写，可绘制Cleveland（1985，1993）所描述的网格图形。
+
+ggplot2包由Hadley Wickham（2009a）编写，提供了一种基于Wilkinson（2005）所述图形语法的图形系统， Wickham（2009b）还对该语法进行了扩展。
+
+# ggplot2 包介绍
+
+```{r}
+mtcars %>% 
+  ggplot(aes(wt,mpg)) +
+  geom_point()
+mtcars %>% 
+  ggplot(aes(wt,mpg)) +
+  geom_point(col = "red",size = 2,shape = 17) +
+  geom_smooth(method = "lm",col = "blue",linetype = 2) +
+  labs(title="Automobile Data", x="Weight", y="Miles Per Gallon") +
+  theme(text = element_text(family = enfont),
+        plot.title = element_text(hjust = 0.5)) 
+```
+
+```{r}
+mtcars %>% map(n_distinct) %>% unlist()
+mtcars %>% DT::datatable()
+```
+
+```{r}
+mtcars1 <- mtcars %>% 
+  mutate(am = factor(am,levels = c(0,1),labels = c("Automatic", "Manual")),
+         vs = factor(vs,levels = c(0,1),labels = c("V-Engine", "Straight Engine")),
+         cyl = factor(cyl))
+mtcars1 %>% datatable()
+mtcars1 %>% glimpse()
+```
+
+```{r}
+mtcars1 %>% 
+  ggplot(aes(hp,mpg)) +
+  geom_point(aes(shape = cyl,col = cyl)) +
+  geom_smooth(aes(col = cyl),method = "lm") +
+  labs(title="Automobile Data by Engine Type",
+       x="Horsepower",
+       y="Miles Per Gallon") +
+  theme(text = element_text(family = enfont),
+        plot.title = element_text(hjust = 0.5)) 
+```
+
+```{r}
+mtcars1 %>% 
+  ggplot(aes(hp,mpg)) +
+  geom_point(aes(shape = cyl,col = cyl)) +
+  geom_smooth(method = "lm") +
+  facet_grid(am~vs) +
+  labs(title="Automobile Data by Engine Type",
+       x="Horsepower",
+       y="Miles Per Gallon") +
+  theme(text = element_text(family = enfont),
+        plot.title = element_text(hjust = 0.5)) 
+```
+
+# 用几何函数指定图的类型
+
+```{r}
+data(singer,package = "lattice")
+singer %>% 
+  ggplot() +
+  geom_histogram(aes(x = height)) +
+  theme(text = element_text(family = enfont),
+        plot.title = element_text(hjust = 0.5))
+```
+
+```{r}
+ggplot(singer, aes(x=voice.part, y=height)) + 
+  geom_boxplot(outlier.colour = "red") +
+  theme(text = element_text(family = enfont),
+        plot.title = element_text(hjust = 0.5))
+  
+```
+
+- **color** 对点、线和填充区域的边界进行着色
+- **fill**  对填充区域着色，如条形和密度区域
+- **alpha** 颜色的透明度，从0（完全透明）到1（不透明）。
+- **linetype** 图案的线条（ 1=实线， 2=虚线， 3=点， 4=点破折号， 5=长破折号， 6=双破折号）
+- **size** 点的尺寸和线的宽度
+- **shape** 点的形状（和pch一样，0=开放的方形，1=开放的圆形，2=开放的三角形，等等）
+- **position** 绘制诸如柱状图和点等对象的位置。对柱状图来说， "dodge"将分组条形图并排， "stacked"堆叠分组条形图， "fill"垂直地堆叠分组条形图并规范其高度相等。对于点来说， - "jitter"减少点重叠
+- **binwidth** 直方图的宽度
+- **notch** 表示方块图是否应为缺口（ TRUE/FALSE）
+- **sides** 地毯图的安置（ "b"=底部，"l"=左部，"t"=顶部，"r"=右部，"bl"=左下部，等等）
+- **width** 箱线图的宽度
+
+我们可以使用Salaries数据集来验证这些选项的使用
+
+```{r}
+Salaries %>% 
+  ggplot(aes(rank,salary)) +
+  geom_boxplot(fill = "steelblue",color="red",notch=TRUE,outlier.color = "orange",
+               outlier.alpha = 0.5) +
+  geom_point(position="jitter", color="blue", alpha = 0.5) +
+  geom_rug(side="l", color="black") +
+  theme(text = element_text(family = enfont),
+        plot.title = element_text(hjust = 0.5))
+```
+
+当几何函数组合形成新类型的图时，ggplot2包的真正力量就会得到展现。让我们回到singer数据集中
+
+```{r}
+data(singer, package = "lattice")
+ggplot(singer, aes(x = voice.part, y = height)) +
+  geom_violin(fill = "lightblue") +
+  geom_boxplot(fill="lightgreen", width=.2) +
+  theme(text = element_text(family = enfont),
+        plot.title = element_text(hjust = 0.5))
+```
+
+该代码把**箱线图**和**小提琴图**结合在一起形成一个新的图形,箱线图展示了在singer数据框中每个音部的**25%、 50%和75%分位数得分**和任意的异常值。对于每个声部身高范围上的得分分布，小提琴图展示了更多视觉线索。
+
+# 分组
+
+```{r}
+library(ggplot2)
+ggplot(data = Salaries, aes(x = salary, fill = rank)) +
+  geom_density(alpha = 0.5) +
+  theme(text = element_text(family = enfont),
+        plot.title = element_text(hjust = 0.5)) 
+```
+
+接下来，我们通过性别和学术等级分组，绘制获得博士学位年数与薪水的关系
+
+```{r}
+Salaries %>% 
+  ggplot(aes(yrs.since.phd,salary,col = rank,shape = sex)) +
+  geom_point() +
+  theme(text = element_text(family = enfont),
+        plot.title = element_text(hjust = 0.5))
+```
+
+用一个分组的条形图按学术等级和性别来可视化教授的人数
+
+```{r}
+Salaries %>% 
+  ggplot(aes(x = rank)) +
+  geom_bar(aes(fill = sex),position = "dodge") +
+  labs(title='position = "dodge"') +
+  theme(text = element_text(family = enfont),
+        plot.title = element_text(hjust = 0.5))
+```
+
+```{r}
+ggplot(Salaries, aes(x=rank, fill=sex))+ geom_bar() +
+  theme(text = element_text(family = enfont),
+        plot.title = element_text(hjust = 0.5))
+
+ggplot(Salaries, aes(x=rank)) + geom_bar(fill="red") +
+  theme(text = element_text(family = enfont),
+        plot.title = element_text(hjust = 0.5))
+
+ggplot(Salaries, aes(x=rank, fill="red")) + geom_bar() +
+  theme(text = element_text(family = enfont),
+        plot.title = element_text(hjust = 0.5))
+```
+
+在第一个例子中，sex变量通过条形图中的fill来展示。在第二个例子中，每个条形图都用红色来填充。在第三个例子中， ggplot2假定"red"是变量的名字，并且你得到一个意想不到（不希望）的结果。通常来说，**变量应该设在aes()函数内，分配常数应该在aes()函数外**。
+
+# 分面
+
+回头看一下合唱的例子，我们可以使用下面的代码创建一个分面图
+
+```{r}
+singer %>% 
+  ggplot(aes(x = height)) +
+  geom_histogram() +
+  facet_wrap(~voice.part,nrow = 4,labeller = "label_both") +
+  theme(text = element_text(family = enfont),
+        plot.title = element_text(hjust = 0.5))
+```
+
+创建一个包含分面和分组的图
+
+```{r}
+Salaries %>% 
+  ggplot(aes(x = yrs.since.phd,y = salary,
+             col = rank,shape = rank),size = 2.5) +
+  geom_point() +
+  facet_grid(.~sex,labeller = "label_both") +
+  theme(text = element_text(family = enfont),
+        plot.title = element_text(hjust = 0.5))
+```
+
+展示singer数据集中每个声部成员的身高分布，并利用核密度图水平排列。给每个声部分配不同的颜色。
+
+```{r}
+singer %>% 
+  ggplot(aes(x = height,fill = voice.part)) +
+  geom_density() +
+  facet_grid(voice.part~.) +
+  theme(text = element_text(family = enfont),
+        plot.title = element_text(hjust = 0.5))
+```
+
+# 添加光滑曲线
+
+```{r}
+Salaries %>% 
+  ggplot(aes(x = yrs.since.phd,y = salary)) +
+  geom_point() +
+  geom_smooth() +
+  theme(text = element_text(family = enfont),
+        plot.title = element_text(hjust = 0.5))
+```
+
+```{r}
+Salaries %>% 
+  ggplot(aes(x = yrs.since.phd,y = salary)) +
+  geom_point(aes(col = sex,shape = sex)) +
+  geom_smooth(aes(linetype = sex,col = sex),method=lm, formula=y~poly(x,2),
+              se = FALSE) +
+  theme(text = element_text(family = enfont),
+        plot.title = element_text(hjust = 0.5))
+```
+
+对男性来说，曲线从0增加至约30年然后下降。对女性来说，拟合曲线从0到40年一直呈上升
+趋势。在数据集中没有女性获得博士学位超过40年。对于数据集中的大部分范围，男性能拿到更高的薪水。
+
+# 修改ggplot2图形的外观
+
+```{r}
+Salaries %>%
+  ggplot(aes(x = rank, y = salary, fill = sex)) +
+  geom_boxplot() +
+  scale_y_continuous(breaks = seq(50000, 200000, 50000),
+                     labels = str_c("$", seq(50, 200, 50), "K")) +
+  scale_x_discrete(
+    breaks = c("AsstProf", "AssocProf", "Prof"),
+    labels = c(
+      "Assistant\nProfessor",
+      "Associate\nProfessor",
+      "Full\nProfessor"
+    )
+  ) + 
+  labs(title="Faculty Salary by Rank and Sex", x="", y="") +
+  theme(text = element_text(family = enfont),
+        plot.title = element_text(hjust = 0.5)) 
+```
+
+很明显，平均收入随着学术排名的上升而上升，在每个学术等级中男性的薪资水平高于女性。
+
+```{r}
+Salaries %>%
+  ggplot(aes(x = rank, y = salary, fill = sex)) +
+  geom_boxplot() +
+  scale_y_continuous(breaks = seq(50000, 200000, 50000),
+                     labels = str_c("$", seq(50, 200, 50), "K")) +
+  scale_x_discrete(
+    breaks = c("AsstProf", "AssocProf", "Prof"),
+    labels = c(
+      "Assistant\nProfessor",
+      "Associate\nProfessor",
+      "Full\nProfessor"
+    )
+  ) + 
+  labs(title="Faculty Salary by Rank and Sex", x="", y="",
+       fill = "Gender") +
+  theme(text = element_text(family = enfont),
+        plot.title = element_text(hjust = 0.5)) +
+  theme(legend.position = c(.1,.9))
+```
+
+```{r}
+ggplot(mtcars, aes(x = wt, y = mpg, size = disp)) +
+  geom_point(shape = 22,
+             color = "black",
+             fill = "cornsilk") +
+  labs(x = "Weight",
+       y = "Miles Per Gallon",
+       title = "Bubble Chart",
+       size = "Engine\nDisplacement") +
+  theme(text = element_text(family = enfont),
+        plot.title = element_text(hjust = 0.5)) 
+```
+
+使用`scale_color_manual()函数`来设定三个学术等级的点的颜色
+
+```{r}
+ggplot(data = Salaries, aes(x = yrs.since.phd, y = salary, color = rank)) +
+  scale_color_manual(values = c("orange", "olivedrab", "navy")) +
+  geom_point(size = 2) +
+  theme(text = element_text(family = enfont),
+        plot.title = element_text(hjust = 0.5)) 
+```
+
+```{r}
+library(ggplot2)
+mytheme <- theme(
+  plot.title = element_text(face = "bold.italic",
+                            size = "14", 
+                            color = "brown"),
+  axis.title = element_text(face = "bold.italic",
+                            size = 10,
+                            color = "brown"),
+  axis.text = element_text(face = "bold", 
+                           size = 9,
+                           color = "darkblue"),
+  panel.background = element_rect(fill = "white",
+                                  color = "darkblue"),
+  panel.grid.major.y = element_line(color = "grey",
+                                    linetype = 1),
+  panel.grid.minor.y = element_line(color = "grey",
+                                    linetype = 2),
+  panel.grid.minor.x = element_blank(),
+  legend.position = "top"
+)
+ggplot(Salaries, aes(x = rank, y = salary, fill = sex)) +
+  geom_boxplot() +
+  labs(title = "Salary by Rank and Sex", x = "Rank", y = "Salary") +
+  mytheme
+```
+
+主题mytheme指定了**图的标题**应该为粗斜体的棕色14号字。**轴的标题**为粗斜体的棕色10号字。**坐标轴标签**应为加粗的深蓝色9号字。**画图区域**有白色的填充和深蓝色的边框。**主水平网格**应该是灰色的实线，**次水平网格**应该是灰色的虚线；**垂直网格**不输出；**图例**展示在图的顶部。`theme()函数`给了我们把控最后图形的控制权。可以参考help(theme)来查看更多关于选项的信息。
+
+# 组合图形
+
+```{r}
+library(patchwork)
+p1 <- ggplot(data=Salaries, 
+             aes(x=rank)) + 
+  geom_bar() +
+  theme(text = element_text(family = enfont),
+        plot.title = element_text(hjust = 0.5)) 
+
+p2 <- ggplot(data=Salaries, 
+             aes(x=sex)) + geom_bar() +
+  theme(text = element_text(family = enfont),
+        plot.title = element_text(hjust = 0.5)) 
+
+p3 <- ggplot(data=Salaries, 
+             aes(x=yrs.since.phd, y=salary)) + geom_point() +
+  theme(text = element_text(family = enfont),
+        plot.title = element_text(hjust = 0.5)) 
+
+p1 + p2 + p3
+```
+
+```{r}
+p1 + p2 - p3
+```
+
+```{r}
+(p1 + p2)/p3
+```
+
+# 保存图形
+
+```{r}
+myplot <- ggplot(data=mtcars, aes(x=mpg)) + geom_histogram()
+# ggsave(file="mygraph.png", plot=myplot, width=5, height=4)
+```
+
+在当前路径下将myplot保存为名为mygraph.png的**5英寸×4英寸**（12.7厘米×10.2厘米） PNG格式的图片。我们可以通过设定文件扩展名为ps、tex、jpeg、pdf、tiff、png、bmp、svg或wmf来保存为不同的格式。wmf文件仅限在装有Windows系统的计算机中保存。如果忽略`plot=`选项，最近创建的图形会被保存。
+
+# 小结
+
+本章回顾了ggplot2包，它提供基于**图形综合语法**的先进图形化方法。这个包旨在在R提供
+的基础画图之外提供一个完整而全面的替代方案。它提供的数据可视化方法很有吸引力和意义，用其他方式很难做到。
