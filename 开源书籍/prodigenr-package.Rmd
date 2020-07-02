@@ -1,0 +1,171 @@
+--- 
+title: "Introduction to prodigenr"
+author:
+- affiliation: Dongbei University of Finance & Economics
+  name: Studennt. LI Junjie
+date: '`r Sys.Date()`'
+output:
+  bookdown::html_document2:
+    # code_folding: hide
+    highlight: pygments
+    # highlight: zenburn
+    # highlight: haddock
+    # theme: darkly
+    theme: journal
+    df_print: paged	
+    number_sections: true
+    keep_md: no
+    keep_tex: no
+    toc: yes
+    toc_depth: 5
+    toc_float:
+      collapsed: no
+      smooth_scroll: yes
+    # css: styles.css
+# bibliography: [book.bib, packages.bib]
+# biblio-style: apalike
+link-citations: yes
+sansfont: Times New Roman
+always_allow_html: yes
+urlcolor: "red"
+description: "This is a minimal example of using the bookdown package to write a book. The output format for this example is bookdown::gitbook."
+---
+
+# 加载经常用的R包
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      fig.show = "hold",
+                      fig.align = "center",
+                      tidy = FALSE,
+                      class.source = "bg-warning")
+```
+
+```{js, echo=FALSE}
+$('.title').css('color', 'red')
+$('.title').css('font-family', 'Times New Roman')
+```
+
+```{css, echo=FALSE}
+* {
+    # font-size: 17px !important;
+    font-family: "Times New Roman" !important;
+    # color: rgb(199 237	204)
+}
+::selection {
+   # background: rgb(135 206 255);
+}
+```
+
+```{r,warning=FALSE,message=FALSE}
+# install.packages("pacman")
+library(pacman)
+# 读数据
+p_load(readxl,writexl,data.table,openxlsx,haven,rvest)
+```
+
+```{r,warning=FALSE,message=FALSE}
+# 数据探索
+p_load(tidyverse,DT,skimr,DataExplorer,explore,vtable,stringr,kableExtra,lubridate)
+```
+
+```{r,eval=FALSE,warning=FALSE,message=FALSE}
+# 模型
+p_load(grf,glmnet,caret,tidytext,fpp2,forecast,car,tseries,hdm,tidymodels,broom)
+```
+
+```{r,eval=FALSE,warning=FALSE,message=FALSE}
+# 可视化
+p_load(patchwork,ggrepel,ggcorrplot,gghighlight,ggthemes,shiny)
+```
+
+```{r,eval=TRUE,warning=FALSE,message=FALSE}
+# 其它常用包
+p_load(magrittr,listviewer,devtools,here,janitor,reticulate,jsonlite)
+```
+
+# Setting up a project with prodigenr
+
+你是一个经常为会议撰写摘要或向期刊投稿的学术研究者吗?
+你是否经常要制作幻灯片或海报?
+您通常的工作流程是复制以前的项目并开始用旧文本替换新文本吗?
+这个包装是为你而设计的!
+
+`prodigenr`，或**项目目录生成器**，简化了创建这些新项目的过程，可以帮助您的工作流程更具可重复性。标准的文件和文件夹是为特定的项目创建的(例如文摘或手稿)，以及一个试图简单易用的工作流，同时使用已经开发和维护良好的基础设施和流程(例如`RStudio`和`devtools`)。
+
+```{r}
+p_load(prodigenr)
+```
+
+通过RStudio的界面建立项目
+
+打开新创建的**R项目文件**（.Rproj）。每个项目和每个文件夹中都包含一个`README.md`文件，该文件详细说明了每个文件夹的作用以及创建的某些文件。 要添加主要文档类型（例如海报，手稿），请在项目的控制台中运行任何`create_*（）`命令（例如`create_poster（）`）。
+
+```{r,eval=FALSE}
+/tmp/Rtmp4QZTUE/HeartDiseaseExercise
+├── DESCRIPTION
+├── HeartDiseaseExercise.Rproj
+├── R
+│   ├── README.md
+│   ├── fetch_data.R
+│   └── setup.R
+├── README.md
+├── TODO.md
+├── data
+│   └── README.md
+└── doc
+    └── README.md
+```
+
+```{r,eval=FALSE}
+# you need to run these in the project's console
+create_abstract()
+create_poster()
+```
+
+现在，这会将另外两个文件添加到doc /文件夹中。 生成的文件结构应如下所示：
+
+```{r,eval=FALSE}
+/tmp/Rtmp4QZTUE/HeartDiseaseExercise
+├── DESCRIPTION
+├── HeartDiseaseExercise.Rproj
+├── R
+│   ├── README.md
+│   ├── fetch_data.R
+│   └── setup.R
+├── README.md
+├── TODO.md
+├── data
+│   └── README.md
+└── doc
+    ├── README.md
+    ├── abstract.Rmd
+    └── poster.Rmd
+```
+
+当前，只有四个模板文件可以使用：
+
+```{r}
+prodigenr::template_list
+```
+
+## Workflow when using projects created from prodigenr
+
+在创建的项目的`README.md`中也概述了一个典型的工作流程，即：
+
+- 与任何研究项目一样，在摘要，海报，幻灯片中写下您的分析结果的相关书面说明，或doc /文件夹中的.Rmd（R Markdown）文件。 
+- 您多次使用或相当复杂的任何代码段，都将其转换为函数。将此新函数放入**R/目录**中的文件（或functions.R文件）中。使用`devtools::load_all（）`（Ctrl-Shift-L）加载该函数。
+- 在**R/fetch_data.R**中获取并整理数据。您可以使用`devtools::load_all（）函数`访问数据。
+- 在**doc/文件夹中**创建更多Rmd文件，以添加将补充主文档或具有探索性的分析。
+- 将.Rmd文件编织到doc/中。现在，您可以使用最终的摘要，海报，幻灯片或手稿进行研究。
+
+## Related packages or projects
+
+有几种处理项目的方法。至少有两个软件包具有与**`prodigenr`**相似的目标，并且通过使用R软件包结构具有相似的目标：
+
+- **ProjectTemplate**有充分的文档证明，并且仍在积极开发中。唯一的缺点是使用起来非常复杂，并且在创建的项目工作流程中也很复杂。
+-  **makeProject**非常简单，并简化了创建和使用的过程。缺点是自2012年以来未进行过更新。
+- 通过**devtools**（或usethis）使用R包结构。
+- **rrtools**与**prodigenr**非常相似，只不过它**只关注手稿**。经过深思熟虑，文档写得很好。
+- **workflowr**是用于创建在线数据科学内容的工作流。

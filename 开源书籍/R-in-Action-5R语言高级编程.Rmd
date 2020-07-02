@@ -31,7 +31,7 @@ always_allow_html: yes
 urlcolor: "red"
 description: "This is a minimal example of using the bookdown package to write a book. The output format for this example is bookdown::gitbook."
 editor_options: 
-  chunk_output_type: inline
+  chunk_output_type: console
 ---
 
 # 加载经常用的R包
@@ -89,3 +89,709 @@ p_load(magrittr,listviewer,devtools,here,janitor,reticulate,jsonlite)
 p_load(car)
 data("Salaries")
 ```
+
+# R语言回顾
+
+Everything is an object!
+
+每一个对象都有**属性**：元信息描述对象的特性。属性能通过`attributes()函数`罗列出来并能通过`attr()函数`进行设置。一个关键的属性是对象的类。R函数使用关于对象类的信息来确定如何处理对象。可以使用`class()函数`来读取和设置对象的类。
+
+## 数据类型
+
+```{r}
+iris %>% attributes()  # 列名 行名 数据框
+library(repurrrsive)
+sw_people[[1]] %>% attributes()
+```
+
+```{r}
+passed <- c(TRUE, TRUE, FALSE, TRUE)
+ages <- c(15, 18, 25, 14, 19)
+cmplxNums <- c(1+2i, 0+1i, 39+3i, 12+2i)
+names <- c("Bob", "Ted", "Carol", "Alice")
+```
+
+```{r}
+mt <- matrix(1:20,nrow = 5,byrow = TRUE)
+mt
+mt %>% attributes()
+```
+
+```{r}
+arr <- array(1:24,dim = c(2,3,4))
+arr
+arr %>% attributes()
+```
+
+```{r}
+x <- 1:24
+x %>% class()
+x %>% attributes()
+attr(x,"dim") <- c(2,3,4)  # 加上一个属性
+x
+```
+
+```{r}
+x %>% class()
+x %>% attributes()
+attr(x,"How") <- "Good"
+x %>% attributes()
+```
+
+有很多特定的函数可以用来设置**属性**，包括`dim()`、`dimnames()`、`names()`、`row.names()`、`class()`和`tsp()`。最后一个函数用来创建时间序列对象。这些特殊的函数对设置的取值范围有一定的限制。除非创建自定义属性，使用这些特殊函数在大部分情况下都是个好主意。它们的限制和产生的错误信息使得编码时出现错误的可能性变少，并且使错误更明显。
+
+```{r}
+iris %>% attributes()  # names row.names class
+unclass(iris)
+```
+
+```{r}
+set.seed(123)
+fit <- kmeans(iris %>% select(-Species),3)
+```
+
+对象fit中包含的信息是什么？`kmeans()函数`的帮助页面表明该函数返回一个包含七种成分的
+列表。 `str()函数`展示了对象的结构， `unclass()函数`用来直接检查对象的内容。 `length()函数`展示对象包含多少成分，`names()函数`提供了这些成分的名字。你可以使用`attributes()函数`来检查对象的属性。下面探讨通过kmeans()得到的对象内容：
+
+```{r}
+fit %>% str()
+fit %>% unclass()
+fit %>% length()
+fit %>% names()
+fit %>% attributes()
+```
+
+```{r}
+fit
+fit %>% unclass()
+```
+
+```{r}
+map(fit,class)
+```
+
+提取元素可以使用**object[index]**，其中object是向量，index是一个整数向量。如果原子向量中的元素已经被命名，index也可以是这些名字中的字符串向量。需要注意的是，R中的
+索引从1开始，而不是像其他语言一样从0开始。
+
+```{r}
+x <- 1:10
+x[1]
+x[1:5]
+```
+
+```{r}
+x <- c("A" = 10,"B" = 20,"C" = 30)
+print(x)
+x[c(1,2)]
+x[c("A","B")]
+```
+
+```{r,error=TRUE}
+fit[2:7]  # 可以多个元素
+fit[[2:7]]
+fit[[2]]
+fit[[2]] %>% class()
+fit$centers  # 等价于上边fit[[2]]
+```
+
+```{r}
+iris[1] %>% head(10)
+iris[[1]]
+iris[1:2] %>% head()
+```
+
+提取了fit（均值矩阵）的第二个成分并且返回第一行（第一类中四个变量的均值）
+
+```{r}
+fit[[2]][1,]
+```
+
+```{r}
+set.seed(1234)
+fit <- kmeans(iris[1:4], 3)
+means <- fit$centers
+means %>% as_tibble() %>% 
+  mutate(id = 1:3) %>% 
+  relocate(id) -> means
+dfm <- tidyr::pivot_longer(means,-1)
+dfm %<>% rename(Cluster = id,
+               Measurement = name,
+               Centimeters = value) %>% 
+  mutate(Cluster = factor(Cluster))
+
+dfm
+```
+
+```{r}
+dfm %>% 
+  ggplot(aes(x = Measurement,y = Centimeters,group = Cluster,
+             shape=Cluster,linetype = Cluster,col = Cluster)) +
+  geom_line() +
+  geom_point(size = 3) +
+  ggtitle("Profiles for Iris Clusters") +
+  theme(plot.title = element_text(family = enfont,hjust = 0.5),
+        text = element_text(family = enfont))
+```
+
+出现这种类型的图形是可能的，因为所有的变量作图使用相同的测量单位（厘米）。如果聚
+类分析涉及不同尺度的变量，你需要在绘图前标准化数据，并标记y轴为标准化得分。
+
+## 控制结构
+
+当R解释器运行代码时，它按顺序逐行读取。如果一行不是一个完整的语句，它会读取附加
+行直到可以构造一个完全的语句。
+
+for循环
+
+```{r}
+for(i in 1:5){
+  print(1:i)
+}
+
+for(i in 5:1){
+  print(1:i)
+}
+```
+
+```{r}
+walk(1:5,function(i){
+  print(1:i)
+})
+
+walk(1:5,~print(.x:1))
+```
+
+if语句
+
+```md
+if(condition){
+  statements
+} else {
+  statements
+}
+```
+
+```{r}
+x <- 10
+x
+if(x > 5){
+  print("X > 5")
+} else {
+  print("X < 5")
+}
+```
+
+ifelse函数
+
+```{r}
+pvalues <- c(.0867, .0018, .0054, .1572, .0183, .5386)
+results <- ifelse(pvalues <.05, "Significant", "Not Significant")
+results
+```
+
+case_when函数
+
+```{r}
+x <- 1:50
+case_when(x %% 35 == 0 ~ "fizz buzz",
+          x %% 5 == 0 ~ "fizz",
+          x %% 7 == 0 ~ "buzz",
+          TRUE ~ as.character(x))
+```
+
+```{r}
+case_when(
+  TRUE ~ as.character(x),
+  x %%  5 == 0 ~ "fizz",
+  x %%  7 == 0 ~ "buzz",
+  x %% 35 == 0 ~ "fizz buzz"
+)  # the arguments are evaluated in order
+``` 
+
+```{r}
+# If none of the cases match, NA is used:
+case_when(
+  x %%  5 == 0 ~ "fizz",
+  x %%  7 == 0 ~ "buzz",
+  x %% 35 == 0 ~ "fizz buzz"
+)
+```
+
+```{r}
+x[2:4] <- NA_real_
+case_when(
+  x %% 35 == 0 ~ "fizz buzz",
+  x %% 5 == 0 ~ "fizz",
+  x %% 7 == 0 ~ "buzz",
+  is.na(x) ~ "nope",
+  TRUE ~ as.character(x)
+)
+```
+
+```{r}
+case_when(
+  x %% 35 == 0 ~ NA_character_,
+  x %% 5 == 0 ~ "fizz",
+  x %% 7 == 0 ~ "buzz",
+  TRUE ~ as.character(x)
+)
+```
+
+```{r}
+case_when(
+  x %% 35 == 0 ~ 35,
+  x %% 5 == 0 ~ 5,
+  x %% 7 == 0 ~ 7,
+  TRUE ~ NA_real_
+)
+y <- seq(-2, 2, by = .5)
+case_when(
+  y >= 0 ~ sqrt(y),
+  TRUE   ~ y
+)
+```
+
+```{r,error=TRUE}
+case_when(
+  x %% 35 == 0 ~ 35,
+  x %% 5 == 0 ~ 5,
+  x %% 7 == 0 ~ 7,
+  TRUE ~ NA
+)
+```
+
+```{r}
+starwars %>% 
+  select(name:mass,gender,species) %>% 
+  mutate(type = case_when(
+    height > 200 | mass > 200 ~ "large",
+    species == "Droid" ~ "robot",
+    TRUE ~ "other"
+  ))
+```
+
+有一些其他的控制结构，包括`while()`、`repeat()`和`switch()`，但是这里介绍的是最常用的。有了数据结构和控制结构，我们就可以讨论创建函数了
+
+## 创建函数
+
+```{r}
+f <- function(x, y, z = 1) {
+  result <- x + (2 * y) + (3 * z)
+  return(result)
+}
+f(2,3,4)
+f(x = 2,y = 3,z = 4)
+f(z = 4,x = 2,y = 3)
+```
+
+参数是可选的，但即使没有值被传递也必须使用圆括号。`return()函数`返回函数产生的对象。它也是可选的；如果缺失，函数中最后一条语句的结果也会被返回。
+
+```{r}
+# 使用args()函数来观测参数的名字和默认值：
+args(f)
+```
+
+`args()`被设计用于交互式观测。如果你需要以编程方式获取参数名称和默认值，可以使用`formals()函数`。它返回含有必要信息的列表
+
+```{r}
+formals(f)
+```
+
+参数是**按值传递**的，而**不是按地址传递**。请看下面这个函数语句：
+
+```{r}
+result <- lm(height ~ weight, data=women)
+result
+```
+
+**women数据集**不是直接得到的。需要形成一个副本然后传递给函数。如果women数据集很大的话，内存（RAM）可能被迅速用完。这可能成为处理大数据问题时的难题能需要使用特殊的技术。
+
+R中对象的范围（名称如何产生内容）是一个复杂的话题。在典型情况下，有如下几点:
+
+- 在函数之外创建的对象是全局的（也适用于函数内部）。在函数之内创建的对象是局部的（仅仅适用于函数内部）。
+- 局部对象在函数执行后被丢弃。只有那些通过`return()函数`（或使用`算子<<-`分配）传回的对象在函数执行之后可以继续使用。
+- 全局对象在函数之内可被访问（可读）但是不会改变（除非使用`<<-算子`）。
+- 对象可以通过参数传递到函数中，但是不会被函数改变。传递的是**对象的副本**而不是变量本身
+
+```{r}
+x <- 2
+y <- 3
+z <- 4
+f <- function(w) {
+    z <- 2
+    x <- w * y * z
+    return(x)
+}
+# formatR::tidy_source()
+f(x) # 2 * 3 * 2
+f(y) # 3 * 3 * 2
+x
+y
+z   # 对象通过参数传递到函数，但是不会改变变量本身，优先使用局部函数，局部函数没有该变量，再全局环境搜索，若有则使用。
+```
+
+在这个例子中，x的一个副本被传递到函数f()中，但是初始的x不变。y的值通过环境得到。尽管**z存在于环境中**，但是*在函数中设置的值被使用并不改变在环境中的值*。
+
+# 环境
+
+```{r}
+makeFunction <- function(k) {
+  f <- function(x) {
+    print(x + k)
+  }
+}
+g <- makeFunction(10)  # 局部环境有k = 10 
+g(5)  # 10 + 5
+k <- 10 
+g(6)  # 10 + 6
+```
+
+```{r}
+environment(g) %>% ls
+environment(g)$k
+environment(g)$f
+```
+
+一般情况下，*对象的值是从本地环境中获得的*。如果未在局部环境中找到对象，R会在**父环境**中搜索，然后是**父环境的父环境**，直到对象被发现。如果R搜索到空环境仍未搜索到对象，它会抛出一个错误。我们把它称为**词法域（lexical scoping）**
+
+```{r}
+ff <- function(x){
+  x + k
+}
+ff(10)   # k从全局环境找到
+```
+
+```{r}
+ff <- function(x){
+  k <- 3
+  x + k
+}
+ff(10)
+```
+
+# 面向对象的编程
+
+R是一个基于使用泛**型函数**的面向对象的编程语言。每个对象有一个类属性，这个类属性决定当对象的副本传递到类似于print()、plot()和summary()这些泛型函数时运行什么代码。
+R有两个分离的面向对象编程的模型。**S3模型**相对更老、更简单、结构更少。**S4模型**更新且更复杂。S3方法容易使用并且在R中有最多的应用。我们将主要集中讨论**S3模型**。本节最后将简单探讨S3模型的局限性和**S4模型**如何试图解决这些问题。
+
+## 泛型函数
+
+```{r}
+women %>% summary()
+women %>% 
+  lm(weight ~ height,data = .) %>% 
+  summary()
+```
+
+```{r}
+summary
+class(women)
+```
+
+为了列出可获得的S3泛型函数，可以使用methods()函数：
+
+```{r}
+methods(summary)
+```
+
+返回的函数个数取决于机器上安装的包的个数。在我的电脑上，独立的`summary()函数`已经定义
+了93类！
+
+你可以使用前面例子中用到的函数，通过**去掉括号**（summary.data.frame、 summary.lm
+和summary.default）来查看这些函数的代码。不可见的函数（*在方法列表中加星号的函数*）
+不能通过这种方式查看代码。在这些情况下，可以使用`getAnywhere()函数`来查看代码。要看
+到`summary.ecdf()`的代码，输入`getAnywhere(summary.ecdf)`就可以了。 查看现有的代码
+是你为自己的函数获取灵感的一种优秀方式。
+
+```{r}
+getAnywhere(summary.lm)
+getAnywhere(summry.ecdf)
+```
+
+你或许已经看到了诸如numeric、matrix、data.frame、array、lm、glm和table的类，但是对象的类可以是任意的字符串。另外，泛型函数不一定是print()、plot()和summary()。任意的函数都可以是泛型的。
+
+一个任意的泛型函数的例子:
+
+```{r}
+mymethod <- function(x,...){UseMethod("mymethod")}
+mymethod.a <- function(x){print("Using A")}
+mymethod.b <- function(y){print("Using B")}
+mymethod.default <- function(z){print("Using default")}
+
+x <- 1:5
+y <- 6:10
+z <- 11:15
+class(x) <- "a"
+class(y) <- "b"
+
+mymethod(x)
+mymethod(y)
+mymethod(z)
+
+class(z) <- c("a","b")
+mymethod(z)
+
+class(z) <- c("a","a","b")
+mymethod(z)
+```
+
+## S3 模型的限制
+
+```{r,error=TRUE}
+class(women) <- "lm"
+summary(women)
+```
+
+```{r}
+class(women) <- "list"
+summary(women)
+```
+
+S4面向对象编程的模型更加正式、严格，旨在克服由S3方法的结构化程度较低引起的困难。在S4方法中，类被定义为具有包含特定类型信息（也就是输入的变量）的槽的抽象对象。
+
+# 编写有效的代码
+
+在程序员中间流传着一句话：*“优秀的程序员是花一个小时来调试代码而使得它的运算速度提高一秒的人。”* R是一种鲜活的语言，大多数用户不用担心写不出高效的代码。加快代码运行速
+度最简单的方法就是**加强你的硬件**（RAM、处理器速度等）。作为一般规则，让代码易于理解、
+易于维护比优化它的速度更重要。但是当你使用大型数据集或处理高度重复的任务时，速度就成
+为一个问题了。
+
+速度 可维护 易于理解
+
+几种编码技术可以使你的程序更高效。
+- 程序只读取需要的数据。
+- 尽可能使用矢量化替代循环。
+- 创建大小正确的对象，而不是反复调整。
+- 使用并行来处理重复、独立的任务。
+
+## 有效的数据输入
+
+使用`read.table()函数`从含有分隔符的文本文件中读取数据的时候，你可以通过指定所需的变量和它们的类型实现显著的速度提升。这可以通过包含colClasses参数的函数来实现。例如，假设你想在用逗号分隔的、每行10个变量的文件中获得3个数值变量和2个字符变量。数值变量的位置是1、 2和5，字符变量的位置是3和7。在这种情况下，代码：
+
+```md
+my.data.frame <- read.table(mytextfile, header=TRUE, sep=',',
+                            colClasses=c("numeric", "numeric", "character",
+                            NULL, "numeric", NULL, "character", NULL,
+                            NULL, NULL))
+```
+
+将比下面的代码运行得更快：
+
+```{r,eval=FALSE}
+my.data.frame <- read.table(mytextfile, header=TRUE, sep=',')
+```
+
+与NULL colClasses值相关的变量会被跳过。如果行和列的值在文本文件中增加，速度提升会变得更加显著。
+
+## 矢量化
+
+```{r}
+1:10 + 1
+1:10 - 1
+for(i in 1:10){
+  print(i- 1)
+}
+```
+
+在有可能的情况下尽量使用**矢量化**，而不是循环。这里的矢量化意味着使用R中的函数，这些函数旨在以高度优化的方法处理向量。初始安装时自带的函数包括 `ifelse()`、 `colsums()`、`rowSums()`和`rowMeans()`。matrixStats包提供了很多进行其他计算的优化函数，包括计数、求和、乘积、集中趋势和分散性、分位数、等级和分级的措施。`dplyr`、 `tidyr`和`data.table`等包也提供了高度优化的函数。
+
+考虑一个1000000行10列的矩阵。让我们使用循环并且再次使用`colSums()函数`来计算列的和。首先，创建矩阵：
+
+```{r}
+p_load(tictoc)
+set.seed(1234)
+mymatrix <- matrix(rnorm(10000000),ncol = 10)
+col_sum <- function(x) {
+  sums <- numeric(ncol(x))
+  for (i in 1:ncol(x)) {
+    for (j in 1:nrow(x)) {
+      sums[i] <- sums[i] + x[j,i]
+    }
+  }
+}
+
+```
+
+```{r}
+tic()
+colSums(mymatrix)
+toc()
+```
+
+```{r}
+tic()
+col_sum(mymatrix)
+toc()
+```
+
+```{r}
+set.seed(10L)
+tic()
+map(1:10000,~rnorm(.x)) -> purrr_map1  # 11.53 sec elapsed
+toc()
+purrr_map1[[2]]
+```
+
+```{r}
+tic()
+furrr::future_map(1:10000,~rnorm(.x),.options = future_options(seed=10L)) -> furrr_map1 # 3.47 sec elapsed
+toc()
+furrr_map2[[2]]
+```
+
+同样的种子结果不一样？
+
+```{r}
+set.seed(10L)
+tic()
+map2(1:10000,1:10000,~.x + .y) -> purrr_map2  # 11.53 sec elapsed
+toc()
+purrr_map1[[2]]
+
+tic()
+furrr::future_map2(1:10000,1:10000,~.x + .y) -> furrr_map2 # 3.47 sec elapsed
+toc()
+furrr_map2[[2]]
+```
+
+```{r}
+all.equal(purrr_map1,furrr_map2)  # 
+```
+
+## 大小正确的对象
+
+与从一个较小的对象开始，然后通过附加值使其增大相比，初始化对象到所需的最终大小再填写值更加高效。比方说，向量x含有100000个数值，你想获得向量y，数值是这些值的平方
+
+```{r}
+set.seed(1234)
+k <- 1000000
+x <- rnorm(k)
+y <- 0
+
+tic()
+for(i in 1:length(x)){
+  y[[i]] <- x[[i]]^2
+}
+toc()
+y %>% head()
+```
+
+y开始是一个单元素矢量，逐渐增长到含有100000个元素的向量，其中的**值是x的平方**。
+
+如果先初始化y为含有100000个元素的向量,这样就可以避免R不断调整对象而耗费相当长的时间
+
+```{r}
+y <- numeric(length = k)
+tic()
+for (i in 1:length(x)) {
+  y[[i]] <- x[[i]]^2
+}
+toc()
+y %>% head()
+```
+
+```{r}
+x^2 %>% head()   # 矢量化
+```
+
+## 并行化
+
+并行化包括分配一个任务，在两个或多个核同时运行组块，并把结果合在一起。这些内核可能是在**同一台计算机**上，也可能是在一个**集群中不同的机器**上。需要重复独立执行数字密集型函数的任务很可能从并行化中受益。这包括许多蒙特卡罗方法（Monte Carlo method），如自助法（bootstrapping）。
+
+并行化的缺点是它可以降低代码的可移植性，也不能保证其他人都和你有一样的硬件配置。
+
+本节描述的**四种高效方法**(有效的数据输入、矢量化、对象d大小合适和并行化)能帮助我们解决每天的编码问题；但是在处理真正的大数据集（例如，在TB级范围内的数据集）时，它们很难帮上忙。
+
+当某个程序无法执行或给出无意义的结果时，提高效率是没有用的。因此下面我们将介绍揭示编程错误的问题。
+
+# 调试
+
+调试是寻找和减少一个程序中错误或缺陷数目的过程。程序在第一次运行时不出错是美好的，独角兽生活在我家附近也是美好的。除了最简单的程序，所有的程序中都会出现错误。确定这些错误的原因并进行修复是一个耗时的过程。在本节中，我们将看到常见的**错误来源**和**帮助我们发现错误的工具**。
+
+## 常见的错误来源
+
+- 对象名称拼写错误，或是对象不存在
+- 函数调用参数时设定错误
+- 对象的内容不是用户期望的结果。尤其是当把NULL或者含有NaN或NA值的对象传递给不
+能处理它们的函数时，错误经常发生。
+
+第三个原因比你想象中更常见，原因在于R处理错误和警告的方法过于简洁
+
+```{r}
+mtcars1 <- mtcars %>% 
+  mutate(Transmission = factor(am,levels = c(1,2),labels = c("Automatic", "Manual")))
+```
+
+```{r,error=TRUE}
+mtcars1
+aov(mpg ~ Transmission, data=mtcars1)
+table(mtcars1$Transmission)
+```
+
+`factor()函数`很愉快地按照你的要求去做了，没有提醒或错误。它把所有的**手动变速器汽车转化为自动变速器汽车**，而把**自动变速器汽车设为缺失**。最后只有一组可用，方差分析因此失败。确认每个输入函数包含预期的数据可以为你节省数小时令人沮丧的检查工作
+
+## 调试工具
+
+尽管检查**对象名**、**函数参数**和**函数输入**可以找到很多错误来源，但有时你还必须深入研究函数内部运作机制和调用函数的函数。
+
+```{r}
+myfunction <- function(x){
+  x <- x
+  x_square <- x^2
+  tibble(x = x,x_square = x_square) %>% return()
+}
+map(1:10,myfunction) %>% bind_rows()
+```
+
+```{r}
+myfunction(c(1:9,"one"))
+debugonce(myfunction)
+```
+
+```{r,eval=FALSE}
+args(mad)
+debug(mad)
+```
+
+## 支持调试的会话选项
+
+使用recover()函数进行样品调试会话
+
+```{r,eval=FALSE}
+f <- function(x, y) {
+  z <- x + y
+  g(z)
+}
+g <- function(x) {
+  z <- round(x)
+  h(z)
+}
+h <- function(x) {
+  set.seed(1234)
+  z <- rnorm(x)
+  print(z)
+}
+options(error=recover)
+```
+
+如果你有调用函数的函数，两个会话选项可以在调试过程中帮上忙。通常情况下，当R遇到错误信息时，它会打印错误信息并退出函数。设置options(error=traceback)之后，一旦错误发生就会打印调用的栈（函数调用导致出错的序列）。这能帮助你看出哪个函数产生了错误。
+
+设置options(error=recover)也会在出现错误时打印调用的栈。除此之外，它还会提示你选择列表中的一个函数，然后在相应的环境中调用browser()函数。输入c会返回列表，输入0则退出到R提示。
+
+使用recover()模式让你探索从函数调用的序列中选择的任何函数的任意对象的内容。通过有选择地观测对象的内容，你可以频繁地确定问题的来源。要返回至R的默认状态，可以设置options(error=NULL)。
+
+## 深入学习
+
+## 小结
+
+在本章中，我们从**程序员的角度**对R语言进行了更深入的研究，详细讲述了**对象**、**数据类型**、
+**函数**、**环境和范围**。你需要了解S3面向对象的编程方法和它的主要局限性。最后，本章给出了编
+写**高效代码**和**调试麻烦程序**的方法。
+
+现在，你已经拥有了创建一个复杂应用程序需要的所有工具。在下一章中，你将会从头创建一个包。R包让你能组织好自己的程序并与他人分享。
+
+
+
+
+
+

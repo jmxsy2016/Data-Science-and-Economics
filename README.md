@@ -113,6 +113,7 @@
   - [基于R语言的科研信息分析与服务](https://bookdown.org/wangminjie/R4IS/)
   - [现代科研指北](https://bookdown.org/yufree/sciguide/)(在读)
   - [数据可视化](https://rkabacoff.github.io/datavis/)
+  - [A Generalized and Structured Analytical Workflow for Reproducible and Openly Scientific Projects](https://rostools.gitlab.io/manifesto/)
 
 ### 程序包(小众而有用)
 
@@ -120,13 +121,12 @@
 - [available](https://cran.r-project.org/web/packages/available/available.pdf):检查包标题是否可用，适当且有趣
 - [similiars](https://github.com/davidsjoberg/similiars):similars的目标是将字符串匹配到另一个向量中最相似的字符串。
 - [aringanthemer](https://pkg.garrickadenbuie.com/xaringanthemer/index.html):给你的xaringan幻灯片添加一些xaringer。Rmd文件没有(很多)CSS。(Good!!!)
-- [here](https://cran.r-project.org/web/packages/here/here.pdf):管理文件路径
 - [pdftools](https://docs.ropensci.org/pdftools/):从pdf文件中提取文本和元数据
-- [stargazer](https://cran.r-project.org/web/packages/stargazer/vignettes/stargazer.pdf) [文档](https://jmxsy2016.github.io/Data-Science-and-Economics/R包学习-计量经济学/stargazer.pdf):将模型结果绘制成表格
 - [kableExtra](https://cran.r-project.org/web/packages/kableExtra/index.html):[构建漂亮的表](https://haozhu233.github.io/kableExtra/)
 - [magick包](https://cran.r-project.org/web/packages/magick/vignettes/intro.html),[网站](https://docs.ropensci.org/magick/articles/intro.html)
+- [magickGUI](https://github.com/ShotaOchi/magickGUI)
 - [printr](https://cran.r-project.org/web/packages/printr/vignettes/printr.html)：打印表格
-- [pmdplyr](https://cran.r-project.org/web/packages/pmdplyr/pmdplyr.pdf):dplyr软件包作为基础，使操作面板数据更加容易
+
 
 ### 数据清洗
 
@@ -137,13 +137,18 @@
 ### 模型分析
 
 - [gmodels](https://cran.r-project.org/web/packages/gmodels/index.html):Various R programming tools for model fitting.
+- [pmdplyr](https://cran.r-project.org/web/packages/pmdplyr/pmdplyr.pdf):dplyr软件包作为基础，使操作面板数据更加容易
+- [stargazer](https://cran.r-project.org/web/packages/stargazer/vignettes/stargazer.pdf) [文档](https://jmxsy2016.github.io/Data-Science-and-Economics/R包学习-计量经济学/stargazer.pdf):将模型结果绘制成表格
 
+### 可重复研究
 
+- [prodigenr](https://github.com/lwjohnst86/prodigenr):具有prodigenr的项目创建: 可重复和开放科学项目的一个组成部分,更好用的project
 
+### 项目管理
 
-
-
-
+- [here](https://cran.r-project.org/web/packages/here/here.pdf):管理文件路径
+- [fs](https://github.com/r-lib/fs) [笔记](https://jmxsy2016.github.io/Data-Science-and-Economics/Data-Science-and-Economics/R包学习-计量经济学/fs-package)
+- [prodigenr](https://github.com/lwjohnst86/prodigenr) [网站](http://prodigenr.lukewjohnston.com/) [笔记](https://jmxsy2016.github.io/Data-Science-and-Economics/Data-Science-and-Economics/R包学习-计量经济学/prodigenr-package)
 
 
 

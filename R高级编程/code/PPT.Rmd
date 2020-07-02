@@ -318,6 +318,10 @@ class: inverse, center, middle
 
 --
 
+- [CRAN Task Views](http://cran.r-project.org/web/views):R在各种学术和研究领域的应用情况
+
+--
+
 - [awesome R](https://github.com/qinwf/awesome-R):分类整理优秀的R包
 
 --

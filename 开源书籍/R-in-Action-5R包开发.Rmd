@@ -1,0 +1,172 @@
+--- 
+title: "R实战第二版笔记-R包开发"
+author:
+- affiliation: Dongbei University of Finance & Economics
+  name: Studennt. LI Junjie
+date: '`r Sys.Date()`'
+output:
+  bookdown::html_document2:
+    # code_folding: hide
+    highlight: pygments
+    # highlight: zenburn
+    # highlight: haddock
+    # theme: darkly
+    theme: journal
+    df_print: paged	
+    number_sections: true
+    keep_md: no
+    keep_tex: no
+    toc: yes
+    toc_depth: 5
+    toc_float:
+      collapsed: no
+      smooth_scroll: yes
+    # css: styles.css
+# bibliography: [book.bib, packages.bib]
+# biblio-style: apalike
+link-citations: yes
+sansfont: Times New Roman
+always_allow_html: yes
+urlcolor: "red"
+description: "This is a minimal example of using the bookdown package to write a book. The output format for this example is bookdown::gitbook."
+editor_options: 
+  chunk_output_type: console
+---
+
+# 加载经常用的R包
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      fig.show = "hold",
+                      fig.align = "center",
+                      tidy = FALSE,
+                      message = FALSE,
+                      class.source = "bg-warning")
+```
+
+```{js, echo=FALSE}
+$('.title').css('color', 'red')
+$('.title').css('font-family', 'Times New Roman')
+```
+
+```{css, echo=FALSE}
+* {
+    # font-size: 17px !important;
+    font-family: "Times New Roman" !important;
+    # color: rgb(199 237	204)
+}
+::selection {
+   # background: rgb(135 206 255);
+}
+```
+
+```{r,warning=FALSE,message=FALSE}
+library(pacman)
+# 读数据
+p_load(readxl,writexl,data.table,openxlsx,haven,rvest)
+```
+
+```{r,warning=FALSE,message=FALSE}
+# 数据探索
+p_load(tidyverse,DT,skimr,DataExplorer,explore,vtable,stringr,kableExtra,lubridate)
+```
+
+```{r,eval=FALSE,warning=FALSE,message=FALSE}
+# 模型
+p_load(grf,glmnet,caret,tidytext,fpp2,forecast,car,tseries,hdm,tidymodels,broom)
+```
+
+```{r,eval=FALSE,warning=FALSE,message=FALSE}
+# 可视化
+p_load(patchwork,ggrepel,ggcorrplot,gghighlight,ggthemes,shiny)
+```
+
+```{r,eval=TRUE,warning=FALSE,message=FALSE}
+# 其它常用包
+p_load(magrittr,listviewer,devtools,here,janitor,reticulate,jsonlite)
+p_load(car)
+data("Salaries")
+```
+
+# 非参分析和 npar 包
+
+```{r}
+library(npar)
+life %>% as_tibble()
+hist(life$hlef,
+     xlab = "Healthy Life Expectancy (years) at Age 65",
+     main = "Distribution of Healthy Life Expectancy for Women",
+     col = "grey",
+     breaks = 10)
+```
+
+不同地区的HLE分数的方差可以用并排点图来可视化
+
+```{r}
+life %>%
+  ggplot(aes(region, hlef)) +
+  geom_point() +
+  labs(title = "Distribution of HLE Estimates by Region",
+       x = "US Region", 
+       y = "Healthy Life Expectancy at Age 65") +
+  theme(text = element_text(family = enfont),
+        plot.title = element_text(hjust = 0.5))
+```
+
+```{r}
+results <- oneway(hlef ~ region, life)
+results %>% summary()
+```
+
+# 开发包
+
+```{r}
+df <- tibble::tribble(
+  ~color,     ~a, ~b,
+  "blue",      1,  2,
+  "green",     6,  2,
+  "purple",    3,  3,
+  "red",       2,  3,
+  "yellow",    5,  1
+)
+df
+df$color <- factor(df$color)
+fct_reorder(df$color, df$a, min)
+fct_reorder2(df$color, df$a, df$b)
+
+boxplot(Sepal.Width ~ Species, data = iris)
+boxplot(Sepal.Width ~ fct_reorder(Species, Sepal.Width), data = iris)
+boxplot(Sepal.Width ~ fct_reorder(Species, Sepal.Width, .desc = TRUE), data = iris)
+
+chks <- subset(ChickWeight, as.integer(Chick) < 10)
+chks <- transform(chks, Chick = fct_shuffle(Chick))
+
+if (require("ggplot2")) {
+ggplot(chks, aes(Time, weight, colour = Chick)) +
+  geom_point() +
+  geom_line()
+
+# Note that lines match order in legend
+ggplot(chks, aes(Time, weight, colour = fct_reorder2(Chick, Time, weight))) +
+  geom_point() +
+  geom_line() +
+  labs(colour = "Chick")
+}
+```
+
+# 创建包的文档
+
+每个R包都符合一套对文档的强制方针。包里每一个函数都必须使用LaTeX来以同样的风格
+撰写文档； LaTeX是一种文档标记语言和排版系统。每个函数都被分别放置在不同的.R文件里，函数对应的文档（用LaTeX写成）则被放置在一个.Rd文件中。.R和.Rd文件都是文本文件。这种方式有两个限制。第一，文档和它所描述的函数是分开放置的。如果你改变了函数代码，就必须搜索出对应的文档并且进行改写。第二，用户必须学习LaTeX。如果你认为R的学习曲线比较平滑，等到使用LaTeX的时候再说吧！
+
+**roxygen2包**能够极大地简化文档的创建过程。你在每一个**.R文件的头部**放置一段注释作为对应的文档。然后，使用一种简单的标记语言来创建文档。当Roxygen2处理文件的时候，以#'开始的行会被用来自动地生成LaTeX文档（.Rd文件）
+
+# 建立包
+
+本节中，你会按照一个流畅的过程来创建包。特别是，你会用到Hadley Wickham的**roxygen2包**来简化创建文档的过程。我是在Windows机器上创建包的，不过这些步骤同样适用于Mac和Linux平台。
+
+# 小结
+
+对于**组织常用函数**、**创建完整程序**以及**分享结果给他人**，R包是一个很好的方法。在本章中，你创建了一个完整的R包，可以用于进行分组之间的非参比较。这些面向对象的技术可以用于很多其他的数据管理和数据分析任务。尽管包一开始看上去很复杂，但是如果你明白了全部步骤，它们就会变得很简单。现在开始着手吧！记得要从中获得乐趣。
+
+

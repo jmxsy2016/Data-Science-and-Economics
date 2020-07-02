@@ -1,0 +1,164 @@
+--- 
+title: "R实战第二版笔记-R语言创建动态报告"
+# subtitle: "Lecture title"
+author:
+- affiliation: Dongbei University of Finance & Economics
+  name: Studennt. LI Junjie
+date: '`r Sys.Date()`'
+output:
+  bookdown::word_document2:
+    # code_folding: hide
+    highlight: pygments
+    # highlight: zenburn
+    # highlight: haddock
+    theme: darkly
+    # theme: journal
+    df_print: tibble	
+    number_sections: true
+    keep_md: no
+    keep_tex: no
+    toc: yes
+    toc_depth: 5
+    toc_float:
+      collapsed: no
+      smooth_scroll: yes
+    # css: styles.css
+# bibliography: [book.bib, packages.bib]
+# biblio-style: apalike
+link-citations: yes
+sansfont: Times New Roman
+always_allow_html: yes
+urlcolor: "red"
+description: "This is a minimal example of using the bookdown package to write a book. The output format for this example is bookdown::gitbook."
+---
+
+# 加载经常用的R包
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      fig.show = "hold",
+                      fig.align = "center",
+                      tidy = FALSE)
+```
+
+```{js, echo=FALSE}
+$('.title').css('color', 'red')
+$('.title').css('font-family', 'Times New Roman')
+```
+
+```{css, echo=FALSE}
+* {
+    # font-size: 17px !important;
+    font-family: "Times New Roman" !important;
+    color: rgb(199 237	204)
+}
+::selection {
+   # background: rgb(135 206 255);
+}
+```
+
+# R语言报告
+
+最后一项统计分析或者绘图的完成并不意味着研究过程的完成。你总要与他人交流研究结果。这意味着把分析整理到某种报告里面。
+
+有三种常见的创建报告情景。
+
+- 第一种：创建一个包含代码和结果的报告，便于记住六个月前做过的事情。如果要重做之前的事情，从单个完整的文档做起比从多个相关的文档做起要更加容易。
+- 第二种：为老师、主管、客户、政府代表、网络观众或者杂志编辑创建一份报告。你需要注
+意清晰性和吸引性，而且这份报告可能只需要创建一次。
+- 第三种：为日常需求创建一份特定类型的报告。这有可能是关于产品或者资源使用量的每月
+报告，可能是关于金融的每周分析，也可能是关于网络流量的每小时更新一次的报告。每一种情况中，数据会有所变化，但是分析过程和报告结构保持不变。
+
+把R的输出合并到报告的一种方法是：进行分析，复制和粘贴每一个图表到一个字处理文档
+中，接着重新整理结果格式。这个方法一般来说非常耗时、低效，让人心烦意乱。尽管R创建的图片很现代，但它的文字输出却很复古——由等宽字体组成并用空格实现列对齐的表格。如果数据有所变化的话，你不得不重复整个过程！
+
+举个例子，假设你在使用回归分析来研究一份女性样本中体重和身高的关系。 R允许你提取
+lm()函数的等宽输出：
+
+```{r message=FALSE}
+library(pacman)
+p_load(tidyverse)
+women %>% 
+  lm(weight ~ height,data = .) %>% 
+  summary() 
+```
+
+```{r}
+women %>% 
+  lm(weight ~ height,data = .) %>% 
+  stargazer::stargazer(type = "text")
+```
+
+```{r}
+women %>% 
+  lm(weight ~ height,data = .) %>% 
+  xtable::xtable(label = "HTML")
+```
+
+# 用模版生成报告
+
+根据你起步的模版文件和用来处理模版的函数，可以创建出不同的报告格式（HTML网页文件、 Microsoft Word文档、 OpenOffice Writer文档、PDF报告、文章和图书）。 它们被称为**动态报告**，动态之处在于改变数据和重新处理模版文件的话会生成一份新的报告。
+
+# 用 R 和 Markdown 创建动态报告
+
+```{r echo=TRUE, results='hide'}
+n <- nrow(women)
+fit <- lm(weight ~ height, data=women)
+sfit <- summary(fit)
+b <- coefficients(fit)
+```
+
+Linear regression was used to model the relationship between weights and height in a sample of `r n` women. The equation **weight = `r b[[1]]` + `r b[[2]]` height** accounted for `r round(sfit$r.squared,2)`% of the variance in weights. The ANOVA table is given below.
+
+```{r echo=TRUE, results='asis'}
+library(xtable)
+options(xtable.comment=FALSE)
+print(xtable(sfit), type="html", html.table.attributes="border=0")
+```
+
+The regression is plotted in the following figure.
+
+```{r echo=TRUE}
+library(ggplot2)
+ggplot(data = women, aes(x = height, y = weight)) +
+  geom_point() + geom_smooth(method = "lm") +
+  theme(text = element_text(family = enfont))
+```
+
+Markdown语法可以方便地快速创建简单的文件。你可以访问其主页<http://daringfireball.net/projects/markdown/>和[rmarkdown文档页面](http://rmarkdown.rstudio.com/)来学习Markdown。如果想创建复杂的文档，比如说**出版水平的文章和图书**，你可能需要使用LaTeX作为你的标记语言。在下一节，你会使用LaTeX和knitr包来创建高质量排版的文档。
+
+# 用 R 和 LaTeX 创建动态报告
+
+# 用 R 和 Open Document 创建动态报告
+
+# 用 R 和 Microsoft Word 创建动态报告
+
+# 小结
+
+本章中，你见到了多个把R结果合并到报告中的方法。这些报告是**动态的**，因为改变数据和重新处理代码会生成一个经过更新的报告。你学习了**创建网页**、**排版文档**、 **Open Document格式报告**和**Microsoft Word文档**的方法。
+
+本章所描述的模板方法有很多好处。通过直接嵌入统计分析所需的代码，你可以准确地看到结果是如何计算出来的。**六个月之后**，你就可以轻易地得知完成了什么。你也可以改变统计分析或者添加新代码，用最少的付出立刻重新生成新的报告。此外，**你避免了复制粘贴和重新排版结果的需要**。单凭这一点就值得学习。
+
+本章的模板是静态的，因为它们的结构是固定的。尽管这里没有讲到，但是你也可以用这些方法**创造出一系列专业报告系统**。比如说，R代码块的输出可以依赖于提交的数据。如果提交数字变量，可以生成一个散点图矩阵；如果提交类别变量，可以生成一幅马赛克图。与其类似，解释性的文字也可以根据分析的结果来生成。用R的if/then结构会使得自定义的可能性无穷无尽。你可以用这个办法建造一个复杂的专业系统。
+
+在本书中，我们讨论了**如何导入数据到R**，并进行**清理**、**分析**、**可视化**，最后**展示给别人**。我们已经讨论了很多的主题。后记给出了帮助你继续学习R的资源。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
