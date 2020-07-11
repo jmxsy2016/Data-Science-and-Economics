@@ -221,4 +221,12 @@ sort_val_labels(v,according_to = "l")
 
 # User defined missing values (SPSS’s style)
 
+```{r}
+data <- data.frame(x = 1:10,
+                   y = rnorm(10),
+                   z = rnorm(10,1,1))
+data %>% ggplot() +
+  geom_line(aes(x,y),col = "red") +
+  geom_line(aes(x,z),col = "blue")
+```
 

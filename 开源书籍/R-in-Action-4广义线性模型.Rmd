@@ -1,0 +1,533 @@
+--- 
+title: "R实战第二版笔记-广义线性模型+因子模型"
+# subtitle: "Lecture title"
+author:
+- affiliation: Dongbei University of Finance & Economics
+  name: Studennt. LI Junjie
+date: '`r Sys.Date()`'
+output:
+  bookdown::html_document2:
+    # code_folding: hide
+    highlight: pygments
+    # highlight: zenburn
+    # highlight: haddock
+    # theme: darkly
+    theme: journal
+    df_print: paged	
+    number_sections: true
+    keep_md: no
+    keep_tex: no
+    toc: yes
+    toc_depth: 5
+    toc_float:
+      collapsed: no
+      smooth_scroll: yes
+    # css: styles.css
+# bibliography: [book.bib, packages.bib]
+# biblio-style: apalike
+link-citations: yes
+sansfont: Times New Roman
+always_allow_html: yes
+urlcolor: "red"
+description: "This is a minimal example of using the bookdown package to write a book. The output format for this example is bookdown::gitbook."
+editor_options: 
+  chunk_output_type: inline
+---
+
+# 加载经常用的R包
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      fig.show = "hold",
+                      fig.align = "center",
+                      tidy = FALSE)
+```
+
+```{js, echo=FALSE}
+$('.title').css('color', 'red')
+$('.title').css('font-family', 'Times New Roman')
+```
+
+```{css, echo=FALSE}
+* {
+    # font-size: 17px !important;
+    font-family: "Times New Roman" !important;
+    # color: rgb(199 237	204)
+}
+::selection {
+   # background: rgb(135 206 255);
+}
+```
+
+```{r,warning=FALSE,message=FALSE}
+library(pacman)
+# 读数据
+p_load(readxl,writexl,data.table,openxlsx,haven,rvest)
+```
+
+```{r,warning=FALSE,message=FALSE}
+# 数据探索
+p_load(tidyverse,DT,skimr,DataExplorer,explore,vtable,stringr,kableExtra,lubridate)
+```
+
+```{r,eval=FALSE,warning=FALSE,message=FALSE}
+# 模型
+p_load(grf,glmnet,caret,tidytext,fpp2,forecast,car,tseries,hdm,tidymodels,broom)
+```
+
+```{r,eval=FALSE,warning=FALSE,message=FALSE}
+# 可视化
+p_load(patchwork,ggrepel,ggcorrplot,gghighlight,ggthemes,shiny)
+```
+
+```{r,eval=TRUE,warning=FALSE,message=FALSE}
+# 其它常用包
+p_load(magrittr,listviewer,devtools,here,janitor,reticulate,jsonlite)
+```
+
+# Logistic 回归
+
+## 建立logistic模型
+
+当通过一系列连续型和/或类别型预测变量来预测二值型结果变量时，Logistic回归是一个非常有用的工具。以AER包中的**数据框Affairs**为例，我们将通过探究婚外情的数据来阐述Logistic回归的过程。首次使用该数据前，请确保已下载和安装了此软件包（使用`install.packages("AER")`）
+
+```{r,message=FALSE}
+library(AER)
+data("Affairs")
+```
+
+```{r message=FALSE}
+Affairs %>% summary()
+Affairs %>% DT::datatable()
+skimr::skim(Affairs)
+```
+
+```{r}
+Affairs %>% as_tibble() %>% 
+  mutate(affairs = if_else(affairs > 0,1,0)) %>% 
+  mutate(affairs = factor(affairs,
+                          levels = c(0,1),
+                          labels = c("No","yes"))) -> Affairs
+  
+```
+
+```{r}
+fit.full <- glm(
+  affairs ~ gender + age + yearsmarried + children +
+    religiousness + education + occupation + rating,
+  data = Affairs,
+  family = binomial()
+)
+fit.full %>% stargazer::stargazer(type = "text")
+```
+
+```{r}
+summary(fit.full)
+```
+
+从回归系数的p值（最后一栏）可以看到，性别、是否有孩子、学历和职业对方程的贡献都不显著（你无法拒绝参数为0的假设）。去除这些变量重新拟合模型，检验新模型是否拟合得好
+
+```{r}
+fit.reduced <- glm(
+  affairs ~ age + yearsmarried + religiousness + rating,
+  data = Affairs,
+  family = binomial()
+)
+fit.reduced %>% summary()
+```
+
+由于两模型嵌套（fit.reduced是fit.full的一个子集），你可以使用`anova()函数`对它们进行比较，对于广义线性回归，可用卡方检验
+
+```{r}
+anova(fit.reduced, fit.full, test="Chisq")
+```
+
+结果的卡方值不显著（p=0.21），表明四个预测变量的新模型与九个完整预测变量的模型拟合程度一样好。这使得你更加坚信添加性别、孩子、学历和职业变量不会显著提高方程的预测精度，因此可以依据更简单的模型进行解释。
+
+## 解释模型参数
+
+```{r}
+coef(fit.reduced)
+```
+
+在Logistic回归中，响应变量是Y=1的对数优势比（log）。回归系数的含义是*当其他预测变量不变时，一单位预测变量的变化可引起的响应变量对数优势比的变化*。
+
+由于对数优势比解释性差，你可对结果进行指数化
+
+```{r}
+exp(coef(fit.reduced))
+```
+
+可以看到*婚龄增加一年*，婚外情的*优势比将乘以1.106*（保持年龄、宗教信仰和婚姻评定不变）；相反，*年龄增加一岁*，婚外情的的*优势比则乘以0.965*。因此，随着婚龄的增加和年龄、宗教信仰与婚姻评分的降低，婚外情优势比将上升。因为预测变量不能等于0，截距项在此处没有什么特定含义。
+
+如果有需要，你还可使用confint()函数获取系数的置信区间。例如， exp(confint(fit.reduced))可在优势比尺度上得到系数95%的置信区间。
+
+最后，预测变量一单位的变化可能并不是我们最想关注的。对于二值型Logistic回归，某预测变量n单位的变化引起的*较高值上优势比的变化*为`exp(βj)^n`，它反映的信息可能更为重要。比如，保持其他预测变量不变，婚龄增加一年，婚外情的优势比将乘以1.106，而如果婚龄增加10年，优势比将乘以1.106^10，即2.7。
+
+## 评价预测变量对结果概率的影响
+
+对于我们大多数人来说，以概率的方式思考比使用优势比更直观。使用predict()函数，可以观察某个预测变量在各个水平时对结果概率的影响。首先创建一个包含你感兴趣预测变量值的虚拟数据集，然后对该数据集使用predict()函数，以预测这些值的结果概率。
+
+现在我们使用该方法评价婚姻评分对婚外情概率的影响。首先，创建一个虚拟数据集，设定年龄、婚龄和宗教信仰为它们的均值，婚姻评分的范围为1～5。
+
+```{r}
+testdata <-
+  data.frame(
+    rating = c(1, 2, 3, 4, 5),
+    age = mean(Affairs$age),
+    yearsmarried = mean(Affairs$yearsmarried),
+    religiousness = mean(Affairs$religiousness)
+  )
+testdata
+```
+
+```{r}
+testdata$prob <- predict(fit.reduced, 
+                         newdata=testdata, 
+                         type="response")
+testdata
+```
+
+```{r}
+testdata <- data.frame(
+  rating = mean(Affairs$rating),
+  age = seq(17, 57, 10),
+  yearsmarried = mean(Affairs$yearsmarried),
+  religiousness = mean(Affairs$religiousness)
+)
+testdata
+
+testdata$prop <- predict.glm(object = fit.reduced,newdata = testdata,
+                            type = "response")
+testdata
+```
+
+此处可以看到，当其他变量不变，*年龄从17增加到57时，婚外情的概率将从0.34降低到0.11。*利用该方法，你可探究每一个预测变量对结果概率的影响。
+
+```{r}
+testdata <- data.frame(
+  rating = mean(Affairs$rating),
+  age = mean(Affairs$age),
+  yearsmarried = seq(0,15,1),
+  religiousness = mean(Affairs$religiousness)
+)
+testdata
+
+testdata$prop <- predict.glm(object = fit.reduced,newdata = testdata,
+                            type = "response")
+testdata
+```
+
+## 过度离势
+
+抽样于二项分布的数据的期望方差是σ2=nπ(1–π)，n为观测数，π为属于Y=1组的概率。所谓过度离势，即观测到的响应变量的方差大于期望的二项分布的方差。过度离势会导致奇异的标准误检验和不精确的显著性检验。
+
+当出现过度离势时，仍可使用glm()函数拟合Logistic回归，但此时需要将二项分布改为类二项分布（quasibinomial distribution）。
+
+```{r}
+deviance(fit.reduced)/df.residual(fit.reduced)
+```
+
+它非常接近于1，表明没有过度离势。
+
+你还可以对**过度离势进行检验**。为此，你需要拟合模型两次，第一次使用family=
+inomial"，第二次使用family="quasibinomial"。假设第一次glm()返回对象记为fit，
+二次返回对象记为fit.od，那么：
+
+```{r,eval=FALSE}
+pchisq(summary(fit.od)$dispersion * fit$df.residual,
+       fit$df.residual,
+       lower = F)
+```
+
+# 主成分分析和因子分析
+
+## R中的主成分和因子分析
+
+- 数据预处理
+- 选择因子模型
+- 判断要选择的主成分/因子数目
+- 选择主成分/因子
+- 旋转主成分/因子
+- 解释结果
+- 计算主成分或因子得分
+
+```{r,message=FALSE,warning=FALSE}
+library(psych)
+```
+
+## 主成分分析
+
+### 判断主成分的个数
+
+```{r}
+psych::fa.parallel(USJudgeRatings[,-1],fa = "pc",n.iter = 100,
+                   show.legend = FALSE,
+                   main = "Scree plot with parallel analysis")
+```
+
+### 提取主成分
+
+```{r}
+pc <- psych::principal(USJudgeRatings[,-1],nfactors = 1)
+pc
+```
+
+让我们再来看看第二个例子，它的结果不止一个主成分。**Harman23.cor数据集**包含305个女孩的8个身体测量指标。本例中，数据集由变量的相关系数组成，而不是原始数据集
+
+```{r}
+Harman23.cor
+```
+
+```{r}
+fa.parallel(
+  Harman23.cor$cov,
+  n.obs = 302,
+  fa = "pc",
+  n.iter = 100,
+  show.legend = FALSE,
+  main = "Scree plot with parallel analysis"
+)
+pc <- psych::principal(Harman23.cor$cov, nfactors=2, rotate="none")
+pc
+```
+
+```{r}
+rc <- principal(Harman23.cor$cov, nfactors=2, rotate="varimax")
+rc
+```
+
+### 获取主成分得分
+
+```{r}
+USJudgeRatings
+```
+
+```{r}
+pc <- psych::principal(USJudgeRatings[,-1], nfactors=1, score=TRUE)
+head(pc$scores)
+```
+
+当`scores = TRUE`时，主成分得分存储在`principal()函数`返回对象的scores元素中。如果有需要，你还可以获得律师与法官的接触频数与法官评分间的相关系数：
+
+```{r}
+rc <- psych::principal(Harman23.cor$cov, nfactors=2, rotate="varimax")
+round(unclass(rc$weights), 2)
+```
+
+$$
+PC1 = 0.28*height + 0.30*arm.span + 0.30*forearm + 0.29*lower.leg - \\
+      0.06*weight - 0.08*bitro.diameter - 0.10*chest.girth -
+      0.04*chest.width
+$$
+
+$$
+PC2 = -0.05*height - 0.08*arm.span - 0.09*forearm - 0.06*lower.leg +
+\\ 0.33*weight + 0.32*bitro.diameter + 0.34*chest.girth + 0.27*chest.width
+$$
+
+许多数据分析师都对PCA和EFA存有或多或少的疑惑。一个是历史原因，它可以追溯到一
+个叫作Little Jiffy的软件（不是玩笑）。 Little Jiffy是因子分析早期最流行的一款软件，默认做主成分分析，选用**方差极大旋转法，提取特征值大于1的成分**。这款软件应用得如此广泛，以至于许多社会科学家都默认它与EFA同义。许多后来的统计软件包在它们的EFA程序中都默认如此处理。
+
+如果你的目标是寻求可解释观测变量的潜在隐含变量，可使用因子分析，这正是下一节的
+主题。
+
+## 探索性因子分析
+
+**EFA的目标**是通过发掘隐藏在数据下的一组较少的、更为基本的无法观测的变量，来解释一组可观测变量的相关性。这些虚拟的、无法观测的变量称作因子。（每个因子被认为可解释多个观测变量间共有的方差，因此准确来说，它们应该称作公共因子。）
+
+```{r}
+covariances <- ability.cov$cov
+correlations <- cov2cor(covariances)
+correlations
+```
+
+因为要寻求用来解释数据的潜在结构，可使用EFA方法。与使用PCA相同，下一步工作为判
+断需要提取几个因子
+
+### 判断需提取的公共因子数
+
+```{r,message=FALSE,warning=FALSE}
+fa.parallel(
+  correlations,
+  n.obs = 112,
+  fa = "both",
+  n.iter = 100,
+  main = "Scree plots with parallel analysis"
+)
+```
+
+### 提取公共因子
+
+```{r}
+fa <- fa(correlations, nfactors=2, rotate="none", fm="pa")
+fa
+```
+
+### 因子旋转
+
+```{r}
+fa.varimax <- fa(correlations, nfactors=2, rotate="varimax", fm="pa")
+fa.varimax
+```
+
+用斜交旋转提取因子
+
+```{r}
+fa.promax <- psych::fa(correlations, nfactors=2, rotate="promax", fm="pa")
+fa.promax
+```
+
+```{r}
+factor.plot(fa.promax, labels=rownames(fa.promax$loadings))
+```
+
+```{r}
+fa.diagram(fa.promax, simple=FALSE)
+```
+
+### 因子得分
+
+```{r}
+fa.promax$weights
+```
+
+与可精确计算的主成分得分不同，因子得分只是估计得到的。它的估计方法有多种， `fa()函数`使用的是回归方法。若想更多地了解因子得分，可参阅DiStefano、 Zhu和Mîndrilă的“Understanding and Using Factor Scores: Considerations for the Applied Researcher”（2009）。
+
+## 其他潜变量模型
+
+## 小结
+
+本章，我们主要学习了**主成分分析（PCA）**和**探索性因子分析（EFA）**两种方法。 PCA在数据降维方面非常有用，它能用一组较少的不相关变量来替代大量相关变量，进而简化分析过程。EFA包含很多方法，可用来发现一组可观测变量背后潜在的或无法观测的结构（因子）。
+
+与PCA综合数据和降低维度的目标不同，EFA是假设生成工具，它在帮助理解众多变量间的关系时非常有用，常用于社会科学的理论研究。
+
+虽然两种方法表面上有许多相似之处，但也有重要的差异。本章中，我们探究了这两种方法的模型，学习了**判断需提取的主成分/因子数的方法**、**提取主成分/因子**和**通过旋转增强解释力的方法**，以及**获得主成分/因子得分**的技巧。
+
+# 时间序列分析
+
+## 生成时间序列对象
+
+函数  | 程序包 | 用途
+----- | -----  | -----
+ts()  | stats  | 生成时序对象
+plot()| graphics | 画出时间序列的折线图
+start() | stats  |返回时间序列的开始时间
+end()   | stats | 返回时间序列的结束时间
+frequency() | stats | 返回时间序列中时间点的个数
+window() | stats | 对时序对象取子集
+ma() | forecast | 拟合一个简单的移动平均模型
+stl() | stats | 用LOESS光滑将时序分解为季节项、趋势项和随机项
+monthplot() | stats | 画出时序中的季节项
+seasonplot() | forecast | 生成季节图
+HoltWinters() | stats | 拟合指数平滑模型
+forecast() | forecast | 预测时序的未来值
+accuracy() | forecast | 返回时序的拟合优度度量
+ets()      | forecast | 拟合指数平滑模型，同时也可以自动选取最优模型
+lag()      | stats    | 返回取过指定滞后项后的时序
+Acf()      | forecast |  估计自相关函数
+Pacf() | forecast | 估计偏自相关函数
+diff() | base | 返回取过滞后项和（或）差分后的序列
+ndiffs() |  forecast | 找到最优差分次数以移除序列中的趋势项
+adf.test() | tseries | 对序列做ADF检验以判断其是否平稳
+arima() | stats | 拟合ARIMA模型
+Box.test() | stats | 进行Ljung-Box检验以判断模型的残差是否独立
+bds.test() | tseries | 进行BDS检验以判断序列中的随机变量是否服从独立同分布
+auto.arima() | forecast | 自动选择ARIMA模型
+
+## 在R中生成时序对象
+
+```{r}
+library(forecast)
+x <- ts(rnorm(200) %>% cumsum(),start = c(2020,1),frequency = 12)
+x %>% forecast::autoplot() +
+  theme(text = element_text(family = enfont))
+```
+
+## 时序的平滑化和季节性分解
+
+正如对横截面数据集分析与建模的第一步是描述性统计和画图一样，对时序数据建立复杂模型之前也需要对其进行描述和可视化。在本节中，我们将对时序进行平滑化以探究其总体趋势，并对其进行分解以观察时序中是否存在季节性因素。
+
+### 通过简单移动平均进行平滑处理
+
+```{r}
+Nile
+# Nile %>% autoplot() +
+  theme(text = element_text(family = enfont))
+```
+
+```{r}
+par(mfrow=c(2,2))
+library(patchwork)
+ylim <- c(min(Nile), max(Nile))
+p1 <- Nile %>% 
+  autoplot(main = "Simple Moving Averages (k=0)") +
+  scale_y_continuous(limits = ylim) +
+  theme(text = element_text(family = enfont))
+
+p2 <- Nile %>% 
+  ma(3) %>% 
+  autoplot(main = "Simple Moving Averages (k=3)") +
+  scale_y_continuous(limits = ylim) +
+  theme(text = element_text(family = enfont))
+
+p3 <- Nile %>% 
+  ma(7) %>% 
+  autoplot(main = "Simple Moving Averages (k=7)") +
+  scale_y_continuous(limits = ylim) +
+  theme(text = element_text(family = enfont))
+
+p4 <- Nile %>% 
+  ma(15) %>% 
+  autoplot(main = "Simple Moving Averages (k=15)") +
+  scale_y_continuous(limits = ylim) +
+  theme(text = element_text(family = enfont))
+
+p1 + p2 + p3 + p4
+```
+
+从图像来看，随着k的增大，图像变得越来越平滑。因此我们需要找到**最能画出数据中规律的k**，避免过平滑或者欠平滑。这里并没有什么特别的科学理论来指导k的选取，我们只是需要先尝试多个不同的k，再决定一个最好的k。从本例的图像来看，尼罗河的流量**从1892年到1900年有明显下降**；其他的变动则并不是太好解读，比如1941年到1961年水量似乎略有上升，但这也可能只是一个随机波动。
+
+对于间隔大于1的时序数据（即存在季节性因子），我们需要了解的就不仅仅是总体趋势了。此时，我们需要通过季节性分解帮助我们探究季节性波动以及总体趋势。
+
+### 季节性分解
+
+将时序分解为趋势项、季节项和随机项的常用方法是用LOESS光滑做季节性分解。这可以通
+过R中的stl()函数实现：
+
+```{r,eval=FALSE}
+stl(ts, s.window=, t.window=)
+```
+
+其中ts是将要分解的时序，参数s.window控制季节效应变化的速度， t.window控制趋势项变
+化的速度。较小的值意味着更快的变化速度。令s.windows="periodic"可使得季节效应在各
+年间都一样。这一函数中，参数ts和s.windows是必须提供的。我们可以通过help(stl)看到
+更多关于stl()函数的细节。
+
+虽然stl()函数只能处理相加模型，但这也不算一个多严重的限制，因为相乘模型总可以通
+过对数变换转换成相加模型：
+
+```{r}
+# R中自带的AirPassengers序列描述了1949～1960年每个月国际航班的乘客
+AirPassengers %>% 
+  autoplot() +
+  scale_y_continuous(limits = c(min(AirPassengers),max(AirPassengers)),
+                     breaks = seq(100,700,100)) +
+  theme(text = element_text(family = enfont))
+```
+
+从图像来看，序列的波动随着整体水平的增长而增长，即相乘模型更适合这个序列
+
+```{r}
+# 对数变换后的序列就可以用相加模型来拟合了
+AirPassengers %>% 
+  log() %>% 
+  autoplot() +
+  scale_y_continuous(limits = c(min(AirPassengers %>% log()),
+                                max(AirPassengers) %>% log()),
+                     breaks = seq(4.5,6.5,0.5)) +
+  theme(text = element_text(family = enfont))
+```
+
+
+

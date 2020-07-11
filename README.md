@@ -24,6 +24,12 @@
 
 ---
 
+## 统计学
+
+[处理缺失数据的高级方法](https://jmxsy2016.github.io/Data-Science-and-Economics/Statistics/处理缺失数据的高级方法.html)
+
+---
+
 ## Machine Learning and Causal Inference(`Python` & `R`) 
 
 - [python安装教程](https://jmxsy2016.github.io/Data-Science-and-Economics/Machine_Learning_and_Causal_Inference/Python安装.pdf )
@@ -77,6 +83,7 @@
 - [RMarkdown PPT教程](https://rladies.github.io/meetup-presentations_oslo/2020-05-11-rmarkdown_like_a_boss/presentation.html#1)
 - [Integration: R and Python](https://shawnsanto.com/files/sta323/slides/lec-16b-rpython.html#1)
 - [如何制作一个PPT](https://jmxsy2016.github.io/Data-Science-and-Economics/R高级编程/code/PPT.html)
+- [最受欢迎的鲜为人知的软件包](https://eringrand.github.io/fave_r_functions/)
 
 ---
 
@@ -86,6 +93,7 @@
 - [如何搭建个人博客](https://bookdown.org/yihui/rmarkdown/rmarkdown-site.html)
 - [如何使用RMarkdown制作幻灯片](https://bookdown.org/yihui/rmarkdown/xaringan-start.html)
 - [如何修改RMarkdown的主题](https://www.datadreaming.org/post/r-markdown-theme-gallery/)
+- [用blogdown搭建一个静态网站(谢益辉)](https://www.youtube.com/watch?v=g-UnHlp_IgA): 视频版！[PPT](https://slides.yihui.org/2017-blogdown-CGM-Yihui-Xie.html#1)
 
 ---
 
@@ -150,6 +158,11 @@
 - [fs](https://github.com/r-lib/fs) [笔记](https://jmxsy2016.github.io/Data-Science-and-Economics/Data-Science-and-Economics/R包学习-计量经济学/fs-package)
 - [prodigenr](https://github.com/lwjohnst86/prodigenr) [网站](http://prodigenr.lukewjohnston.com/) [笔记](https://jmxsy2016.github.io/Data-Science-and-Economics/Data-Science-and-Economics/R包学习-计量经济学/prodigenr-package)
 
+## 文本分析
+
+### 正则表达式
+
+- [RegExplain](https://github.com/gadenbuie/regexplain):正则表达式很复杂，RegExplain使你更容易看到你在做什么。
 
 
 

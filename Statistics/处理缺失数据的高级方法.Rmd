@@ -1,0 +1,198 @@
+---
+title: "处理缺失数据的高级方法"
+date: "`r Sys.Date()`"
+author:
+- affiliation: Dongbei University of Finance & Economics
+  name: Studennt. LI Junjie
+output:
+  bookdown::html_document2:
+    # code_folding: hide
+    highlight: pygments
+    # highlight: zenburn
+    # highlight: haddock
+    # theme: darkly
+    # theme: journal
+    df_print: paged	
+    number_sections: true
+    keep_md: no
+    keep_tex: no
+    toc: yes
+    toc_depth: 5
+    toc_float:
+      collapsed: no
+      smooth_scroll: yes
+    # css: styles.css
+# bibliography: [book.bib, packages.bib]
+# biblio-style: apalike
+link-citations: yes
+sansfont: Times New Roman
+always_allow_html: yes
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      fig.show = "hold",
+                      fig.align = "center",
+                      tidy = FALSE,
+                      class.source = "bg-warning")
+```
+
+# 加载经常用的R包
+
+```{js, echo=FALSE}
+$('.title').css('color', 'red')
+$('.title').css('font-family', 'Times New Roman')
+```
+
+```{css, echo=FALSE}
+* {
+    # font-size: 17px !important;
+    font-family: "Times New Roman" !important;
+    # color: rgb(199 237	204)
+}
+::selection {
+   # background: rgb(135 206 255);
+}
+```
+
+```{r,warning=FALSE,message=FALSE}
+library(pacman)
+# 读数据
+p_load(readxl,writexl,data.table,openxlsx,haven,rvest)
+```
+
+```{r,warning=FALSE,message=FALSE}
+# 数据探索
+p_load(tidyverse,DT,skimr,DataExplorer,explore,vtable,stringr,kableExtra,lubridate)
+```
+
+```{r,eval=FALSE,warning=FALSE,message=FALSE}
+# 模型
+p_load(grf,glmnet,caret,tidytext,fpp2,forecast,car,tseries,hdm,tidymodels,broom)
+```
+
+```{r,eval=FALSE,warning=FALSE,message=FALSE}
+# 可视化
+p_load(patchwork,ggrepel,ggcorrplot,gghighlight,ggthemes,shiny)
+```
+
+```{r,eval=TRUE,warning=FALSE,message=FALSE}
+# 其它常用包
+p_load(magrittr,listviewer,devtools,here,janitor,reticulate,jsonlite)
+```
+
+大部分人都想在一定程度上避免缺失数据造成的影响。统计教科书可能不会提及这个问题，
+或者仅用很少的篇幅介绍；统计软件提供的自动处理缺失值的方法也可能不是最优的。虽然多数数据分析（至少在社会科学中）会牵涉缺失数据，但在期刊文章的方法和结果章节却极少讨论这个问题。鉴于缺失值常常出现，并且可能导致研究结果在一定程度上无效，可以说除了在一些专业化的书籍和课程中，这个问题的受重视程度还远远不够。
+
+本章中，我们将学习处理缺失数据的传统方法和现代方法，主要使用VIM和mice包。命令
+install.packages(c("VIM","mice"))可下载并安装这两个软件包。
+
+# 处理缺失值的步骤
+
+统计学家通常将缺失数据分为三类。尽管它们都用概率术语进行描述，但思想都非常直观。我们将用sleep研究中对做梦时长的测量（12种动物有缺失值）来依次阐述三种类型。
+
+1. **完全随机缺失**: 若某变量的缺失数据与其他任何观测或未观测变量都不相关，则数据为完全随机缺失（MCAR）。若12种动物的做梦时长值缺失不是出于系统原因，那么可以认为数据是MCAR。注意，如果每个有缺失值的变量都是MCAR，那么可以将数据完整的实例看作对更大数据集的一个简单随机抽样。
+
+2. **随机缺失**: 若某变量上的缺失数据与其他观测变量相关，与它自己的未观测值不相关，则数据为随机缺失（MAR）。例如，如果体重较小的动物更可能有做梦时长的缺失值（可能因为较小的动物更难观察），而且该“缺失”与动物的做梦时长无关，那么就可以认为该数据是MAR。此时，一旦控制了体重变量，做梦时长数据的缺失与出现将是随机的。
+
+3. **非随机缺失**: 若缺失数据不属于MCAR和MAR，则数据为非随机缺失（NMAR） 。例如，做梦时长越短的动物更可能有做梦数据的缺失（可能由于难以测量时长较短的事件），那么可认为数据是NMAR。大部分处理缺失数据的方法都假定数据是MCAR或MAR。此时，你可以忽略缺失数据的生成机制，并且（在替换或删除缺失数据后）可以直接对感兴趣的关系进行建模。
+
+```{r message=FALSE, warning=FALSE}
+p_load(VIM,mice)
+sleep
+VIM::sleep %>% is.na()
+sleep %>% complete.cases()
+```
+
+要完整介绍处理缺失数据的方法，用一本书的篇幅才能做到。本章，我们只是**学习探究缺失值模式的方法**，并重点介绍三种最流行的处理不完整数据的方法（推理法、行删除法和多重插补法）。在本章最后，我们还将介绍一些在特定环境中非常有用的其他处理办法。
+
+# 识别缺失值
+
+首先，回顾4.5节的内容并进一步拓展。R使用NA（不可得）代表缺失值，NaN（不是一个数）代表不可能值。另外，符号Inf和-Inf分别代表正无穷和负无穷。函数is.na()、is.nan()和is.infinite()可分别用来识别缺失值、不可能值和无穷值。每个返回结果都是TRUE或FALSE。
+
+```{r}
+sleep$Sleep %>% is.na()
+```
+
+完整行数
+
+```{r}
+sleep[complete.cases(sleep),]
+complete.cases(sleep)
+```
+
+缺失值的行
+
+```{r}
+sleep[!complete.cases(sleep),]
+```
+
+```{r}
+sleep$Dream %>% is.na() %>% sum()
+```
+
+对于识别缺失值，有两点需要牢记。第一，`complete.cases()函数`仅将NA和NaN识别为缺失值，无穷值（Inf和-Inf）被当作有效值。第二，必须使用与本章中类似的缺失值函数来识别R数据对象中的缺失值。像`myvar ==   NA`这样的逻辑比较无法实现。
+
+现在你应该懂得了如何用程序识别缺失值，接下来学习一些有助于发现缺失值模式的工具吧。
+
+# 探索缺失值模式
+
+## 列表显示缺失值
+
+```{r}
+sleep %>% skim()
+sleep %>% complete.cases() %>% sleep[.,]
+```
+
+mice包中的`md.pattern()函数`可生成一个以矩阵或数据框形式展示缺失值模式的表格。将函数应用到sleep数据集，
+
+```{r}
+is.na(sleep) %>% sum()
+mice::md.pattern(sleep)
+```
+
+表中的1和0显示了缺失值模式：0表示变量的列中有缺失值，1则表示没有缺失值。第一行表述了“无缺失值”的模式（所有元素都为1）。第二行表述了“除了Span之外无缺失值”的模式。第一列表示各缺失值模式的实例个数，最后一列表示各模式中有缺失值的变量的个数。此处可以看到，有42个实例没有缺失值，仅2个实例缺失了Span。9个实例同时缺失了NonD和Dream的值。数据集包含了总共(42×0)+(2×1)+…+(1×3)=38个缺失值。最后一行给出了每个变量中缺失值的数目。
+
+## 图形探究缺失数据
+
+虽然`md.pattern()函数`的表格输出非常简洁，但我通常觉得用图形展示模式更为清晰。VIM包提供了大量能可视化数据集中缺失值模式的函数，本节我们将学习其中几个： `aggr()`、`matrixplot()`和`scattMiss()`。
+
+```{r}
+aggr(sleep, prop=FALSE, numbers=TRUE)
+```
+
+```{r}
+aggr(sleep, prop=TRUE, numbers=TRUE)
+```
+
+```{r}
+matrixplot(sleep)
+```
+
+`marginplot()函`数可生成一幅散点图，在图形边界展示两个变量的缺失值信息。以做梦时长与哺乳动物妊娠期时长的关系为例，来看下列代码：
+
+```{r}
+marginplot(sleep[c("Gest","Dream")])
+```
+
+## 用相关性探索缺失值
+
+# 理解缺失数据的来由和影响
+
+# 理性处理不完整数据
+
+推理研究法常常需要创造性和想法，同时还需要许多数据处理技巧，而且数据的恢复可能是准确的（如睡眠的例子）或者近似的（性别的例子）。下一节我们将探究一种通过删除观测来创建完整数据集的方法。
+
+# 完整实例分析（行删除）
+
+**行删除法假定数据是MCAR**（即完整的观测只是全数据集的一个随机子样本）。此例中，我们假定42种动物是62种动物的一个随机子样本。如果违反了MCAR假设，回归参数的结果将是有偏的。由于删除了所有含缺失值的观测，减少了可用的样本，这也将导致统计效力的降低。此例中，行删除法减少了32%的样本量。接下来，我们将探讨一种能够利用整个数据集的方法（可以囊括那些含缺失值的观测）。
+
+# 多重插补
+
+# 处理缺失值的其他方法
+
+虽然**成对删除**似乎利用了所有可用数据，但实际上每次计算都只用了不同的数据子集。这将会导致一些扭曲的、难以解释的结果，所以我建议不要使用该方法。
+
+**简单插补**的一个优点是，解决“缺失值问题”时不会减少分析过程中可用的样本量。虽然简单插补用法很简单，但是对于**非MCAR的数据**会产生有偏的结果。若缺失数据的数目非常大，那么简单插补很可能会低估标准差、曲解变量间的相关性，**并会生成不正确的统计检验的p值**。与成对删除一样，我建议在解决缺失数据的问题时尽量避免使用该方法。
