@@ -1,0 +1,423 @@
+--- 
+title: "机器学习-分类"
+author:
+- affiliation: Dongbei University of Finance & Economics
+  name: Studennt. LI Junjie
+date: '`r Sys.Date()`'
+output:
+  bookdown::html_document2:
+    # code_folding: hide
+    highlight: pygments
+    # highlight: zenburn
+    # highlight: haddock
+    # theme: darkly
+    theme: journal
+    df_print: paged	
+    number_sections: true
+    keep_md: no
+    keep_tex: no
+    toc: yes
+    toc_depth: 5
+    toc_float:
+      collapsed: no
+      smooth_scroll: yes
+    # css: styles.css
+# bibliography: [book.bib, packages.bib]
+# biblio-style: apalike
+link-citations: yes
+sansfont: Times New Roman
+always_allow_html: yes
+urlcolor: "red"
+description: "This is a minimal example of using the bookdown package to write a book. The output format for this example is bookdown::gitbook."
+editor_options: 
+  chunk_output_type: inline
+---
+
+# 加载经常用的R包
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      fig.show = "hold",
+                      fig.align = "center",
+                      cache = FALSE,
+                      tidy = FALSE)
+```
+
+```{js, echo=FALSE}
+$('.title').css('color', 'red')
+$('.title').css('font-family', 'Times New Roman')
+```
+
+```{css, echo=FALSE}
+* {
+    # font-size: 17px !important;
+    font-family: "Times New Roman" !important;
+    # color: rgb(199 237	204)
+}
+::selection {
+   # background: rgb(135 206 255);
+}
+```
+
+```{r,warning=FALSE,message=FALSE}
+library(pacman)
+# 读数据
+p_load(readxl,writexl,data.table,openxlsx,haven,rvest)
+```
+
+```{r,warning=FALSE,message=FALSE}
+# 数据探索
+p_load(tidyverse,DT,skimr,DataExplorer,explore,vtable,stringr,kableExtra,lubridate)
+```
+
+```{r,eval=TRUE,warning=FALSE,message=FALSE}
+# 模型
+p_load(grf,glmnet,caret,tidytext,fpp2,forecast,car,tseries,hdm,tidymodels,broom)
+```
+
+```{r,eval=TRUE,warning=FALSE,message=FALSE}
+# 可视化
+p_load(patchwork,ggrepel,ggcorrplot,gghighlight,ggthemes,shiny)
+```
+
+```{r,eval=TRUE,warning=FALSE,message=FALSE}
+# 其它常用包
+p_load(magrittr,listviewer,devtools,here,janitor,reticulate,jsonlite)
+p_load("rpart", "rpart.plot", "party","randomForest", "e1071")
+```
+
+# 数据准备
+
+本数据集包含699个细针抽吸活检的样本单元，其中458个（65.5%）为良性样本单元， 241个（34.5%）为恶性样本单元。数据集中共有11个变量，表中未标明变量名。共有16个样本单元中有缺失数据并用问号（?）表示。
+
+```{r,include=FALSE,eval=FALSE}
+knitr::knit_exit()
+```
+
+```{r,data}
+read.csv(here::here("Statistics/breast.csv")) -> data
+data %<>% select(-1)
+```
+
+```{r}
+data %>% head()
+data %>% is.na() %>% sum()
+data %>% VIM::aggr(prop = F)
+names(data) <- c(
+  "ID",
+  "clumpThickness",
+  "sizeUniformity",
+  "shapeUniformity",
+  "maginalAdhesion",
+  "singleEpithelialCellSize",
+  "bareNuclei",
+  "blandChromatin",
+  "normalNucleoli",
+  "mitosis",
+  "class"
+)
+```
+
+# 划分训练集和测试集
+
+```{r}
+data %<>% 
+  select(-ID) %>% 
+  mutate(class = factor(class))
+
+data %>% dim()
+data %>% is.na() %>% sum()
+```
+
+```{r}
+library(caret)
+id <- createDataPartition(data$class,p = 0.7,list = FALSE)
+data_train <- data[id,]
+data_test <- data[-id,]
+```
+
+```{r}
+table(data_train$class)
+table(data_test$class)
+```
+
+训练集将用于建立**逻辑回归**、**决策树**、**条件推断树**、**随机森林**、**支持向量机**等分类模型，测试集用于评估各个模型的有效性。本章采用相同的数据集，因此可以直接比较各个方法的结果。
+
+# 逻辑回归
+
+R中的基本函数`glm()`可用于拟合逻辑回归模型。`glm()函数`自动将预测变量中的分类变量编码为相应的虚拟变量。威斯康星乳腺癌数据中的全部预测变量都是数值变量，因此不必要对其编码。下面给出R中逻辑回归流程。
+
+```{r}
+fit_logis <- glm(class ~ .,
+                 data = data_train,
+                 family = binomial())
+summary(fit_logis)
+fit_logis %>% stargazer::stargazer(type = "text")
+pred_logis <- predict(fit_logis, data_test, type="response")
+pred_logis %>% head()
+
+logit.pred <- factor(pred_logis > .5,
+                     levels = c(FALSE, TRUE),
+                     labels = c("2", "4"))
+
+table(data_test$class,
+      logit.pred,
+      dnn = c("Actual", "Predicted"))
+
+confusionMatrix(data_test$class,logit.pred)
+```
+
+要注意的是，模型中有三个预测变量**（sizeUniformity、shapeUniformity和singleEpithelialCellSize）**的系数未通过显著性检验（即p值大于0.1）。从预测的角度来说，
+我们一般不会将这些变量纳入最终模型。当这类不包含相关信息的变量特别多时，可以直接将其认定为模型中的噪声。
+
+在这种情况下，可用逐步逻辑回归生成一个包含更少解释变量的模型，其目的是通过增加或移除变量来得到一个更小的AIC值。具体到这一案例，可通过：
+
+```{r}
+fit_logis_reduce <- step(fit_logis)
+```
+
+来得到一个精简的模型。这样，**上面提到的三个变量**就从最终模型中移除，这种精简后的模型在验证集上的误差相对全变量模型更小。
+
+# 决策树
+
+**决策树**是数据挖掘领域中的常用模型。其基本思想是对预测变量进行二元分离，从而构造一棵可用于预测新样本单元所属类别的树。本节将介绍两类决策树：经典树和条件推断树。
+
+## 经典决策树
+
+R中的`rpart包`支持`rpart()函数`构造决策树，`prune()函数`对决策树进行剪枝。下面给出判别细胞为良性或恶性的决策树算法实现。
+
+```{r}
+library(rpart)
+fit_rpart <- rpart(class ~ .,data = data_train,method = "class",
+                   parms = list(split = "information"))
+fit_rpart$cptable
+plotcp(fit_rpart)
+```
+
+`rpart()`返回的`cptable值`中包括不同大小的树对应的预测误差，因此可用于辅助设定最终
+的树的大小。其中，`复杂度参数（cp）`用于惩罚过大的树；树的大小即分支数（nsplit），有n
+个分支的树将有n+1个终端节点； `rel_error栏`即训练集中各种树对应的误差；交叉验证误差
+`（xerror）`即基于训练样本所得的10折交叉验证误差； `xstd栏`为交叉验证误差的标准差。
+
+借助plotcp()函数可画出交叉验证误差与复杂度参数的关系图
+
+```{r}
+fit_rpart_prune <- prune(fit_rpart,cp = 0.125)
+fit_rpart_prune
+library(rpart.plot)
+prp(
+  fit_rpart_prune,
+  type = 2,
+  extra = 104,
+  fallen.leaves = TRUE,
+  main = "Decision Tree"
+)
+```
+
+```{r}
+fit_rpart_prune_pred <- predict(fit_rpart_prune,data_test,
+                                type = "class")
+confusionMatrix(data_test$class,fit_rpart_prune_pred)
+```
+
+与逻辑回归不同的是，验证集中的210个样本单元都可由最终树来分类。值得注意的是，对于水平数很多或缺失值很多的预测变量，决策树可能会有偏。
+
+## 条件推断树
+
+```{r message=FALSE, warning=FALSE}
+fit_ctree <- ctree(class ~ .,data = data_train)
+plot(fit_ctree)
+```
+
+```{r}
+fit_ctree_pred <- predict(fit_ctree,data_test,type = "response")
+confusionMatrix(fit_ctree_pred,data_test$class)
+```
+
+值得注意的是，对于**条件推断树**来说，剪枝不是必需的，其生成过程相对更自动化一些。另外， `party包`也提供了许多图像参数。
+
+尽管在这个例子中，**传统决策树**和**条件推断树**的准确度比较相似，但有时它们可能会很不一
+样。下一节中，我们将生成并组合大量决策树，从而对样本单元进行分类。
+
+# 随机森林
+
+随机森林的算法涉及对样本单元和变量进行抽样，从而生成大量决策树。对每个样本单元来
+说，所有决策树依次对其进行分类。所有决策树预测类别中的众数类别即为随机森林所预测的这
+一样本单元的类别。
+
+生成树时没有用到的样本点所对应的类别可由生成的树估计，与其真实类别比较即可得到袋
+外预测（out-of-bag， OOB）误差。无法获得验证集时，这是随机森林的一大优势。随机森林算
+法可计算变量的相对重要程度
+
+```{r}
+library(randomForest)
+fit_forest <- randomForest(class ~ .,
+                           data = data_train,
+                           na.action = na.roughfix,
+                           importance = TRUE)
+fit_forest
+```
+
+`randomForest()函数`从训练集中有放回地随机抽取489个观测点，在每棵树的每个节点随机抽取3个变量，从而生成了500棵传统决策树. `na.action=na.roughfix`参数可将数值变量中的缺失值替换成对应列的中位数，类别变量中的缺失值替换成对应列的众数类（若有多个众数则随机选一个）。
+
+```{r}
+importance(fit_forest,type = 2)
+```
+
+随机森林可度量变量重要性，通过设置`information=TRUE参数`得到，并通过`importance()函数`输出。由`type=2参数`得到的变量相对重要性就是分割该变量时节点不纯度（异质性）的下降总量对所有树取平均。节点不纯度由Gini系数定义。本例中， *sizeUniformity是最重要的变量， mitosis是最不重要的变量*。
+
+```{r}
+fit_forest_pred <- predict(fit_forest,data_test)
+confusionMatrix(fit_forest_pred,data_test$class)
+```
+
+最后，再通过随机森林算法对验证集中的样本单元进行分类，并计算预测准确率。分类时剔除验证集中有缺失值的单元。总体来看，对验证集的预测准确率高达98%。
+
+`randomForest包`根据传统决策树生成随机森林，而`party包`中的`cforest()函数`则可基于条件推断树生成随机森林。*当预测变量间高度相关时，基于条件推断树的随机森林可能效果更好*。相较于其他分类方法，随机森林的分类准确率通常更高。另外，随机森林算法**可处理大规模问题**（即多样本单元、多变量），可处理训练集中**有大量缺失值**的数据，也可应对变量远多于样本单元的数据。可计算袋外预测误差（OOB error）、**度量变量重要性**也是随机森林的两个明显优势。
+
+随机森林的一个明显缺点是**分类方法（此例中相当于500棵决策树）较难理解和表达**。另外，我们需要存储整个随机森林以对新样本单元分类
+
+# 支持向量机
+
+**支持向量机（SVM）**是一类可用于**分类和回归**的有监督机器学习模型。其流行归功于两个方面：
+
+- 一方面，他们可输出较准确的预测结果；
+- 另一方面，模型基于较优雅的数学理论。
+
+本章将介绍支持向量机在二元分类问题中的应用。
+
+SVM旨在在多维空间中找到一个**能将全部样本单元分成两类的最优平面**，这一平面应使两类中距离最近的点的间距（margin）尽可能大，在间距边界上的点被称为**支持向量**（support vector，它们决定间距），分割的超平面位于间距的中间。
+
+对于一个N维空间（即N个变量）来说，**最优超平面**（即线性决策面， linear decision surface）为N–1维。当变量数为2时，曲面是一条直线；当变量数为3时，曲面是一个平面；当变量数为10
+时，曲面就是一个九维的超平面。当然，这并不是太好想象。
+
+```{r}
+library(e1071)
+fit_svm <- svm(class ~ .,data = data_train)
+fit_svm
+fit_svm_pred <- predict(fit_svm,na.omit(data_test))
+confusionMatrix(fit_svm_pred,na.omit(data_test)$class)
+```
+
+由于方差较大的预测变量通常对SVM的生成影响更大，`svm()函数`默认在生成模型前对每个变量标准化，使其均值为0、标准差为1。从结果来看， SVM的预测准确率不错.
+
+*svm()函数*默认通过**径向基函数**（Radial Basis Function， RBF）将样本单元投射到高维空间。**一般来说RBF核是一个比较好的选择**，因为它是一种非线性投影，可以应对类别标签与预测变量
+间的非线性关系。
+
+在用带RBF核的SVM拟合样本时，两个参数可能影响最终结果： **gamma和成本（cost）**。 gamma是核函数的参数，控制分割超平面的形状。gamma越大，通常导致支持向量越多。我们也可将gamma看作控制训练样本“到达范围”的参数，即gamma越大意味着训练样本到达范围越广，而越小则意味着到达范围越窄。**gamma必须大于0**。
+
+**成本参数**代表犯错的成本。一个**较大的成本**意味着模型对误差的惩罚更大，从而将生成一个更复杂的分类边界，对应的训练集中的误差也会更小，但**也意味着可能存在过拟合问题**，即对新样本单元的预测误差可能很大。较小的成本意味着分类边界更平滑，但可能会导致欠拟合。与gamma一样，成本参数也恒为正。
+
+*`svm()函数`*默认设置**gamma为预测变量个数的倒数**，**成本参数为1**。不过gamma与成本参数的不同组合可能生成更有效的模型。在建模时，我们可以尝试变动参数值建立不同的模型，但利用格点搜索法可能更有效。可以通过`tune.svm()`对每个参数设置一个候选范围， tune.svm()函数对每一个参数组合生成一个SVM模型，并输出在每一个参数组合上的表现。
+
+```{r}
+fit_svm_tuned <- tune.svm(
+  class ~ .,
+  data = data_train,
+  gamma = 10 ^ (-6:1),
+  cost = 10 ^ (-10:10)
+)
+fit_svm_tuned
+```
+
+```{r}
+fit_svm_modify <- svm(class ~ .,data = data_train,gamma = 0.01,cost = 1)
+fit_svm_pred <- predict(fit_svm_modify,data_test %>% na.omit())
+confusionMatrix(fit_svm_pred,data_test %>% na.omit() %>% pull(class))
+```
+
+首先，对不同的gamma和成本拟合一个带RBF核的SVM模型。我们一共将尝试八个不同的
+gamma（从0.000001到10）以及21个成本参数（从0.01到1010）。总体来说，我们共拟合了168（8×21）个模型，并比较了其结果。训练集中**10折交叉验证误差最小的模型所对应的参数**为gamm=0.1，
+成本参数为1。
+
+如前所述，由于SVM适用面比较广，它目前是很流行的一种模型。 SVM也可以**应用于变量数远多于样本单元数**的问题，而这类问题在生物医药行业很常见，因为在DNA微序列的基因表示中，变量数通常比可用样本量的个数高1~2个量级。
+
+与随机森林类似， **SVM的一大缺点**是分类准则比较难以理解和表述(精度高，可解释性差)。 SVM从本质上来说是一个黑盒子。另外，**SVM在对大量样本建模时不如随机森林**，但只要建立了一个成功的模型，在对新样本分类时就没有问题了。
+
+# 选择预测效果最好的解
+
+我们通过**几种有监督机器学习方法**对细针抽吸活检细胞进行分类，但如何从中选出最准确的方法呢？首先需要在二分类情况下定义准确。
+
+最常用的一个统计量是**准确率**（accuracy），即分类器是否总能正确划分样本单元。不过，尽
+管准确率承载的信息量很大，这一指标仍不足以选出最准确的方法。我们还需要其他信息来评估各种分类方法的有效性。
+
+假设我们现在需要**判别一个人是否患有精神分裂症**。精神分裂症是一种极少见的生理障碍，人群中的患病率约为1%。**如果一种分类方法将全部人都判为未患病**，则这一分类器的准确率将达到99%，但它会把所有患精神分裂症的人都判别成健康人。从这个角度来说它显然不是一个好的分类器。因此，在准确率之外，你一般还应该问问以下问题。
+
+- 患有精神分裂症的人中有多大比例成功鉴别？
+- 未患病的人中有多大比例成功鉴别？
+- 如果一个人被鉴别为精神分裂症患者，这个判别有多大概率是准确的？
+- 如果一个人被鉴别为未患病，这个判别又有多大概率是准确的？
+
+上述问题涉及一个分类器的**敏感度**（sensitivity）、**特异性**（sensitivity）、**正例命中率**（positive predictive power）和**负例命中率**（negative predictive power）。
+
+- **敏感度**: 正类的样本单元被成功预测的概率，也叫正例覆盖率（ true positive）或召回率（ recall）
+- **特异性**: 负类的样本单元被成功预测的概率，也叫负例覆盖率（ true negative）
+- **正例命中率**: 被预测为正类的样本单元中，预测正确的样本单元占比，也叫精确度（ precision）
+- **负例命中率**: 被预测为负类的样本单元中，预测正确的样本单元占比
+- **准确率**: 被正确分类的样本单元所占比重，也叫ACC
+
+```{r}
+confusionMatrix(fit_rpart_prune_pred,data_test$class)[[4]] %>% enframe()
+```
+
+```{r}
+confusionMatrix(fit_ctree_pred,data_test$class)[[4]] %>% enframe()
+```
+
+```{r}
+confusionMatrix(fit_forest_pred,data_test$class)[[4]] %>% enframe()
+```
+
+```{r}
+confusionMatrix(fit_svm_pred,data_test %>% na.omit() %>% pull(class))[[4]] %>% 
+  enframe()
+```
+
+```{r}
+confusionMatrix(fit_rpart_prune_pred,data_test$class)[[4]] %>% 
+  enframe(value = "rpart") %>% 
+  bind_cols(confusionMatrix(fit_ctree_pred,data_test$class)[[4]] %>% 
+              enframe(value = "ctree")) %>% 
+  bind_cols(confusionMatrix(fit_forest_pred,data_test$class)[[4]] %>%
+              enframe(value = "forest")) %>% 
+  bind_cols(confusionMatrix(fit_svm_pred,data_test %>%
+                              na.omit() %>% pull(class))[[4]] %>% 
+              enframe(value = "Svm")) -> data_compare
+data_compare %>% 
+  select(name...1,rpart,ctree,forest,Svm) %>% 
+  rename(name = name...1) %>% 
+  datatable()
+```
+
+在这个案例中，这些分类器（逻辑回归、传统决策树、条件推断树、随机森林和支持向量机）都表现得相当不错。不过在现实中并不总是这样。
+
+我们也可以从**特异性**和**敏感度**的权衡中提高分类的性能，但这不在本书的范围之内。在逻辑回归模型中，`predict()函数`可以估计一个样本单元为恶性组织的概率。如果这一概率值大于0.5，则分类器会把这一样本单元判为恶性。**这个0.5即阈值（threshold）**或门槛值（cutoff value）。通过变动这一阈值，我们可以通过牺牲分类器的特异性来增加其敏感度。这同样适用于决策树、随机森林和支持向量机（尽管语句写法上会有差别）。
+
+**变动阈值**可能带来的影响可以通过ROC（Receiver Operating Characteristic）曲线来进一步观察。**ROC曲线**可对一个区间内的门槛值画出特异性和敏感度之间的关系，然后我们就能针对特定问题选择特异性和敏感度的最佳组合。许多R包都可以画ROC曲线，如`ROCR`、`pROC`等。这些R包中的函数能帮助我们在面对不同问题时，通过比较不同算法的ROC曲线选择最有效的算法。细节见Kuhn&Johnson（2013），更详尽的讨论见Fawcett（2005）。
+
+到目前为止，我们都是通过执行命令行代码的方式调用这些分类方法。下一节中，我们将介
+绍一个**图像式交互界面**，并在可视界面上生成、应用这些预测模型。
+
+# 用`rattle包`进行数据挖掘
+
+Rattle（R Analytic Tool to Learn Easily）为R语言用户提供了一个可做数据分析的图像式交互界面（GUI）。这样，本章提及的很多函数以及未提及的其他无监督或有监督的学习方法，都可以通过鼠标点击的方式操作。 Rattle也可以实现数据转换和评分等功能，并提供了可用于评估模型的一系列数据可视化工具。
+
+为了节约时间和存储空间，**安装rattle**时将默认同时安装几个必需的基础包。其他包将在我们需要用到相关分析方法时安装。这样我们在操作中可能会不时碰到需要安装缺失程序包的提醒；如果选择“是”， R会从CRAN上下载安装所需的程序包。
+
+在本节中，我们将在Rattle中生成条件推断树并预测糖尿病。糖尿病数据同样可以在UCI机器
+学习数据库中找到。这个皮马族印第安人糖尿病（Pima Indians Diabetes）数据中共有768个样本单元，数据来源于美国糖尿病、消化和肾脏疾病协会.
+
+我们也可以指定**训练集**、**验证集**和**测试集**中的样本比重。数据分析的一般流程是通过*训练集建立模型，基于验证集调节参数，在测试集上评价模型*。Rattle对数据集的默认划分是70/15/15，设定随机种子为42。
+
+这里只将全部数据分成**训练集**和**验证集**，在划分文本框（Partition text box）中输入70/30/0，设定种子为1234，再单击执行。
+
+**Rattle的一个巨大优势**是可以对同一数据集拟合出不同模型，并通过评价选项卡来直接比较各个模型。我们可以在选项卡中指定**想要比较的几种方法，然后单击执行**。另外，执行过程中调用的所有R命令都可以在**日志（Log）选项卡**中看到，还可以将它们输出到一个文本文件中来实现重复调用。
+
+# 小结
+
+本章介绍了一系列用于**二分类的机器学习方法**，包括**逻辑回归分类方法**、**传统决策树**、**条件推断树**、集成性的**随机森林**以及越来越流行的**支持向量机**。最后介绍了**Rattle**，它为数据挖掘提供了一个图形用户界面，使用户可以通过鼠标点击的方式调用相关的函数。Rattle在比较多个分类模型时格外有用。由于它可在日志文件中生成可重用的R代码，也为我们学习R中的许多预测分析函数的语法提供了机会。
+
+本章介绍的方法复杂度各异。数据挖掘者一般会尝试一些相对简单的方法（如逻辑回归、决
+策树）和一些复杂的、黑箱式的方法（如随机森林、支持向量机）。如果与简单的方法相比，复杂方法在预测效果方面并没有显著提升，则我们一般会选择较简单的方法。
+
+本章用到的**两个数据集**（癌症和糖尿病甄别）都是**医学类数据**，但这些分类方法在其他领域也很常见，包括计算机科学、市场营销、金融、经济和行为科学。另外，虽然我们目前介绍的都是**二分类数据**（恶性/良性、患糖尿病/不患糖尿病），但目前对这些方法的改进也使其适用于多分类问题。

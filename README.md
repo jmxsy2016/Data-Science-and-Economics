@@ -97,7 +97,7 @@
 
 ---
 
-## 开源书籍和程序包
+## 开源书籍
 
 ### 书籍
 
@@ -123,7 +123,11 @@
   - [数据可视化](https://rkabacoff.github.io/datavis/)
   - [A Generalized and Structured Analytical Workflow for Reproducible and Openly Scientific Projects](https://rostools.gitlab.io/manifesto/)
 
-### 程序包(小众而有用)
+---
+
+## 程序包
+
+### 小功能，大作用
 
 - [beepr](https://cran.r-project.org/web/packages/beepr/beepr.pdf):如果您想在例如脚本完成时收到通知，该声音会很有用
 - [available](https://cran.r-project.org/web/packages/available/available.pdf):检查包标题是否可用，适当且有趣
@@ -140,7 +144,8 @@
 
 - [janitor包——检查和清理脏数据](https://jmxsy2016.github.io/Data-Science-and-Economics/R高级编程/code/janitor包——检查和清理脏数据)
 - [datapasta](https://milesmcbain.github.io/datapasta/index.html):剪贴板数据转换为c()和数据框
-- [DataExplorer](https://boxuancui.github.io/DataExplorer/)
+- [DataExplorer](https://boxuancui.github.io/DataExplorer/)：数据探索
+- [labelled](https://jmxsy2016.github.io/Data-Science-and-Economics/R包学习-计量经济学/labelled.html):Introduction to labelled
 
 ### 模型分析
 
@@ -158,9 +163,9 @@
 - [fs](https://github.com/r-lib/fs) [笔记](https://jmxsy2016.github.io/Data-Science-and-Economics/Data-Science-and-Economics/R包学习-计量经济学/fs-package)
 - [prodigenr](https://github.com/lwjohnst86/prodigenr) [网站](http://prodigenr.lukewjohnston.com/) [笔记](https://jmxsy2016.github.io/Data-Science-and-Economics/Data-Science-and-Economics/R包学习-计量经济学/prodigenr-package)
 
-## 文本分析
+### 文本分析
 
-### 正则表达式
+#### 正则表达式
 
 - [RegExplain](https://github.com/gadenbuie/regexplain):正则表达式很复杂，RegExplain使你更容易看到你在做什么。
 
