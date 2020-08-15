@@ -36,7 +36,7 @@
 
 ---
 
-## 金融大数据与R语言
+## R语言基础教程
 
 - [R语言学习建议](https://jmxsy2016.github.io/Data-Science-and-Economics/R语言与金融大数据/R学习建议.html)
 - [R语言基础知识](https://jmxsy2016.github.io/Data-Science-and-Economics/R语言与金融大数据/R语言基础知识.html)
@@ -44,6 +44,11 @@
 - [R语言数据操作](https://jmxsy2016.github.io/Data-Science-and-Economics/R语言与金融大数据/R数据操作.html)
 - [R语言基础绘图技术](https://jmxsy2016.github.io/Data-Science-and-Economics/R语言与金融大数据/R基础绘图技术.html)
 - [R语言数据分析函数](https://jmxsy2016.github.io/Data-Science-and-Economics/R语言与金融大数据/R重要数据分析函数.html)
+
+---
+
+## 金融数据处理和R语言
+
 - [xts-处理高频时间序列数据](https://jmxsy2016.github.io/Data-Science-and-Economics/R语言与金融大数据/xts-处理高频时间序列数据.html)
 
 ---
@@ -82,7 +87,7 @@
 - [爬虫完整教程](https://jmxsy2016.github.io/Data-Science-and-Economics/R高级编程/code/R爬虫完整教程.html)
 - [RMarkdown PPT教程](https://rladies.github.io/meetup-presentations_oslo/2020-05-11-rmarkdown_like_a_boss/presentation.html#1)
 - [Integration: R and Python](https://shawnsanto.com/files/sta323/slides/lec-16b-rpython.html#1)
-- [如何制作一个PPT](https://jmxsy2016.github.io/Data-Science-and-Economics/R高级编程/code/PPT.html)
+- [如何制作一个PPT](https://jmxsy2016.github.io/Data-Science-and-Economics/R高级编程/code/PPT.html): **`R语言课程大纲`**
 - [最受欢迎的鲜为人知的软件包](https://eringrand.github.io/fave_r_functions/)
 
 ---
@@ -97,14 +102,15 @@
 
 ---
 
-## 开源书籍
+## 重要的开源书籍
 
 ### 书籍
 
 - Hadley Wickham
   - [Mastering Shiny](https://mastering-shiny.org/index.html)
   - [R packages](https://r-pkgs.org/workflows101.html):R包开发教程
-  - [R for Data Science](https://r4ds.had.co.nz/)
+  - [R for Data Science](https://r4ds.had.co.nz/):R数据科学英文版
+  - [R for Data ScienceSolutions](https://jrnold.github.io/r4ds-exercise-solutions/):R数据科学答案
   
 - 谢益辉
   - [Bookdown: Authoring Books and Technical Documents with R Markdown](https://github.com/rstudio/bookdown):使用Rmarkdown编写书籍和技术文档
@@ -117,11 +123,11 @@
   
 - 其它
   - [RMarkdown for Scientists](https://rmd4sci.njtierney.com/)：RMarkdown概述
-  - [Interactive web-based data visualization with R, plotly, and shiny](https://plotly-r.com/)：可视化
+  - [Interactive web-based data visualization with R, plotly, and shiny](https://plotly-r.com/)交互可视化
   - [基于R语言的科研信息分析与服务](https://bookdown.org/wangminjie/R4IS/)
   - [现代科研指北](https://bookdown.org/yufree/sciguide/)(在读)
   - [数据可视化](https://rkabacoff.github.io/datavis/)
-  - [A Generalized and Structured Analytical Workflow for Reproducible and Openly Scientific Projects](https://rostools.gitlab.io/manifesto/)
+  - [A Generalized and Structured Analytical Workflow for Reproducible and Openly Scientific Projects](https://rostools.gitlab.io/manifesto/)：待更新
 
 ---
 
@@ -135,16 +141,16 @@
 - [aringanthemer](https://pkg.garrickadenbuie.com/xaringanthemer/index.html):给你的xaringan幻灯片添加一些xaringer。Rmd文件没有(很多)CSS。(Good!!!)
 - [pdftools](https://docs.ropensci.org/pdftools/):从pdf文件中提取文本和元数据
 - [kableExtra](https://cran.r-project.org/web/packages/kableExtra/index.html):[构建漂亮的表](https://haozhu233.github.io/kableExtra/)
-- [magick包](https://cran.r-project.org/web/packages/magick/vignettes/intro.html),[网站](https://docs.ropensci.org/magick/articles/intro.html)
+- [magick包](https://cran.r-project.org/web/packages/magick/vignettes/intro.html),[网站](https://docs.ropensci.org/magick/articles/intro.html):图像处理
 - [magickGUI](https://github.com/ShotaOchi/magickGUI)
-- [printr](https://cran.r-project.org/web/packages/printr/vignettes/printr.html)：打印表格
+- [printr](https://cran.r-project.org/web/packages/printr/vignettes/printr.html):打印表格
 
 
 ### 数据清洗
 
-- [janitor包——检查和清理脏数据](https://jmxsy2016.github.io/Data-Science-and-Economics/R高级编程/code/janitor包——检查和清理脏数据)
+- [janitor包——检查和清理脏数据](https://jmxsy2016.github.io/Data-Science-and-Economics/R包学习-数据科学/janitor-package.html)
 - [datapasta](https://milesmcbain.github.io/datapasta/index.html):剪贴板数据转换为c()和数据框
-- [DataExplorer](https://boxuancui.github.io/DataExplorer/)：数据探索
+- [DataExplorer](https://boxuancui.github.io/DataExplorer/):数据探索
 - [labelled](https://jmxsy2016.github.io/Data-Science-and-Economics/R包学习-计量经济学/labelled.html):Introduction to labelled
 
 ### 模型分析
@@ -156,6 +162,7 @@
 ### 可重复研究
 
 - [prodigenr](https://github.com/lwjohnst86/prodigenr):具有prodigenr的项目创建: 可重复和开放科学项目的一个组成部分,更好用的project
+- [bubblyr](https://github.com/feddelegrand7/bubblyr):`bubblyr` is an R wrapper of the `JavaScript` library `bubbly-bg`
 
 ### 项目管理
 
@@ -168,7 +175,7 @@
 #### 正则表达式
 
 - [RegExplain](https://github.com/gadenbuie/regexplain):正则表达式很复杂，RegExplain使你更容易看到你在做什么。
-
+- [stringr.plus](https://github.com/johncassil/stringr.plus):提供了一些`stringr`中没有的用于处理字符串的额外函数。函数可以很好地与`tidyverse`一起使用。这些函数对于处理`url`和文件路径数据以从字符串中提取特定文本特别有用。[一个笔记](https://jmxsy2016.github.io/Data-Science-and-Economics/Data-Science-and-Economics/R包学习-文本挖掘/stringr.plus-package)
 
 
 
