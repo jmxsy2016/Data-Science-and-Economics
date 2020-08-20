@@ -1,0 +1,214 @@
+--- 
+title: "janitor-清洗数据"
+# subtitle: "Lecture title"
+author:
+- affiliation: Dongbei University of Finance & Economics
+  name: Studennt. Li Junjie
+date: '`r Sys.Date()`'
+output:
+  bookdown::html_document2:
+    # code_folding: hide
+    highlight: pygments
+    # highlight: zenburn
+    # highlight: haddock
+    # theme: darkly
+    theme: cerulean
+    df_print: paged	
+    number_sections: true
+    keep_md: no
+    keep_tex: no
+    toc: yes
+    toc_depth: 5
+    toc_float:
+      collapsed: no
+      smooth_scroll: yes
+    # css: styles.css
+# bibliography: [book.bib, packages.bib]
+# biblio-style: apalike
+link-citations: yes
+sansfont: Times New Roman
+always_allow_html: yes
+urlcolor: "red"
+description: "This is a minimal example of using the bookdown package to write a book. The output format for this example is bookdown::gitbook."
+abstract: |
+    `janitor` has simple functions for examining and cleaning dirty data. It was built with beginning and intermediate R users in mind and is optimized for user-friendliness. Advanced R users can already do everything covered here, but with `janitor` they can do it faster and save their thinking for the fun stuff.
+---
+
+# 加载经常用的R包
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      cache = FALSE,
+                      fig.show = "hold",
+                      fig.align = "center",
+                      tidy = FALSE)
+                      # class.source = "bg-warning")
+```
+
+```{r,echo=FALSE}
+library(bubblyr)
+# bubblyr::bubbly(theme = "sweet")
+# bubblyr::bubbly(theme = "rladies")
+```
+
+```{js, echo=FALSE}
+$('.title').css('color', 'red')
+$('.title').css('font-family', 'Times New Roman')
+```
+
+```{css, echo=FALSE}
+* {
+    # font-size: 17px !important;
+    font-family: "Times New Roman" !important;
+    # color: rgb(199 237	204)
+}
+::selection {
+   # background: rgb(135 206 255);
+}
+```
+
+```{r,warning=FALSE,message=FALSE}
+library(pacman)
+# 读数据
+p_load(readxl,writexl,data.table,openxlsx,haven,rvest)
+```
+
+```{r,warning=FALSE,message=FALSE}
+# 数据探索
+p_load(tidyverse,DT,skimr,DataExplorer,explore,vtable,stringr,kableExtra,lubridate)
+```
+
+```{r,eval=FALSE,warning=FALSE,message=FALSE}
+# 模型
+p_load(grf,glmnet,caret,tidytext,fpp2,forecast,car,tseries,hdm,tidymodels,broom)
+```
+
+```{r,eval=FALSE,warning=FALSE,message=FALSE}
+# 可视化
+p_load(patchwork,ggrepel,ggcorrplot,gghighlight,ggthemes,shiny)
+```
+
+```{r,eval=TRUE,warning=FALSE,message=FALSE}
+# 其它常用包
+p_load(magrittr,listviewer,devtools,here,janitor,reticulate,jsonlite)
+```
+
+# Cleaning dirty data
+
+```{r}
+roster_raw <- readxl::read_excel(here::here("R包学习-数据科学/data/dirty_data.xlsx"))
+```
+
+```{r}
+# roster_raw %>% view()
+roster_raw %>% str()
+```
+
+```{r}
+roster_raw %>% glimpse()
+```
+
+```{r}
+roster_raw %>% janitor::clean_names()
+```
+```{r}
+roster_raw %>% clean_names() %>% glimpse()
+```
+
+```{r}
+roster_raw$`Hire Date` %>% excel_numeric_to_date()
+```
+
+```{r}
+roster_raw %>% clean_names() %>% 
+  mutate(hire_date = excel_numeric_to_date(hire_date)) %>% 
+  mutate(cert = coalesce(certification_9,certification_10))
+```
+
+总结：
+
+- clean_names
+- excel_numeric_to_date
+- coalesce
+
+# Examining dirty data
+
+## Finding duplicates
+
+Use `get_dupes()` to identify and examine duplicate records during data cleaning. Let’s see if any teachers are listed more than once:
+
+```{r}
+iris %>% janitor::get_dupes()
+```
+
+```{r}
+iris %>% get_dupes(contains("Length")) %>% 
+  arrange(-dupe_count)
+```
+
+```{r}
+roster_raw %>% 
+  clean_names() %>% 
+  mutate(hire_date = excel_numeric_to_date(hire_date)) %>% 
+  mutate(cert = coalesce(certification_9,certification_10)) %>% 
+  janitor::remove_empty(which = "rows") -> df
+```
+
+```{r}
+df %>% 
+  tabyl(subject)
+```
+
+```{r}
+df %>% 
+  tabyl(subject,full_time)
+```
+
+```{r}
+df %>% 
+  tabyl(full_time,subject,employee_status,show_missing_levels = FALSE)
+```
+
+```{r}
+df %>% 
+  tabyl(employee_status,full_time) %>% 
+  adorn_totals(where = "row") %>% 
+  adorn_percentages("row")
+```
+
+```{r}
+df %>% 
+  tabyl(employee_status,full_time) %>% 
+  adorn_totals(where = "row") %>% 
+  adorn_percentages("row") %>% 
+  adorn_pct_formatting()
+```
+
+```{r}
+df %>%
+  tabyl(employee_status, full_time) %>%
+  adorn_totals(where = "row") %>%
+  adorn_percentages("row") %>%
+  adorn_pct_formatting() %>%
+  adorn_ns()
+```
+
+```{r}
+df %>%
+  tabyl(employee_status, full_time) %>%
+  adorn_totals(where = "row") %>%
+  adorn_percentages("row") %>%
+  adorn_pct_formatting() %>%
+  adorn_ns() %>% 
+  adorn_title("combined")
+```
+
+# Reference
+
+- `clean_names()`: Cleans names of an object (usually a data.frame).
+- `remove_constant()`: Remove constant columns from a data.frame or matrix.
+- `remove_empty()`: Remove empty rows and/or columns from a data.frame or matrix.
+- `round_half_up()`: Round a numeric vector; halves will be rounded up, ala Microsoft Excel.
+- `signif_half_up()`: Round a numeric vector to the specified number of significant digits; halves will be rounded up.
+
+
