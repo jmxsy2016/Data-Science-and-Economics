@@ -1,0 +1,393 @@
+---
+title: "R编程进阶"
+author: "LJJ"
+date: "2020/3/31"
+output: 
+  html_document: 
+    highlight: haddock
+    theme: flatly
+    toc: yes
+    toc_depth: 5
+    toc_float:
+      collapsed: no
+      smooth_scroll: yes
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,cache = TRUE)
+```
+
+注意:这是关于编程的三堂课中的第二堂。如果你还没看过第一节课，请看看。今天，我们将在此基础上处理一些在r中编写和使用函数时出现的更高级的问题。特别是，我将重点讨论三个问题:
+
+* 1)函数调试
+* 2)捕捉用户错误
+* 3)缓存结果
+
+## 1.1 加载软件包
+
+* New: memoise
+* Already used: tidyverse, here
+
+```{r}
+pacman::p_load(tidyverse,DT,memoise,here)
+```
+
+我们还将使用上一节课中的简单`my_square()函数`。让我们再快速创建一次。
+
+```{r}
+my_square <- function(x = 1){
+  x_sq <- x^2
+  df <- tibble(value = x,
+               value_square = x_sq,
+               value_sqrt = sqrt(x))
+  return(df)
+}
+```
+
+```{r}
+my_square(122)
+my_square(11:15)
+```
+
+## 1.2 Debugging
+
+函数是非常强大和有用的编程工具。他们也经常出错,有时这是因为我们(或其他人)在编写代码时犯了一个错误。其他时候是因为用户错误(例如无效输入)。无论如何，这是我们必须开始调试代码的地方，以找出出错的地方和原因。
+
+### 1.2.1 RStudio中的调试工具
+
+R和RStudio IDE提供了许多用于调试的优秀工具,请使用**[RStudio IDE备忘单]**(https://rstudio.com/resources/cheatsheets/#ide)了解Rstudio中自带的调试工具。
+
+如上图所示，有多种方法可以进入所谓的调试模式。这是您“进入”函数并在该函数环境中评估对象的地方。换句话说，它允许您暂停时间并与内部函数对象交互，而这些对象通常对全局环境是隐藏的。让我们用一个例子来练习。
+
+假设我们向`my_square()函数`提供一些故意无效的输入(一个字符串):
+
+```{r,eval=FALSE}
+my_square("one")
+# Error in x^2 : 二进列运算符中有非数值参数
+```
+
+当然，我们已经知道这个函数调用会失败。(嗯，你不能对字符串平方。)在本例中，R还产生了一个提供信息的错误消息。但是，请注意，我们实际上并没有看到失败点——即函数尝试对值“one”进行平方的代码行。为此，我们需要进入调试模式。
+
+虽然有几种方法可以**触发调试器**，但我建议使用`debugonce()函数`。顾名思义，运行`debugonce(my_square)`将导致我们在下一次调用`my_square()`时进入调试模式，但只有这一次。
+
+```{r,eval=FALSE}
+## Run this next chunk yourself in a live session
+debugonce(my_square)
+my_square("one")
+```
+
+注意RStudio IDE在调试模式下的以下变化:
+
+现在，再次，在这种情况下，问题是显而易见的，并且提前知道了。但是我认为这个简单的示例对于说明一些常规调试原理以及通过调试器模式进入功能内部的功能很有用。它使您有机会查看功能的“发现”，然后系统地了解问题的根本原因。一旦确定了问题，就可以开始纠正功能（或输入）。最终，您希望编写健壮的功能，以及早发现错误，以可接受的可接受水平忍受失败，并向用户提供有用的反馈。 这将是下一部分的主题。
+
+### 1.2.2 手动和提示调试
+
+首先，顺便说一句：当函数失败时，我们不必总是手动调用调试器。例如，使用`debugonce（）`。实际上，如果出现问题，RStudio经常会提示您自动“使用调试重新运行”。发生这种情况时，您将在控制台中看到类似以下屏幕截图的内容（忽略特定的功能和错误消息，而是专注于右侧的蓝色图标。）
+
+```{r,eval=FALSE}
+group_mean(starwars,species1,height)
+# 错误: Column `species1` is unknown
+```
+
+每当评估函数中R代码的方式有问题时（即产生R错误），都会出现RStudio自动提示。相反，如果您的代码逻辑有问题（例如，您尝试对字符串取平方），则不会收到自动提示。
+
+### 1.2.3 捕捉用户错误
+
+在前一讲中，**我们含蓄地假设用户确切地知道如何使用我们的函数**。然而，情况并不总是如此。一个相关但更复杂的情况是，我们错误地将错误类型的参数输入到函数中。让我们回到前面的示例，在这个示例中，我们“意外地”在my_square()函数中输入了一个字符串。
+
+```{r,eval=FALSE}
+my_square("one")
+# Error in x^2 : 二进列运算符中有非数值参数
+```
+
+这似乎只是一种特别愚蠢的用户错误的情况。但是，请相信我，当您进行包含一系列嵌套函数的复杂分析时，很容易遇到此类问题。（一个函数调用另一个函数，然后调用另一个…）由于某种原因，**单个函数或迭代可能会产生与预期略有不同的输出，这会使您的整个分析崩溃**，因为该输出不能在下一部分使用的。当您运行多核进程（例如并行的蒙特卡洛模拟）时，这尤其令人沮丧，因为该程序将首先完成整个运行（可能要花费几个小时），然后才最终通知您某个地方有错误。
+
+幸运的是，有几种方法可以防止这类错误。下面我将简要介绍我认为的三个主要选项。
+
+* Function-specific control flow
+* Use base::tryCatch()
+* Use purrr::safely() and family
+
+#### 1.2.3.1 选项1: Function-specific control flow
+
+我们在上一节课(这里)中讨论了**控制流**的基础知识。让我们将相同的概念用于**调试**。例如，在这个特定的函数中，我们知道我们的函数需要一个数字输入。因此，我们可以检查输入参数是否为数值，并使用ifelse语句在测试失败时生成警告/错误消息。然后，考虑我们的函数的一个稍微修改的版本，我将其称为square_ifelse。
+
+```{r}
+square_ifelse <- function(x = 1){
+  if(is.numeric(x)){
+    x_sq <- x^2
+    df <- tibble(value = x,value_square = x_sq)
+    return(df)
+  }else{
+    message("Sorry, you need to provide a numeric input variable.")
+  }
+}
+```
+
+```{r}
+square_ifelse()
+square_ifelse(1:5)
+```
+
+```{r}
+# debugonce(square_ifelse)
+square_ifelse("one")
+```
+
+我们可以使用通用的`stop()函数`，用更少的代码实现非常相似的结果。
+
+```{r}
+square_stop <- function(x = 1){
+  if(!is.numeric(x)) 
+    stop("Sorry, you need to provide a numeric input variable.")
+  x_sq <- x^2
+  df <- tibble(value = x,value_square = x_sq)
+  return(df)
+}
+```
+
+```{r,eval=FALSE}
+square_stop("one")
+# Error in square_stop("one") : Sorry, you need to provide a numeric input variable.
+```
+
+```{r}
+square_stop(1:5)
+```
+
+#### 1.2.3.2 选项2：Use base::tryCatch()
+
+另一个更通用的选项是使用`base::tryCatch()函数`来处理错误和警告。让我用两个不同的例子来说明它的有用性。
+
+第一个简单地围绕现有的my_square函数包装一个通用的tryCatch语句。注意R的内建“error”类的调用，它依次传递给另一个内建函数message。基本上，我们告诉R在执行我们的定制函数时，当它识别出一个错误(任何错误!)时，就生成一个特定的消息。
+
+```{r}
+tryCatch(
+  my_square("three"), 
+  error = function(e) message("Sorry, something went wrong. Did you try to square a string instead of a number?")
+  )
+```
+
+第一个示例工作得很好，但是它有一个缺点，即为了一条错误消息而放弃了函数中的所有内容。不仅如此，它还可能因为一个错误而抛出可能有效的输入-输出。为了更清楚地看到这一点，让我们向函数输入一个向量，其中只有一个输入是无效的。
+
+```{r}
+tryCatch(
+  square(c(1,2,"three")), 
+  error = function(e) 
+    message("Sorry, something went wrong. Did you try to square a string instead of a number?")
+  )
+```
+
+因此，我们只是得到一个错误消息，即使我们的一些(大部分)输入是有效的。在理想的情况下，我们应该保留有效参数(即1和2)的输入输出，只接收单个无效情况(即“3”)的错误消息。这就引出了第二个例子……
+
+第二个示例通过在用户定义的函数中调用tryCatch()来避免上述问题。原理和以前一样:我们将告诉R当它遇到错误时应该给我们什么。但是，我们将更明确地说明错误发生在何处。此外，这一次我们将指示R返回一个显式的可选值(即NA)，而不是简单地生成一个错误消息。
+
+```{r}
+square_trycatch <-
+  function (x = 1) {
+    x_sq <- tryCatch(x^2, error = function(e) NA_real_) ## tryCatch goes here now. Produce an NA value if we can't square the input.
+    df <- tibble(value=x, value_squared=x_sq)
+    return(df)
+  }
+```
+
+```{r}
+square_trycatch(c(1,2,"three"))
+```
+
+嗯?看起来成功了一半。我们得到了输入值，**但是现在所有的平方值都被转换成了NA**。为什么会这样呢?挑战:看看你能不能在继续之前使用debugonce(square_trycatch)自己找出问题所在……
+让我们深入看看我们的输入向量:
+
+```{r}
+str(c(1,2,"three"))
+```
+
+啊哈。R已将输入向量中的每个元素强制转换为字符串。(请记住:**向量只能包含相同类型的元素**。)解决方案是使用一个允许不同元素类型的输入数组——即一个列表。这反过来又需要修改调用函数的方式，方法是将它放在`base::lapply()`或`purrr::map()`调用中。希望你们还记得上节课的内容，这两个函数在语法上是一样的，所以我就用后者
+
+```{r}
+map(list(1,2,"three"),  square_trycatch) 
+```
+
+上节课我们练习过，我们可能希望使用`dplyr::bind_rows()`或更简单的`purrr::map_df()`将结果数据帧列表绑定到单个数据帧中。然而，这实际上会产生它自己的错误，因为所有的列都需要是相同的。
+
+```{r,eval=FALSE}
+map_df(list(1,2,"three"), square_trycatch)
+# 错误: Column `value` can't be converted from numeric to character
+```
+
+有些迂腐的解决方案是确保错误的输入被强制转换为函数本身的数值。注意，这将引入强制警告，但至少不会失败。
+
+```{r}
+square_trycatch2 <-
+  function (x = 1) {
+    x_sq <- tryCatch(x^2, error = function(e) NA_real_) 
+    df <- tibble(value=as.numeric(x), value_squared=x_sq) ## Convert input to numeric
+    return(df)
+  }
+
+map_df(list(1,2,"three"), square_trycatch2)
+```
+
+#### 1.2.3.3 选项3：Use purrr::safely() and family
+
+最后，对于喜欢类似于`tryCatch()`的tidyverse的用户，可以使用`purrr::safe()`及其相关函数(包括`purrr::possibly()`和其他变体)。我不会再重复整个冗长的过程了，下面是它们的工作原理:
+
+```{r}
+square_simple <- function (x = 1) {
+  x_sq <- x^2
+}
+square_safely <- safely(square_simple)
+square_safely("three")
+square_safely(c(1,2,"three"))
+```
+
+你也可以指定默认的行为，在一个错误:
+
+```{r}
+square_safely <- safely(square_simple, otherwise = NA_real_)
+square_safely(c(1,2,"three"))
+```
+
+## 1.3  Caching (memoisation)
+
+我们已经体验过使用RMarkdown文档进行缓存的好处(偶尔也会遇到挫折)。缓存对于普通的R脚本和分析也非常有用。例如，我们可能希望保存一些计算开销较大的输出，这样就不必再次运行它。另一个相关但更危险的提示是，程序和函数可能在完成过程中崩溃。出现这种情况的原因有很多:迭代输入中的无效函数参数、计算机故障、内存限制、断电、超时等。
+
+无论如何，如果您正在处理一个特别冗长的模拟或计算问题，那么丢失所有的工作将是一种相当痛苦的经历。最后，我们将在下一讲讨论并行计算，但是这个问题更糟糕。并行化程序通常会发生的情况是，整个运行将会完成(可能需要几个小时或几天)，并且只在最后显示一个错误，没有保存输出!
+
+幸运的是，R支持一些缓存工具。这里我将**重点介绍memoise包**。请注意，记忆/记忆是指一种特殊形式的缓存，我们将昂贵的函数调用的结果保存在其中(即“记住”)，这样我们就不必在将来重复它们。
+
+让我们从创建一个简单的square函数的“慢”版本开始——在做任何事情之前都要等待两秒钟——我创造性地将它命名为slow_square()。当然，这只是为了模拟一个计算开销很大的操作，但是基本原则将完整地执行。
+
+```{r}
+slow_square <- function(x){
+  Sys.sleep(2)
+  my_square(x)
+}
+slow_square(1:5)
+```
+
+Enabling caching (i.e. memoisation) of our slow function is a simple matter of feeding it to:
+
+```{r}
+mem_square <- memoise(slow_square)
+```
+
+注意:我在这里指定了备忘录版本作为它自己的函数(即mem_square())。但是，如果您愿意，可以回收原来的函数名(即slow_square < - memoise(slow_square))。
+
+当我们第一次执行memoised slow_square_mem()函数时，它将不能使用任何保存的结果。 这意味着它必须运行所有底层计算。但是，在这样做的过程中，它将保存输入和结果，以便稍后立即检索。
+
+让我们运行一些示例并比较实际的计时。对于第一次运行，我将使用数字1到10对我们的函数进行迭代，并将结果数据帧保存到一个名为m1的对象中。
+
+```{r}
+system.time(
+  m1 <- map_df(1:10, mem_square)
+)
+```
+
+正如预期的那样，这花费了20秒，因为在每个迭代中都要强制等待2秒。现在，我们试着第二次调用这个函数—在完全相同的输入上迭代并保存到一个新的m2对象—看看缓存是否有影响…
+
+```{r}
+system.time(
+  m2 <- map_df(1:10, mem_square)
+)
+```
+
+而且永远如此!我们下降到几分之一秒，因为我们根本不需要再次运行。相反，我们只是简单地回忆以前保存的结果(即记忆)。为了证明我们确实保存了有意义的输出，这里是两个数据帧的比较，以及df2的打印输出。
+
+```{r}
+all.equal(m1, m2)
+m2
+```
+
+最后，请注意，我们的缓存功能非常聪明，可以在以前缓存的结果和非缓存的结果之间进行伪装。例如，考虑如果我在x输入向量中再包含5个数字会发生什么。
+
+```{r}
+system.time(
+  m3 <- map_df(1:15, mem_square)
+)
+```
+
+正如预期的那样，这只需要(5×2=)10秒就可以从头生成新的结果，之前的结果将从缓存中 调用。您可以将前面的示例看作是真实场景的近似值，即您的程序在运行过程中崩溃或停止，但您不需要从头开始重新启动。这种类型的中断发生的频率比您预期的要高，特别是在使用复杂分析和高性能计算工具(例如可抢占节点或VM实例)的情况下。聪明的缓存为我节省了很多时间
+
+### 12.3.1 Aside 1: Caching across R sessions
+
+前一段省略了一个重要的警告:**默认的memoise()缓存仅对当前R会话有效**。通过研究函数的帮助文档，您可以更清楚地看到这一点，其中您将注意到内部cache = cache_memory()参数。 要启用跨会话(包括当您的计算机崩溃时)持久缓存，您需要指定一个专用的缓存目录，其中cache = cache_filesystem(PATH)。
+
+这个目录可以位于系统上的任何位置(实际上，也可以位于链接的云存储服务上)，甚至可以为不同的项目提供多个缓存目录。我唯一的建议是使用.rcache/命名模式来保持顺序。
+
+例如，我们可以在这个lecture子目录中为我们的slow_square()函数指定一个新的、持久的缓存位置，如下所示。
+
+```{r}
+## Cache directory path (which I've already created)
+cache_dir <- here("11-funcs-adv/.rcache")
+
+## (Re-)memoise our function with the persistent cache location
+mem_square_persistent <- memoise(slow_square, cache = cache_filesystem(cache_dir))
+```
+
+运行我们的新缓存函数，并检查它是否将缓存的输出保存到指定的目录。
+
+```{r,eval=FALSE}
+m4 <- map_df(1:7, mem_square_persistent)
+list.files(cache_dir)
+```
+
+底线:为复杂或耗时的分析指定一个专用的缓存目录，以便能够跨R会话进行访问。
+
+### 12.3 2 Aside 2: Verbose output
+
+向记忆功能中添加冗长的提示是可能的(而且通常非常有用)。考虑下面的代码，它将mem_square_persistent()函数折叠成两个部分:
+检查并加载以前缓存的结果。将结果打印到屏幕上。运行我们的备忘录功能的任何输入，尚未评估。(这些结果将依次被缓存以备将来使用。)同样，将结果打印到屏幕上
+
+```{r,eval=FALSE}
+mem_square_verbose <- 
+  function(x) {
+    ## 1. Load cached data if already generated
+    if (has_cache(mem_square_persistent)(x)) {
+      cat("Loading cached data for x =", x, "\n")
+      my_data <- mem_square_persistent(x)
+      return(my_data)
+    }
+    
+    ## 2. Generate new data if cache not available
+    cat("Generating data from scratch for x =", x, "...")
+    my_data <- mem_square_persistent(x)
+    cat("ok\n")
+    
+    return(my_data)
+  }
+```
+
+这是一个vebose作用的例子。在一个编织的R标记文档中，输出可能没有那么令人印象深刻，但是我发现实时反馈在实时会话中非常有用。(自己试试)。
+
+```{r,eval=FALSE}
+system.time(
+  m5 <- map_df(1:10, mem_square_verbose)
+)
+```
+
+## 1.4 参考文献
+
+哈德利·韦翰的《高级R》的调试章节提供了一个非常彻底的处理。事实上，整本书都很棒。如果您希望扩展您对R的底层工作原理的理解，并实现一些真正的高性能代码，那么我想不出更好的参考资料了。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

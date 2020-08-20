@@ -1,0 +1,463 @@
+--- 
+title: "机器学习-模型训练与集成"
+# subtitle: "Lecture title"
+author:
+- affiliation: Dongbei University of Finance & Economics
+  name: Studennt. Li Junjie
+date: '`r Sys.Date()`'
+output:
+  bookdown::html_document2:
+    # code_folding: hide
+    highlight: pygments
+    # highlight: zenburn
+    # highlight: haddock
+    # theme: darkly
+    theme: cerulean
+    df_print: paged	
+    number_sections: true
+    keep_md: no
+    keep_tex: no
+    toc: yes
+    toc_depth: 5
+    toc_float:
+      collapsed: no
+      smooth_scroll: yes
+    # css: styles.css
+# bibliography: [book.bib, packages.bib]
+# biblio-style: apalike
+link-citations: yes
+sansfont: Times New Roman
+always_allow_html: yes
+urlcolor: "red"
+description: "This is a minimal example of using the bookdown package to write a book. The output format for this example is bookdown::gitbook."
+abstract: |
+    之前分别介绍了**机器学习概要**、**数据预处理**以及**模型调参**。本次重点介绍**模型训练与集成**。继续回到之前提到的相亲数据，在实际业务开展时，发现相亲失败时不仅客户会心情低落，对于组织相亲的人来说，也会很难过。那么是否可以提升模型预测的精确度，**增加相亲成功率**呢？
+---
+
+# 加载经常用的R包
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      cache = FALSE,
+                      fig.show = "hold",
+                      fig.align = "center",
+                      tidy = FALSE)
+                      # class.source = "bg-warning")
+```
+
+```{r,echo=FALSE}
+library(bubblyr)
+# bubblyr::bubbly(theme = "sweet")
+# bubblyr::bubbly(theme = "rladies")
+```
+
+```{js, echo=FALSE}
+$('.title').css('color', 'red')
+$('.title').css('font-family', 'Times New Roman')
+```
+
+```{css, echo=FALSE}
+* {
+    # font-size: 17px !important;
+    font-family: "Times New Roman" !important;
+    # color: rgb(199 237	204)
+}
+::selection {
+   # background: rgb(135 206 255);
+}
+```
+
+```{r,warning=FALSE,message=FALSE}
+library(pacman)
+# 读数据
+p_load(readxl,writexl,data.table,openxlsx,haven,rvest)
+```
+
+```{r,warning=FALSE,message=FALSE}
+# 数据探索
+p_load(tidyverse,DT,skimr,DataExplorer,explore,vtable,stringr,kableExtra,lubridate)
+```
+
+```{r,eval=TRUE,warning=FALSE,message=FALSE}
+# 模型
+p_load(grf,glmnet,caret,tidytext,fpp2,forecast,car,tseries,hdm,tidymodels,broom)
+```
+
+```{r,eval=FALSE,warning=FALSE,message=FALSE}
+# 可视化
+p_load(patchwork,ggrepel,ggcorrplot,gghighlight,ggthemes,shiny)
+```
+
+```{r,eval=TRUE,warning=FALSE,message=FALSE}
+# 其它常用包
+p_load(magrittr,listviewer,devtools,here,janitor,reticulate,jsonlite)
+```
+
+之前分别介绍了**机器学习概要**、**数据预处理**(这个最重要)以及**模型调参**。本次重点介绍**模型训练与集成**。
+
+继续回到之前提到的**相亲数据**，在实际业务开展时，发现相亲失败时不仅客户会**心情低落**，对于组织相亲的人来说，也会很**难过**。那么是否可以提升模型预测的精确度，**增加相亲成功率呢**？(优秀)
+
+# 读入数据
+
+```{r}
+data <- data.table::fread(here::here("Machine_Learning_and_Causal_Inference/data/相亲数据重新编码.csv"))
+
+data
+```
+
+```{r}
+data %>% str()
+```
+
+# 数据预处理(最重要且最费时间)
+
+## 删除缺失值
+
+```{r}
+data <- data %>% drop_na()
+data %>% dim()  # 5723   29
+```
+
+## 删除近零方差
+
+**零方差**或者**近零方差**的变量传递不了什么信息，因为几乎所有人的取值都一样。可以利用`caret包`中的`nearZeroVar()函数`，一行代码就能找出近零方差的变量，操作过程非常简单。
+
+```{r}
+nearZeroVar(data) # 没有近零变量
+```
+
+不用的代码注释掉
+
+```{r}
+# data_training_dropvariable <- data_training[,-nearZeroVar(data_training)]
+# data_testing_dropvariable <- data_testing[,-nearZeroVar(data_training)]
+# data_training_dropvariable
+```
+
+## 数据类型变换
+
+```{r}
+data %>%
+  mutate(决定   = factor(决定,
+                         levels = c(0, 1),
+                         labels = c("拒绝", "接受"))) %>%
+  mutate(性别   = factor(性别,
+                         levels = c(0, 1),
+                         labels = c("女", "男"))) %>%
+  mutate(种族   = factor(
+    种族,
+    levels = c(1, 2, 3, 4, 5, 6),
+    labels = c("非洲裔", "欧洲裔", "拉丁裔", "亚裔", "印第安土著", "其他")
+  )) %>%
+  mutate(从事领域 = factor(
+    从事领域,
+    levels = 1:18,
+    labels = c(
+      "法律",
+      "数学",
+      "社会科学或心理学",
+      "医学或药物学或生物技术",
+      "工程学",
+      "写作或新闻",
+      "历史或宗教或哲学",
+      "商业或经济或金融",
+      "教育或学术",
+      "生物科学或化学或物理",
+      "社会工作",
+      "大学在读或未择方向",
+      "政治学或国际事务",
+      "电影",
+      "艺术管理",
+      "语言",
+      "建筑学",
+      "其他"
+    )
+  )) %>%
+  mutate(对方决定  = factor(对方决定,
+                            levels = 0:1,
+                            labels = c("拒绝", "接收"))) %>%
+  mutate(对方种族  = factor(
+    对方种族,
+    levels = c(1, 2, 3, 4, 5, 6),
+    labels = c("非洲裔", "欧洲裔", "拉丁裔", "亚裔", "印第安土著", "其他")
+  )) %>%
+  mutate(是否同一种族  = factor(
+    是否同一种族,
+    levels = c(0, 1),
+    labels = c("非同一种族", "同一种族") 
+  )) -> data
+
+data %>% map(unique)
+```
+
+## 数据划分
+
+```{r}
+set.seed(1234)
+data_id <- createDataPartition(y = data$决定,p = 0.75,times = 1,list = FALSE)
+data_training <- data[data_id,]
+data_testing <- data[-data_id,]
+```
+
+```{r}
+data_training$决定 %>% table() %>% prop.table()
+data_testing$决定 %>% table() %>% prop.table()
+
+data$决定 %>% table() %>% prop.table()
+```
+
+## 删除共线性变量
+
+`caret包`中的`findCorrelation()函数`会自动找到**高度共线性**的变量，并给出建议删除的变量。
+
+但需要注意，这个函数对输入的数据要求比较高：
+
+- 首先，数据中**不能有缺失值**，所以在此之前需要先处理缺失值；
+- 其次，只能包含**数值型变量**。
+
+```{r,fig.height=10}
+data_training %>% 
+  select(-nearZeroVar(data_training)) %>% 
+  select(where(is.numeric)) %>% 
+  cor() -> data_cor
+data_cor %>% 
+  round(1) %>% ggcorrplot::ggcorrplot(lab = TRUE,hc.order = TRUE,type = "lower") + mytheme
+```
+
+```{r}
+data_high_cor <- findCorrelation(data_cor,cutoff = 0.75,verbose = TRUE,names = TRUE)
+
+data_high_cor   # 这个数据真好，多重共线性也没有！现实里别想有这么好的数据集
+```
+
+## 标准化(可选择)
+
+**为什么要标准化**？很简单，看看年龄，几十万岁，但是智力这个变量最高也才10分，这两列变量的量纲不同，为了防止年龄的权重过高，就需要将这些特征进行标准化才能学习各个变量真实的权重。需要注意的是：**只能拿训练集的均值和标准差来对测试集进行标准化。**
+
+```{r}
+# data_proprocess_std <- preProcess(data_training,method = c("scale","center"))
+# 
+# data_training_std <- predict(data_proprocess_value,data_training)
+# data_testing_std <- predict(data_proprocess_value,data_testing)
+```
+
+总结：目前就对数据进行了两项处理：**删除缺失值**和**数据类型转换**.。
+
+# 模型调参(默认参数)
+
+可以使用网格搜索和随机搜索，就是后者慢！
+
+```{r}
+set.seed(1234)  # 设置种子
+fit_control <- trainControl(
+  method = "cv",
+  number = 5,             # 5折交叉验证
+  classProbs = TRUE,
+  summaryFunction = twoClassSummary
+)
+```
+
+# 逻辑回归
+
+**逻辑回归**可以说是最基础的分类模型，它度量的是**Y=1的可能性**。图1为经典逻辑回归的一个例子，自变量包括5个，因变量为“是否女神”。**逻辑回归模型利用训练集对不同的自变量赋予不同的权重**，这些自变量线性组合得到z。**z通过logit函数转换**，就得到了“女神的概率”。
+
+```{r,fig.cap="逻辑回归"}
+knitr::include_graphics(here::here("Machine_Learning_and_Causal_Inference/fig/logis.png"))
+```
+
+再看看数据
+
+```{r}
+data_training
+data_testing
+```
+
+```{r}
+data %>% str()
+```
+
+那么，在`caret包`中如何实现**逻辑回归**呢？代码只要几行即可，如下所示：
+
+```{r}
+set.seed(1234)
+model_logis <- train(决定 ~ .,
+                     data = data_training,
+                     method = "glm",     # 方法
+                     trControl = fit_control,
+                     family = "binomial",
+                     metric = "ROC")  # 指标
+
+model_logis_pre <- predict(model_logis,newdata = data_testing)
+
+confusionMatrix(model_logis_pre,data_testing$决定)
+```
+
+# 决策树
+
+**决策树**是机器学习中常用的基础树模型。前面介绍了一个如何判断**是否为女神**的例子，下面就利用决策树来介绍**一个男生追女神**的故事（见下图）。首先判断女生是不是女神，如果是，则看女神是否单身。对于单身女神，又可以分为喜欢我的和不喜欢我的。对于喜欢我的单身女神，果断选择追，其他情况下都选择不追。这就是决策树模型的最终输出呈现。
+
+```{r,fig.cap="决策树"}
+knitr::include_graphics(here::here("Machine_Learning_and_Causal_Inference/fig/tree.png"))
+```
+
+那么，在`caret包`中如何实现决策树呢？在`method`中设置参数为`”rpart”`即可。
+
+```{r}
+set.seed(1234)
+model_tree <- train(决定 ~ .,
+                     data = data_training,
+                     method = "rpart",     # 方法
+                     trControl = fit_control,
+                     metric = "ROC")  # 指标
+
+model_tree_pre <- predict(model_tree,newdata = data_testing)
+
+confusionMatrix(model_tree_pre,data_testing$决定)
+```
+
+# 随机森林
+
+**随机森林**是通过将多棵决策树集成的一种算法，它的基本单元为**决策树**。下图为随机森林建模的步骤，这里依然沿用男生追女神的例子。
+
+```{r,fig.cap="随机森林"}
+knitr::include_graphics(here::here("Machine_Learning_and_Causal_Inference/fig/rf.png"))
+```
+
+首先，从训练样本中重抽样m组样本，每组样本都是一个**子训练集**；然后，对每个子训练集样本都构造出一棵决策树，每棵树都有一个决策结果。最后，使用**投票法**决定最终输出结果。N棵树会有N个分类结果，根据“少数服从多数”原则，投票次数最多的类别为最终的输出。
+
+比如现在有**3棵决策树**：一棵树认为追女神A，两棵树认为不追女神A，那么根据投票法，到底追不追女神A呢？
+
+那么，在`caret包`中如何实现随机森林呢？只需要在`method`中设置为`”rf”`（random forest的缩写），就可以了。
+
+```{r}
+set.seed(1234)
+# model_rf <- train(决定 ~ .,
+#                      data = data_training,
+#                      method = "rf",     # 方法
+#                      trControl = fit_control,
+#                      metric = "ROC")  # 指标
+
+# 先保存随机森林的结果
+
+# save(model_rf,file = here::here("Machine_Learning_and_Causal_Inference/result/model_training_integration-model_rf.RData"))
+
+load(file = here::here("Machine_Learning_and_Causal_Inference/result/model_training_integration-model_rf.RData"))
+model_rf_pre <- predict(model_rf,newdata = data_testing)
+
+confusionMatrix(model_rf_pre,data_testing$决定)
+```
+
+# 模型集成
+
+一个分类器学习可能会犯错，但是多个分类器一起学习可能会取长补短，这是模型集成的思想，一句话概括就是**“三个臭皮匠顶个诸葛亮”**。
+
+用的模型集成方法分为**投票法**、**平均法**和**堆叠**集成。其中**投票法**适用于分类问题，**平均法**适用于回归问题。其中，平均法的结果由几个分类器的结果平均而得，可以采用简单平均和加权平均。
+
+## 投票法
+
+投票法的思想是**“少数服从多数”**，**“群众的眼光是雪亮的”**。和随机森林的思路很像，只是这里的分类器可以是不同的分类器，不仅仅是决策树（见下图）。假设分类器1认为杨幂是女神，分类器2认为杨幂是女神，分类器3认为杨幂不是女神。那么最后这3个分类器经过开会投票表决，决定最终结果为杨幂是女神。这就是**投票法**的思想。
+
+```{r,fig.cap="投票法"}
+knitr::include_graphics(here::here("Machine_Learning_and_Causal_Inference/fig/vote.png"))
+```
+
+```{r}
+results <-  data.frame(model_logis_pre, model_tree_pre, model_rf_pre)
+results <-  map(results,as.character)
+
+# major_results <-  apply(results, 1, function(x) {
+#   tb = sort(table(x), decreasing = T)
+#   if(tb[1] %in% tb[2]) {
+#     return(sample(c(names(tb)[1], names(tb)[2]), 1))
+#   } else {
+#     return(names(tb)[1])
+#   }
+# })  
+
+map(1:length(results[[1]]),function(i){
+  fct_count(map_chr(results,i) %>% unname()) %>% 
+    arrange(desc(n)) %>% 
+    slice(1)
+}) %>% bind_rows() %>%
+  pull(f)  -> results_vote
+
+results_vote %>% class()
+# all.equal(results_vote,major_results)
+
+results_vote %>% levels()
+data_testing$决定 %>% levels()
+confusionMatrix(results_vote, data_testing$决定)
+```
+
+首先将几个分类器得到的结果整合在一个数据框中，然后对每行样本都进行投票表决，得到最终结果。但问题是，**投票法得到的预测精度还不如随机森林**，**为什么呢？**
+
+这里预测精度降低的原因很简单，**就是有个别分类器在拉后腿**。所以需要更有效的方式来进行模型集成，即**堆叠集成法**。
+
+## 堆叠法
+
+**堆叠集成思路**是，首先利用机器学习的不同模型得到不同预测结果，不同模型得到的预测结果就像组装前的零部件。然后将预测结果作为自变量输入模型进行拟合，也就是将这些零部件组装在一起，而如何组装就取决于不同的模型了（见下图）。
+
+```{r,fig.cap="堆叠法"}
+knitr::include_graphics(here::here("Machine_Learning_and_Causal_Inference/fig/pile.png"))
+```
+
+那么在R中如何实现呢？首先**将各个模型得到的分类结果及真实的分类组合成一个数据框**；然后**将各个模型的分类结果**作为自变量，**真实的分类作**为因变量，利用模型进行拟合预测。这里，**在组装这个阶段利用随机森林模型**。
+
+```{r}
+set.seed(1234)
+combPre <- data.frame(model_logis_pre = model_logis_pre, 
+                      model_tree_pre = model_tree_pre,
+                      model_rf_pre =model_rf_pre, 
+                     决定 = data_testing$决定)
+combfit <- train(决定~., 
+                   method = "rf", 
+                   data = combPre,
+                   trControl = fit_control,
+                   metric = "ROC")
+results_pile <-  predict(combfit, newdata = data_testing)
+confusionMatrix(results_pile, data_testing$决定)
+```
+
+## AdaBoost
+
+`AdaBoost算法`的核心思想是：区别对待不同训练样本。首先，**秉承“人人平等”的原则**，对所有训练样本都赋予相等的权重。然后，对每个训练样本都进行训练，得到训练精度。**秉承“帮助弱者”的原则**，对训练精度低的样本赋予更大的权重，让模型能更注意提高这部分样本的训练精度。最后，**将各个样本训练出来的结果进行加权投票或加权平均**。
+
+下边代码训练时间也有点长，先使用`save函数`保存结果
+
+```{r,message=FALSE,eval=FALSE}
+set.seed(1234)
+model_ada <-  train(决定 ~., 
+               data = data_training, 
+               method = "gam")  # 训练模型
+result_ada <- predict(model_ada, newdata = data_testing)  # 在测试集上预测
+confusionMatrix(result_ada, data_testing$决定)  # 利用混淆矩阵评估模型
+
+save(result_ada,here::here("Machine_Learning_and_Causal_Inference/model_training_integration-result_ada"))
+
+load(here::here("Machine_Learning_and_Causal_Inference/model_training_integration-result_ada"))
+```
+
+最后，来总结一下本节用到的模型及模型集成的预测精度。可以看出，**堆叠集成法**是提高预测精度的利器。
+
+```{r}
+confusionMatrix(model_logis_pre, data_testing$决定)[[3]][[1]]  # 利用混淆矩阵评估模型
+
+confusionMatrix(model_rf_pre, data_testing$决定)[[3]][[1]]  # 利用混淆矩阵评估模型
+
+confusionMatrix(model_tree_pre, data_testing$决定)[[3]][[1]]  # 利用混淆矩阵评估模型
+
+confusionMatrix(results_vote, data_testing$决定)[[3]][[1]]  # 利用混淆矩阵评估模型
+
+confusionMatrix(results_pile, data_testing$决定)[[3]][[1]]  # 利用混淆矩阵评估模型
+
+result_df_compare <- tibble(
+  logis = confusionMatrix(model_logis_pre, data_testing$决定)[[3]][[1]],
+  rf = confusionMatrix(model_rf_pre, data_testing$决定)[[3]][[1]],  # 利用混淆矩阵评估模型
+  tree = confusionMatrix(model_tree_pre, data_testing$决定)[[3]][[1]],  # 利用混淆矩阵评估模型
+  vote = confusionMatrix(results_vote, data_testing$决定)[[3]][[1]] , # 利用混淆矩阵评估模型
+  pile = confusionMatrix(results_pile, data_testing$决定)[[3]][[1]],  # 利用混淆矩阵评估模型
+)
+result_df_compare %>% t() %>% as.data.frame() %>% rownames_to_column(var = "model") %>% 
+  rename(value = V1) %>% 
+  arrange(value)
+```

@@ -1,0 +1,146 @@
+--- 
+title: "stringr.plus-package"
+# subtitle: "Lecture title"
+author:
+- affiliation: Dongbei University of Finance & Economics
+  name: Studennt. Li Junjie
+date: '`r Sys.Date()`'
+output:
+  bookdown::html_document2:
+    # code_folding: hide
+    highlight: pygments
+    # highlight: zenburn
+    # highlight: haddock
+    theme: darkly
+    # theme: cerulean
+    df_print: paged	
+    number_sections: true
+    keep_md: no
+    keep_tex: no
+    toc: yes
+    toc_depth: 5
+    toc_float:
+      collapsed: no
+      smooth_scroll: yes
+    # css: styles.css
+# bibliography: [book.bib, packages.bib]
+# biblio-style: apalike
+link-citations: yes
+sansfont: Times New Roman
+always_allow_html: yes
+urlcolor: "red"
+description: "This is a minimal example of using the bookdown package to write a book. The output format for this example is bookdown::gitbook."
+abstract: |
+    **`stringr.plus`** provides some additional functions not found in `stringr` for working with strings. Functions play quite nicely with the `tidyverse.` The functions are especially useful for working with **URLs** and **file path** data to extract specific text from strings.
+
+---
+
+# 加载经常用的R包
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      cache = FALSE,
+                      fig.show = "hold",
+                      fig.align = "center",
+                      tidy = FALSE)
+                      # class.source = "bg-warning")
+```
+
+```{r,echo=FALSE}
+library(bubblyr)
+# bubblyr::bubbly(theme = "sweet")
+bubblyr::bubbly(theme = "rladies")
+```
+
+```{js, echo=FALSE}
+$('.title').css('color', 'red')
+$('.title').css('font-family', 'Times New Roman')
+```
+
+```{css, echo=FALSE}
+* {
+    # font-size: 17px !important;
+    font-family: "Times New Roman" !important;
+    # color: rgb(199 237	204)
+}
+::selection {
+   # background: rgb(135 206 255);
+}
+```
+
+```{r,warning=FALSE,message=FALSE}
+library(pacman)
+# 读数据
+p_load(readxl,writexl,data.table,openxlsx,haven,rvest)
+```
+
+```{r,warning=FALSE,message=FALSE}
+# 数据探索
+p_load(tidyverse,DT,skimr,DataExplorer,explore,vtable,stringr,kableExtra,lubridate)
+```
+
+```{r,eval=FALSE,warning=FALSE,message=FALSE}
+# 模型
+p_load(grf,glmnet,caret,tidytext,fpp2,forecast,car,tseries,hdm,tidymodels,broom)
+```
+
+```{r,eval=FALSE,warning=FALSE,message=FALSE}
+# 可视化
+p_load(patchwork,ggrepel,ggcorrplot,gghighlight,ggthemes,shiny)
+```
+
+```{r,eval=TRUE,warning=FALSE,message=FALSE}
+# 其它常用包
+p_load(magrittr,listviewer,devtools,here,janitor,reticulate,jsonlite)
+```
+
+```{r}
+library(stringr.plus)
+```
+
+# 案例分析
+
+```{r}
+url <- 'www.carfax.com/vehicle/3GCPKTE77DG348900'
+stringr.plus::str_extract_before(string = url,pattern = "/")
+```
+
+```{r}
+stringr.plus::str_extract_after(string = url,pattern = "/") %>% 
+  str_extract_after(pattern = "/")
+```
+
+```{r}
+stringr.plus::str_extract_after(string = url,
+                                pattern = "vehicle/3GCPKTE")
+```
+
+```{r}
+stringr.plus::str_extract_before(url,"/",num_char = 3)
+```
+
+```{r}
+stringr.plus::str_extract_after(url,"/",num_char = 5)
+```
+
+#Additionally, we often are interested in extracting text between two common patterns:
+
+```{r}
+file_path <- "‪C:/Users/pingu/Downloads/a-very-poorly-named-file_08_09_2020.csv"
+str_extract_between(string = file_path, pattern1 = '_', pattern2 = ".csv")
+```
+
+```{r}
+#str_detect_multiple with the "and" method ensures that all patterns must be found to return TRUE:
+file_path <- "‪C:/Users/pingu/Downloads/a-very-poorly-named-file_08_09_2020.csv"
+str_detect_multiple_and(string = file_path, patterns = c("pingu", "2020"))
+```
+
+```{r}
+#str_detect_multiple with the "or" method ensures at least one of patterns must be found to return TRUE:
+file_path <- "‪C:/Users/pingu/Downloads/a-very-poorly-named-file_08_09_2020.csv"
+str_detect_multiple_or(file_path,patterns = c("larges","csv"))
+```
+
+这些函数从`stringr::str_extract()`继承属性并基于它们，所以模式可以是正则表达式。有关更多细节，请参阅文档。
+

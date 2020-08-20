@@ -1,0 +1,334 @@
+--- 
+title: "purrr教程2"
+# subtitle: "Lecture title"
+author:
+- affiliation: Dongbei University of Finance & Economics
+  name: Studennt. LI Junjie
+date: '`r Sys.Date()`'
+output:
+  bookdown::html_document2:
+    # code_folding: hide
+    highlight: pygments
+    # highlight: zenburn
+    # highlight: haddock
+    # theme: darkly
+    theme: journal
+    df_print: paged	
+    number_sections: true
+    keep_md: no
+    keep_tex: no
+    toc: yes
+    toc_depth: 5
+    toc_float:
+      collapsed: no
+      smooth_scroll: yes
+    # css: styles.css
+# bibliography: [book.bib, packages.bib]
+# biblio-style: apalike
+link-citations: yes
+sansfont: Times New Roman
+always_allow_html: yes
+urlcolor: "red"
+description: "This is a minimal example of using the bookdown package to write a book. The output format for this example is bookdown::gitbook."
+---
+
+# 加载经常用的R包
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      fig.show = "hold",
+                      fig.align = "center",
+                      tidy = FALSE,
+                      class.source = "bg-warning")
+```
+
+```{js, echo=FALSE}
+$('.title').css('color', 'red')
+$('.title').css('font-family', 'Times New Roman')
+```
+
+```{css, echo=FALSE}
+* {
+    # font-size: 17px !important;
+    font-family: "Times New Roman" !important;
+    # color: rgb(199 237	204)
+}
+::selection {
+   # background: rgb(135 206 255);
+}
+```
+
+```{r,warning=FALSE,message=FALSE}
+library(pacman)
+# 读数据
+p_load(readxl,writexl,data.table,openxlsx,haven,rvest)
+```
+
+```{r,warning=FALSE,message=FALSE}
+# 数据探索
+p_load(tidyverse,DT,skimr,DataExplorer,explore,vtable,stringr,kableExtra,lubridate)
+```
+
+```{r,eval=FALSE,warning=FALSE,message=FALSE}
+# 模型
+p_load(grf,glmnet,caret,tidytext,fpp2,forecast,car,tseries,hdm,tidymodels,broom)
+```
+
+```{r,eval=FALSE,warning=FALSE,message=FALSE}
+# 可视化
+p_load(patchwork,ggrepel,ggcorrplot,gghighlight,ggthemes,shiny)
+```
+
+```{r,eval=TRUE,warning=FALSE,message=FALSE}
+# 其它常用包
+p_load(magrittr,listviewer,devtools,here,janitor,reticulate,jsonlite)
+```
+
+```{r}
+p_load(repurrrsive,stringi)
+```
+
+# 介绍repurrrsive
+
+```{r}
+repurrrsive::sw_people %>% listviewer::jsonedit()
+sw_people %>% head(2)
+sw_people[[1]] 
+sw_people[[1]] %>% listviewer::jsonedit()
+```
+
+How many elements are in sw_people?
+
+```{r}
+sw_people %>% length()
+```
+
+Who is the first person listed in sw_people? What information is given for this person?
+
+```{r}
+sw_people %>% .[[1]]
+```
+
+What is the difference between sw_people[1] and sw_people[[1]]?
+
+```{r}
+sw_people %>% .[1]
+sw_people %>% .[[1]]
+```
+
+# map(.x,.f,...)函数
+
+```{r}
+luck <- sw_people[[1]]
+luck
+luck$starships %>% length()
+```
+
+```{r}
+leia <- sw_people[[5]]
+leia
+leia$starships %>% length()
+```
+
+```{r}
+map(sw_people,function(i){
+  i$starships %>% length()
+}) %>% unlist()
+```
+
+```{r}
+map(sw_people,function(i){
+  i[["hair_color"]]
+}) %>% unlist()
+```
+
+```{r}
+map(sw_people, "starships") -> x
+map(sw_people,function(i){
+  i[["starships"]]
+}) -> y
+all.equal(x,y)
+```
+
+为什么要用purrr,而不是apply家族
+
+- consistent return type
+- useful shortcuts
+- consistent syntax for more complicated iteration
+
+# 轮到你了-sw_*数据集
+
+Which film (see **sw_films**) has the most characters?
+
+```{r}
+sw_films %>% listviewer::jsonedit()
+sw_films %>% length()
+```
+
+```{r}
+sw_films %>% .[1]
+sw_films %>% .[[1]]
+sw_films %>% .[[1]] %>% .[[3]]
+```
+
+```{r}
+map(sw_films,function(i){
+  i[["characters"]]
+}) %>% 
+  map(length) %>%
+  unlist() %>% 
+  set_names(
+    map_chr(sw_films,function(i){
+  i[["title"]]
+})
+  ) %>% 
+  sort()
+```
+
+```{r}
+sw_species %>% 
+  map(function(i){
+    i[["eye_colors"]]
+  }) %>% unlist() %>% 
+  str_split(pattern = ",") %>% 
+  map(length) %>% unlist() %>% 
+  set_names(1:37) %>% 
+  sort()
+```
+
+# 更多的迭代函数
+
+- map(.x,.f,...)
+- walk(.x,.f,...)
+- map2(.x,.y,.f)
+
+# 轮到你了-map or walk
+
+1. For each function, which two arguments might be useful to iterate over?
+- download.file()
+- rnorm()
+- lm()
+- predict.lm()
+- write.csv()
+2. For which functions above should we use walk2() or a typed version of
+map2()?
+
+```{r}
+gap_split_small <- gap_split[1:10]
+countries <- names(gap_split_small)
+```
+
+```{r}
+ggplot(gap_split[[1]],aes(year,lifeExp)) +
+  geom_line() +
+  labs(title = countries[[1]]) +
+  theme(text = element_text(family = enfont),
+        plot.title = element_text(hjust = 0.5))
+```
+
+```{r}
+map2(gap_split_small,countries,function(i,j){
+  ggplot(i,aes(year,lifeExp)) +
+  geom_line() +
+  labs(title = j) +
+  theme(text = element_text(family = enfont),
+        plot.title = element_text(hjust = 0.5))
+}) -> plots
+
+plots[[2]]
+walk(plots,print) # this might take awhile
+```
+
+# purrr和列表列
+
+```{r}
+people_tbl <- tibble(
+  name = sw_people %>% map_chr("name"),
+  films = sw_people %>% map("films"),
+  height = sw_people %>% map_chr("height") %>%
+    readr::parse_number(na = "unknown"),
+  species = sw_people %>% map_chr("species", .null = NA_character_
+  )
+)
+people_tbl
+```
+
+# purrr：pmap和invoke_map
+
+- pmap
+- invoke_map
+
+# WRAP UP!
+
+purrr provides:
+
+- functions that write for loops for you
+- with consistent syntax
+- convenient shortcuts for specifying functions to iterate
+
+Choosing the right function depends on:
+
+- type of iteration
+- type of output
+
+# 学习更多
+
+Jenny Bryan's purrr tutorial
+
+<https://github.com/jennybc/purrr-tutorial>
+
+All materials (code files too): <https://github.com/cwickham/purrr-tutorial>
+
+# 练习1-mtcars
+
+```{r}
+mtcars_by_cyl <- mtcars %>% 
+  split(mtcars$cyl)
+mtcars_by_cyl
+```
+
+```{r}
+# Fit a regression model to each element 
+map(mtcars_by_cyl,function(i){
+  lm(mpg~disp,data = i)
+})
+```
+
+```{r}
+library(broom)
+# Extract R^2 from each regression model
+map(mtcars_by_cyl,function(i){
+  lm(mpg~disp,data = i)
+}) %>% map(glance) %>% 
+  map(function(i){i[["r.squared"]]})
+  
+```
+
+```{r}
+# Extract the slope from each regression model
+# Extract R^2 from each regression model
+map(mtcars_by_cyl,function(i){
+  lm(mpg~disp,data = i)
+}) %>% map(tidy) %>% 
+  map(function(i){i[["estimate"]]}) %>% 
+  bind_cols()
+```
+
+# 练习2-word_count.R
+
+```{r}
+read_lines(file = "../data1/challenges/word_count_files/geospatial-README.md") -> geospatial_README_text
+
+read_lines(file = "../data1/challenges/word_count_files/nass-README.md") -> nass_README_text
+
+read_lines(file = "../data1/challenges/word_count_files/purrr-workshop-README.md") -> purrr_README_text
+```
+
+```{r}
+stri_stats_general(geospatial_README_text)
+stri_stats_general(nass_README_text)
+stri_stats_general(purrr_README_text)
+```
+
+

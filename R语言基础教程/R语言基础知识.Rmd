@@ -1,0 +1,231 @@
+---
+title: "R语言基础知识"
+author: "ljj"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    highlight: espresso
+    theme: united
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+    toc_depth: 5
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      fig.show = "hold",
+                      fig.align = "center",
+                      tidy = FALSE)
+```
+
+## 加载经常用的R包
+
+```{r,warning=FALSE,message=FALSE}
+library(pacman)
+p_load(tidyverse,stringr,DT,skimr,DataExplorer,grf,glmnet,caret,tidytext,
+       explore,patchwork,ggrepel,ggcorrplot,gghighlight,ggthemes,fpp2,
+       forecast,magrittr,readxl,writexl,listviewer,car,tseries,vtable)
+```
+
+R语言是免费、开源、自由的计算平台使用成本低
+
+R的基础语法简单、学习速度快、上手容易
+
+R语言的数据可视化能力强，提供了丰富的绘图函数
+
+扩展软件包发展速度快、更新快，目前已有数千个扩展包覆盖几乎所有的科学计算领域
+
+虽然运行速度比C/C++等慢，但是可以快速测试各种算法，节约项目实验、研究时间。
+
+很多时候只需一行代码就可以实行一项复杂的功能
+
+R语言的学习、研究社区发展快、学习资料丰富
+   
+## RStudio 重要快捷键
+
+- Ctrl + L              # 清除控制台输出
+- Ctrl + Enter          # 运行光标所在行的R代码 或者 当前选中行的R代码
+- Ctrl + Shift + S      # 运行当前脚本文件
+- Ctrl + D              # 删除整行
+
+## 基础知识
+
+```{r}
+# 通过赋值生成一个新变量
+x  <- 1.5
+print(x)
+y1 <- c(1.5,2.3,8.6,7.4,9.2)
+print(y1)
+y2 <- c("MSFT","GOOG","AAPL")
+print(y2)
+y3 <- c(T,F,T,T,F,F)
+print(y3)
+
+3.1415926 -> z
+print(z)               
+
+assign("t",1.414)
+print(t)            # assign()函数给变量赋值
+
+szSymbolName <- 'GSPC'                
+assign(szSymbolName,1860)
+print(GSPC)
+```
+
+```{r}
+# 可一次输入多个数据
+cat("x = ",x,"\n",sep="")
+
+
+# 显示当前内存中的所有变量、函数名称
+ls()
+
+# 删除内存中的指定名称变量
+rm(GSPC)
+
+# 删除内存中加载的所有变量和函数，慎用
+# rm(list=ls())
+```
+
+```{r}
+
+# 分支结构
+
+a <- 1
+if(a==1){
+  print("a==1")
+}
+
+a <- 2
+if(a > 1){
+  print("a > 1")
+} else {
+  print("a <= 1")
+}        
+
+
+a <- 3
+if (a == 1){
+  print("a == 1")
+} else {
+  print("a != 1")
+}
+```
+
+```{r}
+
+# 多重分支结构，同样每个else必须和前面的}紧紧粘在一起
+a <- 4
+
+if(a == 1) {
+  print("a == 1")
+} else if (a == 2) {
+  print("a == 2")
+} else{
+  print("Not 1 %2")
+}
+
+# ifelse()计算第一个逻辑表达式得到结果如果为T则返回第二个参数；否则返回第三个参数
+a <- 2
+print(ifelse(a > 1,3.1416,1.414) )
+```
+
+```{r}
+# switch语句的多重分支结构
+n <- 1
+
+switch(n,
+       print("选项1"),
+       print("选项2"),
+       print("选项3"),
+       print("选项4"),
+       print("选项5")
+       )
+```
+
+```{r}
+# for 循环结构
+
+iTotal <-  0
+
+for(i in 1:100)   # 使用关键词in枚举向量中的每一整数
+{
+   iTotal <- iTotal + i
+} 
+cat("1-100的累加和为：",iTotal,"\n",sep="")
+
+```
+
+```{r}
+# 字符串也同样可以成功枚举十分方便
+szSymbols <- c("MSFT","GOOG","AAPL","INTL","ORCL","SYMC")
+for(SymbolName in szSymbols)
+{
+   cat(SymbolName,"\n",sep="")
+}
+```
+
+```{r}
+
+# while循环
+i <- 1
+iTotal <- 0
+while(i <= 100)
+{
+   iTotal <- iTotal + i
+   i <- i + 1
+}
+cat("1-100的累加和为：",iTotal,"\n",sep="")
+```
+
+```{r}
+# repeat循环
+i <- 1
+iTotal <- 0
+repeat                               # 无条件循环，必须在程序内部设法退出
+{
+  iTotal <- iTotal + i
+  i <- i + 1
+  
+  if(i <= 100) next else break       # 注意：next,break的用法
+}
+cat("1-100的累加和为：",iTotal,"\n",sep="")
+```
+
+```{r}
+# 自定义函数
+# 注意：建立功能丰富、庞大、专业的自定义函数库、类库是公司的核心竞争力
+# pt <- function() { szCurTime <- as.character.Date(Sys.time()); options(prompt=paste(szCurTime,">",sep="")) }
+#pt()
+
+
+# 定义自己的二元运算符，%anything%，两个百分号之间可以是任何字符串
+# 定义二元运算符的过程和编写自定义函数本质相同
+"%g%" <- function(x,y)
+{
+   print(x+y)
+   print(x-y)
+   print(x*y)
+   print(x/y)
+}  
+
+3%g%5
+```
+
+```{r}
+
+# 获取帮助信息
+
+?print              # 在RStudio右侧打开相关帮助界面
+# example(print)
+
+# ?quantmod         # 打开扩展包整体帮助信息
+
+apropos("print*")   # 在搜索路径下查找满足正则表达式的所有函数信息
+
+demo(graphics)
+
+```
+

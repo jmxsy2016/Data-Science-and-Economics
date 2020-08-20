@@ -1,0 +1,347 @@
+--- 
+title: "机器学习简介"
+# subtitle: "Lecture title"
+author:
+- affiliation: Dongbei University of Finance & Economics
+  name: Studennt. Li Junjie
+date: '`r Sys.Date()`'
+output:
+  bookdown::html_document2:
+    # code_folding: hide
+    highlight: pygments
+    # highlight: zenburn
+    # highlight: haddock
+    # theme: darkly
+    theme: cerulean
+    df_print: paged	
+    number_sections: true
+    keep_md: no
+    keep_tex: no
+    toc: yes
+    toc_depth: 5
+    toc_float:
+      collapsed: no
+      smooth_scroll: yes
+    # css: styles.css
+# bibliography: [book.bib, packages.bib]
+# biblio-style: apalike
+link-citations: yes
+sansfont: Times New Roman
+always_allow_html: yes
+urlcolor: "red"
+description: "This is a minimal example of using the bookdown package to write a book. The output format for this example is bookdown::gitbook."
+abstract: |
+    机器学习已经成为建模环节中必备的实践方法。本章主要介绍用R语言实现机器学习的一些典型算法。其中，本章将以**相亲市场数据**为例，讲解相关模型的建立与解读。
+editor_options: 
+  chunk_output_type: console
+---
+
+# `r emo::ji("smile")`加载经常用的R包`r emo::ji("smile")`
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      cache = FALSE,
+                      fig.show = "hold",
+                      fig.align = "center",
+                      tidy = FALSE)
+                      # class.source = "bg-warning")
+```
+
+```{r,echo=FALSE}
+library(bubblyr)
+# bubblyr::bubbly(theme = "sweet")
+# bubblyr::bubbly(theme = "rladies")
+```
+
+```{js, echo=FALSE}
+$('.title').css('color', 'red')
+$('.title').css('font-family', 'Times New Roman')
+```
+
+```{css, echo=FALSE}
+* {
+    # font-size: 17px !important;
+    font-family: "Cinzel" !important;
+    # color: rgb(199 237	204)
+}
+::selection {
+   # background: rgb(135 206 255);
+}
+```
+
+```{r,warning=FALSE,message=FALSE}
+library(pacman)
+# 读数据
+p_load(readxl,writexl,data.table,openxlsx,haven,rvest)
+```
+
+```{r,warning=FALSE,message=FALSE}
+# 数据探索
+p_load(tidyverse,DT,skimr,DataExplorer,explore,vtable,stringr,kableExtra,lubridate)
+```
+
+```{r,eval=TRUE,warning=FALSE,message=FALSE}
+# 模型
+p_load(grf,glmnet,caret,tidytext,fpp2,forecast,car,tseries,hdm,tidymodels,broom)
+```
+
+```{r,eval=TRUE,warning=FALSE,message=FALSE}
+# 可视化
+p_load(patchwork,ggrepel,ggcorrplot,gghighlight,ggthemes,shiny)
+```
+
+```{r,eval=TRUE,warning=FALSE,message=FALSE}
+# 其它常用包
+p_load(magrittr,listviewer,devtools,here,janitor,reticulate,jsonlite)
+```
+
+# `r emo::ji("smile")`机器学习简介`r emo::ji("smile")`
+
+机器学习的整个过程就像是**烹饪**。首先是**准备食材**，也就是准备并读入数据；其次**是对食材进行加工**，比如洗菜、切菜，也就是数据预处理；再次是**对这些食材进行烹调**，也就是模型训练；最后是将不同厨师做出来的菜**给评委品尝**，评委满意度越高越好，也即模型预测及评价。
+
+# `r emo::ji("smile")`读入数据`r emo::ji("smile")`
+
+分析之前，要先把数据和分析所需要的R包准备好。这里分析用到的数据为相亲数据`.csv`，直接使用read.csv操作即可。分析的整个过程借用了`caret包`来完成。这里的`caret包`是为了解决预测问题的综合机器学习工具包。这个包的特点就是能够快速把所有的材料准备好，包括**数据预处理**、**模型训练**、**模型预测**的整个过程。
+
+```{r}
+data <- read.csv(here::here("Machine_Learning_and_Causal_Inference/data/相亲数据重新编码.csv"))
+```
+
+```{r}
+data %>% as_tibble() -> data
+```
+
+```{r}
+data %>% str()
+```
+
+```{r}
+data %>% glimpse()
+```
+
+```{r}
+data %>% skimr::skim()
+```
+
+# `r emo::ji("smile")`数据预处理和数据分割`r emo::ji("smile")`
+
+## `r emo::ji("flowers")`处理缺失值`r emo::ji("flowers")`
+
+现实生活中，在数据分析时，经常会碰到缺失值，比如相亲数据中，有些女性不愿意暴露自己的年龄，**年龄就会有缺失值**。那么对于缺失值，怎么处理呢？处理方式很多，甚至有时候数据缺失本身也暗含一些信息（比如年龄缺失的女性可能是因为年龄比较大），由此引申了许多插补方法。不过这里缺失值处理并不是重点，**因此对于缺失值直接删除即可**。
+
+```{r}
+data %>% is.na() %>% sum()  # 7735个缺失值
+```
+
+```{r}
+data %>% janitor::get_dupes()  # 重复的行
+```
+
+```{r}
+data %>% dim()
+data %>% janitor::remove_empty(which = "rows")
+```
+
+```{r}
+data %<>% drop_na()
+data %>% dim()  # 删除的缺失值不少
+```
+
+## `r emo::ji("flowers")`转换数据类型`r emo::ji("flowers")`
+
+对于完整的观测，首先需要定义变量的类型：属于**定性变量**还是**连续变量**。对于定性变量而言，需要给定性变量的各个水平取名，比如性别有两个水平**1和0**，分别命名为**男、女**。
+
+```{r}
+data %>% str()  # 全是数值型，需要改变
+```
+
+```{r}
+data %>% map(unique)
+data %>%
+  mutate(决定   = factor(决定,
+                         levels = c(0, 1),
+                         labels = c("拒绝", "接受"))) %>%
+  mutate(性别   = factor(性别,
+                         levels = c(0, 1),
+                         labels = c("女", "男"))) %>%
+  mutate(种族   = factor(
+    种族,
+    levels = c(1, 2, 3, 4, 5, 6),
+    labels = c("非洲裔", "欧洲裔", "拉丁裔", "亚裔", "印第安土著", "其他")
+  )) %>%
+  mutate(从事领域 = factor(
+    从事领域,
+    levels = 1:18,
+    labels = c(
+      "法律",
+      "数学",
+      "社会科学或心理学",
+      "医学或药物学或生物技术",
+      "工程学",
+      "写作或新闻",
+      "历史或宗教或哲学",
+      "商业或经济或金融",
+      "教育或学术",
+      "生物科学或化学或物理",
+      "社会工作",
+      "大学在读或未择方向",
+      "政治学或国际事务",
+      "电影",
+      "艺术管理",
+      "语言",
+      "建筑学",
+      "其他"
+    )
+  )) %>%
+  mutate(对方决定  = factor(对方决定,
+                            levels = 0:1,
+                            labels = c("拒绝", "接收"))) %>%
+  mutate(对方种族  = factor(
+    对方种族,
+    levels = c(1, 2, 3, 4, 5, 6),
+    labels = c("非洲裔", "欧洲裔", "拉丁裔", "亚裔", "印第安土著", "其他")
+  )) %>%
+  mutate(是否同一种族  = factor(
+    是否同一种族,
+    levels = c(0, 1),
+    labels = c("非同一种族", "同一种族") 
+  )) -> data
+```
+
+重新看看数据，有的变量已经成为因子变量
+
+```{r}
+data %>% str()
+```
+
+```{r}
+data %>% glimpse()
+```
+
+```{r}
+data %>% map(unique)
+```
+
+## `r emo::ji("flowers")`数据划分`r emo::ji("flowers")`
+
+这一步，需要将数据分割为**训练集和测试集**。常用的方式是5折划分，也就是将数据的80%划分为训练集，20%划分为测试集。**训练集**用于训练模型，**测试集**用于测试模型的效果。需要注意的是，测试集的信息就是黑盒子，是“雷区”，**是绝对不能用到的信息**。
+
+当因变量Y的各个水平比例分布不均时，需要保证训练集和测试集中有相同比例，这时就会用到`caret包`。
+
+`caret包`中`createDataPartition()函数`可以用于创建训练集，该函数的抽样方法类似**分层抽样**，从因变量Y的各个水平中随机抽取80%的数据作为训练集，剩下的数据作为测试集。
+
+```{r}
+set.seed(1234)
+data_id <- createDataPartition(data$决定,
+                               p = 0.8,
+                               list = FALSE,
+                               times = 1)
+data_training <- data[data_id,]
+data_testing <- data[-data_id,]
+```
+
+```{r}
+table(data_training$决定) %>% prop.table()
+table(data_testing$决定) %>% prop.table()
+data %$% table(决定) %>% prop.table()
+```
+
+## `r emo::ji("flowers")`标准化处理`r emo::ji("flowers")`
+
+**标准化处理**是指将数据处理为均值为0、标准差为1的数据。*那么为什么要进行标准化处理呢*？因为在进行实证分析时，有些变量取值很大，有些变量取值很小，这里需要营造一个公平公正的环境，权重的大小不能被自身变量取值的大小所束缚。比如在判断一个女生是否是美女时，会考虑腿长、脸长、脸宽、腰围等因素，这些因素的学名为**特征**。显然腿长的取值比脸长的取值大得多，这时为了防止腿长的权重过高，就需要将这些特征进行标准化才能学习各个变量真实的权重。
+
+标准化处理时，**只能利用训练集的均值与标准差对训练集和测试集进行标准化**。
+
+```{r}
+pre_process_value <- preProcess(data_training,
+                                method = c("center","scale"))
+
+data_training_std <- predict(pre_process_value,data_training)
+
+# 利用训练集的均值和标准差对测试集进行标准化(重要)
+data_testing_std <- predict(pre_process_value,data_testing)
+```
+
+```{r}
+data_training_std
+data_testing_std
+```
+
+# `r emo::ji("smile")`特征选择`r emo::ji("smile")`
+
+**特征选择**是指选择出那些对研究问题至关重要的特征，剔除掉那些不重要的变量。依然拿判断一个女生是否是美女为例，我们会考虑**腿长、脸长、脸宽、腰围、年龄、肤色、脸型、上下身比例、牙齿是否洁白……**影响一个人是否是美女的因素很多，但并不是所有因素都是特别重要的。所以需要选择出那些对判断是否为美女至关重要的变量。
+
+特征选择在R中如何实现呢？`caret包`中`rfe()函数`可以用于特征选择，该函数属于特征选择中的**封装法**。该函数还内嵌一个特殊的函数——`rfecontrol()`，用于输入目标函数和抽样方法。在判断一个女生是否为美女的例子中，我们以随机森林为目标函数，即functions为`rfFuncs`，抽样方法为**交叉验证**，即将参数method设置为cv。该方法的核心思想为用随机森林法进行预测，挑出来的特征使交叉验证的平均预测精度越高越好。
+
+封装法 `rfe: Recursive feature selection `
+
+```{r}
+subsets = c(2, 5, 10, 15, 20)
+# 要选择的变量个数
+ctrl = rfeControl(functions = rfFuncs, method = "cv")
+```
+
+首先定义控制参数，`functions`是确定用什么样的模型进行自变量排序，本例选择的模型是随机森林。根据目标函数（通常是预测效果评分），每次选择若干特征。`method`是确定用什么样的抽样方法，本例使用`cv`，即交叉检验。
+
+```{r}
+data_training_std_x <- data_training_std %>% 
+  select(-决定)
+
+data_training_std_y <- data_training_std %>% 
+  select(决定) %>% 
+  pull()
+```
+
+```{r}
+# data_training_std_select <- rfe(data_training_std_x,
+#                                 data_training_std_y,
+#                                 rfeControl = ctrl)
+# 
+# save(data_training_std_select,file = here::here("Machine_Learning_and_Causal_Inference/code/data_training_std_select.RData"))
+
+load(file = here::here("Machine_Learning_and_Causal_Inference/code/data_training_std_select.RData"))
+data_training_std_select
+data_training_std_select$optVariables
+```
+
+# `r emo::ji("smile")`模型训练`r emo::ji("smile")`
+
+**随机森林算法**选择了16个让其预测精度最高的特征，接下来就要把这16个特征作为**自变量**来训练模型，此时用到的数据为训练集，建模依然用**随机森林法**。
+
+```{r}
+data_training_std_select_fin <- data_training_std %>% 
+  select(data_training_std_select$optVariables,决定)
+
+data_testing_std_select_fin <- data_testing_std %>% 
+  select(data_training_std_select$optVariables,决定)
+```
+
+```{r}
+set.seed(1234)
+# model_rf <- caret::train(决定~.,data = data_training_std_select_fin,
+#                            method = "rf")
+
+# save(model_rf,file = here::here("Machine_Learning_and_Causal_Inference/result/data_training_std_select.RData"))
+
+load(file = here::here("Machine_Learning_and_Causal_Inference/result/data_training_std_select.RData"))
+model_rf
+```
+
+变量重要性
+
+```{r}
+model_rf %>% varImp(scale = FALSE) -> variable_imp
+variable_imp %>% ggplot() + mytheme
+```
+
+模型训练出来后，就可以顺便把变量的重要性给提取出来了。从下图可以看出，**好感、吸引力与共同爱好**这三个特征最为重要。
+
+# `r emo::ji("smile")`模型测试集评估`r emo::ji("smile")`
+
+最后来测试一下模型的预测精度。数据分析的结局不能是开放式任凭想象的，需要给出一个具体的数值。使用`caret包`的`predict()函数`，预测精度就呈现出来了
+
+```{r}
+data_predict <- predict(model_rf,newdata = data_testing_std_select_fin)
+confusionMatrix(data_predict,data_testing_std_select_fin$决定)
+```
+

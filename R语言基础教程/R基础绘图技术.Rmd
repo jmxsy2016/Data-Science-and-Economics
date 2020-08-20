@@ -1,0 +1,186 @@
+---
+title: "R基础绘图技术"
+author: 
+- affiliation: Dongbei University of Finance & Economics
+  name: Studennt. LJJ
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    highlight: pygments
+    theme: paper
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+    toc_depth: 5
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      fig.show = "hold",
+                      fig.align = "center",
+                      tidy = FALSE)
+```
+
+## 加载经常用的R包
+
+```{r,warning=FALSE,message=FALSE}
+library(pacman)
+# 模型
+p_load(tidyverse,grf,glmnet,caret,tidytext,fpp2,
+       forecast,car,tseries,hdm,tidymodels,broom)
+
+# 读数据
+p_load(readxl,writexl,data.table,openxlsx,haven,rvest)
+
+# 数据探索
+p_load(DT,skimr,DataExplorer,explore,vtable,stringr,lubridate)
+
+# 可视化
+p_load(patchwork,ggrepel,ggcorrplot,gghighlight,ggthemes,shiny)
+
+# 其它常用包
+p_load(magrittr,listviewer,devtools,here,janitor,reticulate,jsonlite)
+```
+
+## base R绘图技术
+
+这里简单介绍R绘图技术，并不深入，对于深入学习R绘图，不得不说ggplot2包。有兴趣的可以看看我写的绘图系列教程，基本可以完成80%的绘图任务，对于更复杂的绘图，就需要经验，时间和训练等，不是像画个散点图那么简单。对于经常画图，喜欢可视化的人，读一本可视化专著，多看博客，多模仿代码，对于技能和审美提升大有裨益！
+
+```{r}
+x <- 1:100
+y <- 100 + x*5
+lm(y ~ x)  # 哈哈
+lm(y ~ 0 + x)
+```
+
+```{r}
+plot(x,y)
+# 生成100个正态分布随机数并绘图
+x <- rnorm(100,10,5)
+plot(x)
+
+# 绘制1000个正态分布随机数的频数直方图
+x <- rnorm(10000,30,10)
+hist(x)
+
+# 使用核密度估计函数density()，在直方图上绘制密度曲线
+# hist()函数必须设置freq参数为F才能显示密度曲线
+x <- rnorm(1000,30,10)
+hist(x,freq=F)
+lines(density(x),col="blue")
+box()
+```
+
+```{r}
+# 茎叶图很直观的表现出数据的分布情况
+x <- rnorm(100,5,1)
+stem(x)
+
+# 绘制10个正态分布随机数的条形图
+x <- rnorm(10,30,10);barplot(x)
+box() # 在当前图上加个方框
+
+# 绘制饼图
+x <-1:8;pie(x,col=rainbow(8))
+box()
+```
+
+```{r}
+# 绘制箱线图
+# 中间黑线为中位数位置；上下框线为上下四分位数位置；上下触须为1.5倍四分位数间距；如果有孤立点表示异常值
+x <-rnorm(10,10,3);
+x
+boxplot(x)
+```
+
+```{r}
+# 绘制向日葵图
+data(iris)
+iris
+sunflowerplot(iris[,3:4])
+
+# 绘制矩阵或数据框的二元图
+data(iris)
+pairs(iris[1:4], 
+      main = "Anderson's Iris Data -- 3 species",
+      pch = 21, 
+      bg = c("red", "green3", "blue")[unclass(iris$Species)])
+```
+
+```{r}
+# 绘制QQ图
+# 如果向量为正态分布则数据点基本在一条直线上
+x <- rnorm(50000,10,5);qqnorm(x)
+
+# 根据指定函数绘制指定范围的曲线图
+curve(cos, -2*pi, 2*pi, xname = "t")
+```
+
+```{r}
+# 低水平绘图函数：在高水平绘图函数绘制的图形上做补充和修饰
+
+# 生成50个正态分布随机数并绘图
+x <- 1:50
+y <- rnorm(50,10,5)
+plot(x,y,
+     type="n",
+     xlab="数据索引",
+     ylab="随机数点",
+     xlim=c(1,50),
+     ylim=c(-20,20),
+     main="实验图",
+     sub="随机数绘图")
+points(x,y,col="blue")
+lines(x,y,col="red")
+
+text(5,5,"随机数据点")           # 在指定坐标位置放置文本
+
+mtext("横轴下方文字",side=1)          # 横轴、纵轴上放置文字
+mtext("纵轴左方文字",side=2)
+mtext("横轴上方文字",side=3)
+mtext("纵轴右方文字",side=4)
+
+segments(10,10,50,-10)                # 根据起点、终点坐标绘制线段
+
+arrows(10,-10,40,20,angle=15,code=1) # 绘制带箭头线段，可以设置箭头角度，有几个箭头（1起点箭头、2终点箭头，3双箭头）
+
+abline(-20,.5) # 在图上绘制直线，第一个参数为截距，第二个参数为斜率
+
+abline(h=0,col="red") # 在图上绘制水平线或垂直线，可以标示临界位置，很好用的功能
+
+legend(0,max(y),"随机点连线")
+```   
+
+```{r}
+# 坐标定位模式获得鼠标点击位置的坐标
+x <- 1:50
+y <- rnorm(50,10,5)
+plot(x,y,type="n",
+     xlab="数据索引",ylab="随机数点",
+     xlim=c(1,50),ylim=c(-20,20),
+     main="实验图")
+print(locator(3,type="p")) 
+# 图像进入定位模式，第一个参数决定获取几个点的坐标信息，第二个参数决定绘图方式
+
+rect(5,5,20,20) # 在已经成功绘制的图形内部绘制一个长方形
+
+polygon(c(20,10,30,40,45),c(-10,0,15,4,-10)) # 在高级图形内部绘制多边形
+```
+
+```{r}
+# 生成一个绘图窗口在其中绘制图形后用savePlot()函数保存
+windows()
+plot(1:10)
+rect(1, 5, 3, 7, col="blue")
+# savePlot("test01", type="jpg",device=dev.cur(),restoreConsole=TRUE)
+
+# 直接在jpeg设备上绘制图形，完成后使用dev.off()关闭设备，存盘退出
+# jpeg(file="myplot.jpeg")
+plot(1:10)
+rect(1, 5, 3, 7, col="blue")
+# dev.off()
+```
+
+
+

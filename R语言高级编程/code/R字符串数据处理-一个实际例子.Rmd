@@ -1,0 +1,168 @@
+---
+title: "R字符串数据处理-一个实际例子"
+author: "LJJ"
+date: "2020/4/16"
+output: 
+  html_document:
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,fig.show = "hold",fig.align = "center")
+```
+
+## 加载包和数据
+
+```{r}
+library(tidyverse)
+library(here)
+library(skimr)
+library(stringr)
+```
+
+数据见文件夹data1
+
+```{r}
+dball_data <- read_csv(here("/R高级编程/data1/Dragon_Ball_Data_Set.csv"))
+```
+
+```{r}
+dball_data %>% glimpse()  # 全是字符数据
+dball_data %>% head()
+```
+
+## 开始
+
+在这里，我们使用正则表达式字符串匹配来过滤“字符”列。`stringr`包中的str_detect（）函数检测字符串中是否存在模式或表达式，并返回TRUE或FALSE的逻辑值（这是dplyr :: filter（）在第二个参数中采用的值）。 我还使用了stringr :: regex（）函数，并将ignore_case参数设置为TRUE，这使**过滤器不区分大小写**，因此，如果存在'Kame'和'kAMe'的情况，它们也会被拾取。
+
+```{r}
+dball_data %>% 
+  filter(str_detect(Character,
+                    regex(pattern = "kameha",
+                          ignore_case = TRUE)))->dball_data_1
+
+dball_data_1 %>%
+  knitr::kable()
+```
+
+```{r}
+dball_data %>% 
+  filter(str_detect(Character,"kamehameha"))->dball_data_1b
+
+dball_data_1b %>% 
+  knitr::kable()
+```
+
+
+```{r}
+## Show the rows which do not appears on BOTH datasets
+dball_data_1 %>%
+  dplyr::anti_join(dball_data_1b, by = "Character") %>% 
+  knitr::kable()
+```
+
+```{r}
+dball_data_1 %>%
+  mutate_at("Power_Level", ~str_remove_all(., ",")) %>%
+  mutate_at("Power_Level", ~as.numeric(.)) -> dball_data_2
+
+dball_data_2 %>% 
+  knitr::kable()
+
+```
+
+```{r}
+dball_data_2 %>%
+  filter(!str_detect(Character, "absorbed")) %>% # Remove 2 rows unrelated to kamehameha attacks
+  mutate(Character_Single = str_remove_all(Character, "\\'.+")) %>% # Remove everything after apostrophe
+  select(Character_Single, everything()) -> dball_data_3
+```
+
+注意，撇号是一个特殊字符，因此需要通过在它前面添加两个正斜杠来转义它。 点(.) 匹配所有字符，并且 + 告诉 r 匹配前面的点以匹配一次或多次。 
+
+```{r}
+dball_data_3 %>%
+  group_by(Character_Single) %>%
+  summarise_at(vars(Power_Level), ~mean(.)) %>%
+  arrange(desc(Power_Level)) -> kame_data_grouped # Sort by descending
+
+kame_data_grouped
+```
+
+```{r}
+kame_data_grouped %>%
+  pull(Power_Level) %>%
+  summary()
+```
+
+```{r}
+kame_data_grouped %>%
+  mutate(Power_Index = log(Power_Level)) %>% # Log transform Power Levels
+  ggplot(aes(x = reorder(Character_Single, Power_Level),
+             y = Power_Index,
+             fill = Character_Single)) +
+  geom_col() +
+  coord_flip() +
+  scale_fill_brewer(palette = "Spectral") +
+  theme_minimal() +
+  geom_text(aes(y = Power_Index,
+                label = round(Power_Index, 1),
+                hjust = -.2),
+            colour = "#FFFFFF") +
+  ggtitle("Power Levels of Kamehamehas", subtitle = "By Dragon Ball characters") +
+  theme(plot.background = element_rect(fill = "grey20"),
+        text = element_text(colour = "#FFFFFF"),
+        panel.grid = element_blank(),
+        plot.title = element_text(colour="#FFFFFF", face="bold", size=20),
+        axis.line = element_line(colour = "#FFFFFF"),
+        legend.position = "none",
+        axis.title = element_text(colour = "#FFFFFF", size = 12),
+        axis.text = element_text(colour = "#FFFFFF", size = 12)) +
+  ylab("Power Levels (log transformed)") +
+  xlab(" ")
+```
+
+```{r}
+dball_data_3 %>%
+  filter(Character_Single == "Goku") %>%
+  mutate(Power_Index = log(Power_Level)) %>% # Log transform Power Levels
+  group_by(Saga_or_Movie) %>%
+  summarise(Power_Index = mean(Power_Index)) %>%
+  ggplot(aes(x = reorder(Saga_or_Movie, Power_Index),
+             y = Power_Index)) +
+  geom_col(fill = "#F85B1A") +
+  theme_minimal() +
+  geom_text(aes(y = Power_Index,
+                label = round(Power_Index, 1),
+                vjust = -.5),
+                colour = "#FFFFFF") +
+  ggtitle("Power Levels of Goku's Kamehamehas", subtitle = "By Saga/Movie") +
+  scale_y_continuous(limits = c(0, 40)) +
+  theme(plot.background = element_rect(fill = "grey20"),
+        text = element_text(colour = "#FFFFFF"),
+        panel.grid = element_blank(),
+        plot.title = element_text(colour="#FFFFFF", face="bold", size=20),
+        plot.subtitle = element_text(colour="#FFFFFF", face="bold", size=12),
+        axis.line = element_line(colour = "#FFFFFF"),
+        legend.position = "none",
+        axis.title = element_text(colour = "#FFFFFF", size = 10),
+        axis.text.y = element_text(colour = "#FFFFFF", size = 8),
+        axis.text.x = element_text(colour = "#FFFFFF", size = 8, angle = 45, hjust = 1)) +
+  ylab("Power Levels (log transformed)") +
+  xlab(" ")
+
+```
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,465 @@
+--- 
+title: "机器学习-模型训练与调参"
+# subtitle: "Lecture title"
+author:
+- affiliation: Dongbei University of Finance & Economics
+  name: Studennt. Li Junjie
+date: '`r Sys.Date()`'
+output:
+  bookdown::html_document2:
+    # code_folding: hide
+    highlight: pygments
+    # highlight: zenburn
+    # highlight: haddock
+    # theme: darkly
+    theme: flatly
+    df_print: paged	
+    number_sections: true
+    keep_md: no
+    keep_tex: no
+    toc: yes
+    toc_depth: 5
+    toc_float:
+      collapsed: no
+      smooth_scroll: yes
+    # css: styles.css
+# bibliography: [book.bib, packages.bib]
+# biblio-style: apalike
+link-citations: yes
+sansfont: Times New Roman
+always_allow_html: yes
+urlcolor: "red"
+description: "This is a minimal example of using the bookdown package to write a book. The output format for this example is bookdown::gitbook."
+abstract: |
+    **机器学习调参**的思路都异曲同工，首先确定一个参数池，也就是模型参数值的可选范围。从这个池子中挑选出不同的参数组合，对于每个组合都计算其预测精度，最后选取预测精度最高的参数组合。
+---
+
+# 加载经常用的R包
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      cache = FALSE,
+                      fig.show = "hold",
+                      fig.align = "center",
+                      tidy = FALSE)
+                      # class.source = "bg-warning")
+```
+
+```{r,echo=FALSE}
+library(bubblyr)
+# bubblyr::bubbly(theme = "sweet")
+# bubblyr::bubbly(theme = "rladies")
+```
+
+```{js, echo=FALSE}
+$('.title').css('color', 'red')
+$('.title').css('font-family', 'Times New Roman')
+```
+
+```{css, echo=FALSE}
+* {
+    # font-size: 17px !important;
+    font-family: "Times New Roman" !important;
+    # color: rgb(199 237	204)
+}
+::selection {
+   # background: rgb(135 206 255);
+}
+```
+
+```{r,warning=FALSE,message=FALSE}
+library(pacman)
+# 读数据
+p_load(readxl,writexl,data.table,openxlsx,haven,rvest)
+```
+
+```{r,warning=FALSE,message=FALSE}
+# 数据探索
+p_load(tidyverse,DT,skimr,DataExplorer,explore,vtable,stringr,kableExtra,lubridate)
+```
+
+```{r,eval=TRUE,warning=FALSE,message=FALSE}
+# 模型
+p_load(grf,glmnet,caret,tidytext,fpp2,forecast,car,tseries,hdm,tidymodels,broom)
+```
+
+```{r,eval=TRUE,warning=FALSE,message=FALSE}
+# 可视化
+p_load(patchwork,ggrepel,ggcorrplot,gghighlight,ggthemes,shiny)
+```
+
+```{r,eval=TRUE,warning=FALSE,message=FALSE}
+# 其它常用包
+p_load(magrittr,listviewer,devtools,here,janitor,reticulate,jsonlite)
+```
+
+# 模型调参
+
+**机器学习调参**的思路都异曲同工，首先确定一个参数池，也就是模型参数值的可选范围。从这个池子中挑选出不同的**参数组合**，对于每个组合都计算其预测精度，最后选取预测精度最高的参数组合。
+
+## 什么是调参？
+
+**调参的过程**就像是找人生伴侣的过程，首先我们有一个标准，比如**身高**、**体重**等，符合这个标准的异性将进入到参数池中。然后我们跟参数池中的每个异性谈恋爱，找到最适合我们的那个作为终极选择。接下来，介绍两种常见的调参方法：**网格搜索**与**随机搜索**。
+
+```{r,fig.cap="调参流程"}
+knitr::include_graphics(here::here("Machine_Learning_and_Causal_Inference/fig/modify parameters.png"))
+```
+
+**网格搜索**首先会有一个标准，将符合标准的参数放入参数池中，形成不同的参数组合。而**随机搜索**则不同，随机搜索没有标准，随机地组合参数。依然以找男友为例，假设参数有3个：**身高**、**体重**、**年龄**。
+
+**网格搜索**会对这3个参数设定一个范围，比如**身高>180厘米**，**体重小于<140斤**，**年龄在20～40岁**之间。但是**随机搜索**则不同，有些女性觉得如果设定了择偶条件，反而容易错过自己喜欢的，**也许适合自己的恰好身高只有179厘米**。
+
+这两种不同的搜索方式出来的参数组合是不同的。两者各有优缺点，**随机搜索与网格搜索相比**，其优点在于能随机地遍历所有参数空间，但是缺点也很明显：不知道随机出来的是什么类型的人。下面分别看看两种搜索方式的实现。
+
+首先来看在`caret包`中如何轻轻松松实现**网格搜索**。
+
+- 第一步：设置随机种子，保证实验的可重复性；  
+    
+- 第二步：利用`traincontrol()函数`设置模型训练时用到的参数。其中`method`表示重抽样方法。此处，`cv`表示交叉验证，`number`表示几折交叉验证，本例中是**10折交叉验证**。**10折交叉验证表示**，首先将样本分为10个组，每次训练的时候抽取其中9组作为训练集，剩下的1组作为测试集。`classProbs参数`表示是否计算类别概率，如果评价指标为AUC，那么这里一定要设置为TRUE。由于因变量为两水平变量，所以`summaryFunction`这里设置为`twoClassSummary`。  
+
+- 第三步：设置网格搜索的参数池，也就是设定参数的选择范围。这里以机器学习中的`gbm（Gradient boosting machine）方法`为例，所以有**4个超参数**需要设定，分别为`迭代次数（n.trees）`，`树的复杂度（interaction.depth）`，`学习率（shrinkage）`，`训练样本的最小数目（n.minobsinnode）`。这里设定了60组参数组合。
+    
+```{r}
+set.seed(1234)
+fit_control_gbm <- trainControl(method = "cv",
+                                number = 10,
+                                classProbs = TRUE,
+                                summaryFunction = twoClassSummary)
+
+grid_gbm <- expand.grid(interaction.depth = c(1,5,9),
+                        n.trees = (1:20) * 50,
+                        shrinkage = 0.1,
+                        n.minobsinnode = 20)
+grid_gbm
+```
+    
+- 第四步：利用`train()函数`来进行模型训练及得到最优参数组合。该函数会遍历第三步得到的所有参数组合，并得到使**评价指标最大的参数组合**作为输出。`method`表示使用的模型，本例使用机器学习中的`gbm（Gradient boosting machine）`模型，使用的评价指标为`ROC曲线面积`（**即AUC值**）。  
+
+# 导入数据
+
+```{r}
+data <- data.table::fread(here::here("Machine_Learning_and_Causal_Inference/data/相亲数据重新编码.csv"))
+data %<>% as.data.frame()
+data
+```
+    
+# 数据预处理
+
+## 数据查看
+
+```{r}
+data %>% str()  # 全是数值型
+data %>% skimr::skim()
+```
+
+## 删除缺失值
+
+现实生活中，在数据分析时，经常会碰到**缺失值**，比如相亲数据中，有些女性不愿意暴露自己的年龄，年龄就会有缺失值。那么对于缺失值，怎么处理呢？处理方式很多，甚至有时候数据缺失本身也暗含一些信息*（比如年龄缺失的女性可能是因为年龄比较大）*，由此引申了**许多插补方法**。不过这里缺失值处理并不是重点，因此**对于缺失值直接删除即可**。
+
+```{r}
+data <- data %>% drop_na()
+data
+```
+
+## 删除近零方差
+
+**零方差**或者**近零方差**的变量传递不了什么信息，因为几乎所有人的取值都一样。可以利用`caret包`中的`nearZeroVar()函数`，一行代码就能找出近零方差的变量，操作过程非常简单。
+
+```{r}
+data %>% nearZeroVar() # 没有
+```
+
+## 转换数据类型
+
+对于完整的观测，首先需要定义变量的类型：**属于定性变量还是连续变量**。对于定性变量而言，需要给定性变量的各个水平取名，比如**性别有两个水平1和0**，分别**命名为男、女**。
+
+```{r}
+data %>%
+  mutate(决定   = factor(决定,
+                         levels = c(0, 1),
+                         labels = c("拒绝", "接受"))) %>%
+  mutate(性别   = factor(性别,
+                         levels = c(0, 1),
+                         labels = c("女", "男"))) %>%
+  mutate(种族   = factor(
+    种族,
+    levels = c(1, 2, 3, 4, 5, 6),
+    labels = c("非洲裔", "欧洲裔", "拉丁裔", "亚裔", "印第安土著", "其他")
+  )) %>%
+  mutate(从事领域 = factor(
+    从事领域,
+    levels = 1:18,
+    labels = c(
+      "法律",
+      "数学",
+      "社会科学或心理学",
+      "医学或药物学或生物技术",
+      "工程学",
+      "写作或新闻",
+      "历史或宗教或哲学",
+      "商业或经济或金融",
+      "教育或学术",
+      "生物科学或化学或物理",
+      "社会工作",
+      "大学在读或未择方向",
+      "政治学或国际事务",
+      "电影",
+      "艺术管理",
+      "语言",
+      "建筑学",
+      "其他"
+    )
+  )) %>%
+  mutate(对方决定  = factor(对方决定,
+                            levels = 0:1,
+                            labels = c("拒绝", "接收"))) %>%
+  mutate(对方种族  = factor(
+    对方种族,
+    levels = c(1, 2, 3, 4, 5, 6),
+    labels = c("非洲裔", "欧洲裔", "拉丁裔", "亚裔", "印第安土著", "其他")
+  )) %>%
+  mutate(是否同一种族  = factor(
+    是否同一种族,
+    levels = c(0, 1),
+    labels = c("非同一种族", "同一种族") 
+  )) -> data
+
+data %>% map(unique)
+```
+
+## 删除共线性变量
+
+`caret`包中的`findCorrelation()函数`会自动找到高度共线性的变量，并给出**建议删除的变量**。
+
+但需要注意，这个函数对输入的数据要求比较高
+
+```{r,fig.height=10,out.height= 8}
+data %>% 
+  select(where(is.numeric)) %>% 
+  cor() -> data_cor
+
+data_cor %>% round(1) %>% ggcorrplot::ggcorrplot(lab = TRUE,type = "lower")  + mytheme
+```
+
+```{r}
+data_high_cor <- findCorrelation(data_cor,cutoff = 0.75,names = TRUE)
+data_high_cor      # 没有共线性变量
+```
+
+# 划分数据集(无标准化)
+
+```{r,results='hold'}
+set.seed(1234)
+data_id <- createDataPartition(y = data$决定,p = 0.7,list = FALSE,times = 1)
+data_training <- data[data_id,]
+data_testing <- data[-data_id,]
+```
+
+```{r,results='hold'}
+data_training %$% table(决定) %>% prop.table()
+data_testing %$% table(决定) %>% prop.table()
+data %$% table(决定) %>% prop.table()
+```
+
+# 训练模型
+
+## 网格搜索结果
+
+```{r,fig.cap="AUC值与迭代次数的折线图"}
+# model_gbm <- train(决定 ~ .,
+#                      data = data_training,
+#                      method = "gbm",     # 方法
+#                      trControl = fit_control_gbm,
+#                      verbose = FALSE,
+#                      tuneGrid = grid_gbm,   # 网格搜索结果
+#                      metric = "ROC")  # 指标
+
+data_training %>% dim()
+# save(model_gbm,file = "Machine_Learning_and_Causal_Inference/result/model_gbm.RData")
+load(file = here::here("Machine_Learning_and_Causal_Inference/result/model_gbm.RData"))
+model_gbm
+```
+
+    第五步：模型会自动确定**ROC曲线面积最大**（即AUC值最高）的参数组合，也就是图3中最高的点对应的参数组合，对应的AUC值为90.14%。
+
+```{r}
+model_gbm %>% ggplot() + mytheme
+```
+
+## 网格搜索结果-变量重要性
+
+```{r,fig.height=10}
+library(gbm)
+model_gbm %>% varImp(scale = FALSE) -> variable_imp
+variable_imp %>% ggplot() + mytheme
+```
+
+## 随机搜索结果
+
+随机搜索与网格搜索相比，**参数的选择没有固定的范围**，最终的结果可能好也可能坏。它的实现步骤如下：
+
+- 第一步：设定随机种子。  
+- 第二步：利用`trainControl()函数`设定模型训练的参数，但是多了一项：`search=”random”`。
+
+```{r}
+fit_control_gbm_random <- trainControl(method = "cv",
+                                       number = 10,
+                                       classProbs = TRUE,
+                                       summaryFunction = twoClassSummary,
+                                       search = "random")   # 随机搜索
+```
+
+- 第三步：**超参数在随机搜索中不受约束**，没有条条框框的限制。所以无须设置`tuneGrid参数`，只需要设置参数`tuneLength`（随机搜索多少组）。
+    
+```{r}
+# model_gbm_random <- train(决定~.,data =data_training,
+#                             method = "gbm",  # 方法
+#                             trControl = fit_control_gbm_random,
+#                             verbose = FALSE,
+#                             metric = "ROC",  # 指标
+#                             tuneLength = 30)
+
+# save(model_gbm_random,file = here::here("Machine_Learning_and_Causal_Inference/result/model_gbm_random.RData"))
+load(file = here::here("Machine_Learning_and_Causal_Inference/result/model_gbm_random.RData"))
+model_gbm_random
+```
+    
+## 随机搜索结果-变量重要性
+
+```{r,eval=FALSE,fig.height=10}
+model_gbm_random %>% varImp(scale = FALSE) -> variable_imp
+variable_imp %>% ggplot() + mytheme
+```
+
+# 预测模型
+
+确定最优参数之后，模型如何进行预测呢？使用`predict()函数`，只要输入模型及测试集，就可以预测了。然后利用`confusionMatrix()函数`输入真实的Y与预测的Y就可以得到`混淆矩阵（Confusion Matrix）`。
+
+*网格搜索的参数与随机搜索的参数的预测结果有什么区别呢？*下面的操作结果可以明显看出两者的区别。
+
+## 网格搜索预测结果
+
+```{r}
+model_gbm_pre <- predict(model_gbm,newdata = data_testing)
+confusionMatrix(model_gbm_pre,data_testing$决定)
+```
+
+## 随机搜索预测结果
+
+```{r,eval=TRUE}
+model_gbm_random_pre <- predict(model_gbm_random,newdata = data_testing)
+confusionMatrix(model_gbm_random_pre,data_testing$决定)
+```
+
+# 划分数据集(进行标准化)
+
+**标准化处理**是指将数据处理为均值为0、标准差为1的数据。那么**为什么要进行标准化处理呢？**因为在进行实证分析时，有些变量取值很大，有些变量取值很小，这里需要营造一个公平公正的环境，权重的大小不能被自身变量取值的大小所束缚。比如在判断一个女生是否是美女时，会考虑腿长、脸长、脸宽、腰围等因素，这些因素的学名为特征。显然腿长的取值比脸长的取值大得多，这时为了防止腿长的权重过高，就**需要将这些特征进行标准化**才能学习各个变量真实的权重。
+
+> 标准化处理时，**只能利用训练集的均值与标准差对训练集和测试集进行标准化**。
+
+```{r}
+pre_process_value <- preProcess(data_training,
+                                method = c("center","scale"))
+
+data_training_std <- predict(pre_process_value,
+                             data_training)
+
+# 利用训练集的均值和标准差对测试集进行标准化(重要)
+data_testing_std <- predict(pre_process_value,
+                            data_testing)
+```
+
+# 训练模型
+
+## 网格搜索结果
+
+```{r,fig.cap="AUC值与迭代次数的折线图"}
+# model_gbm_std <- train(决定 ~ .,
+#                      data = data_training_std,   # 数据已经标准化
+#                      method = "gbm",   # 方法
+#                      trControl = fit_control_gbm,   
+#                      verbose = FALSE,
+#                      tuneGrid = grid_gbm,   # 网格搜索
+#                      metric = "ROC")  # 指标
+
+data_training_std %>% dim()
+# save(model_gbm_std,file = here::here("Machine_Learning_and_Causal_Inference/result/model_gbm_std.RData"))
+load(file = here::here("Machine_Learning_and_Causal_Inference/result/model_gbm_std.RData"))
+model_gbm_std
+```
+
+## 网格搜索结果-变量重要性
+
+```{r,fig.height=10}
+model_gbm_std %>% varImp(scale = FALSE) -> variable_imp
+variable_imp %>% ggplot() + mytheme
+```
+
+## 随机搜索结果
+
+```{r}
+fit_control_gbm_random <- trainControl(method = "cv",
+                                       number = 10,
+                                       classProbs = TRUE,
+                                       summaryFunction = twoClassSummary,
+                                       search = "random")  # 随机搜索
+
+# model_gbm_random_std <- train(
+#   决定 ~ .,
+#   data = data_training_std,  # 数据已经标准化
+#   method = "gbm",
+#   trControl = fit_control_gbm_random,
+#   verbose = FALSE,
+#   metric = "ROC",
+#   tuneLength = 30    # 随机搜索
+# )
+
+# save(model_gbm_random_std,file = here::here("Machine_Learning_and_Causal_Inference/result/model_gbm_random_std.RData"))
+load(file = here::here("Machine_Learning_and_Causal_Inference/result/model_gbm_random_std.RData"))
+model_gbm_random_std
+```
+
+## 随机搜索结果-变量重要性
+
+```{r,fig.height=10}
+model_gbm_random_std %>% varImp(scale = FALSE) -> variable_imp
+variable_imp %>% ggplot() + mytheme
+```
+
+# 预测模型
+
+## 网格搜索预测结果
+
+```{r}
+model_gbm_std_pre <- predict(model_gbm_std,newdata = data_testing_std)
+confusionMatrix(model_gbm_std_pre,data_testing_std$决定)
+```
+
+## 随机搜索预测结果
+
+```{r}
+model_gbm_random_std_pre <- predict(model_gbm_random_std,
+                                    newdata = data_testing_std)
+confusionMatrix(model_gbm_random_std_pre,data_testing_std$决定)
+```
+
+# 比较结果
+
+```{r}
+result_df_compare <- tibble(
+  gbm = confusionMatrix(model_gbm_pre, data_testing$决定)[[3]][[1]],
+  gbm_std = confusionMatrix(model_gbm_std_pre, data_testing$决定)[[3]][[1]],  # 利用混淆矩阵评估模型
+  gbm_random_std = confusionMatrix(model_gbm_random_std_pre, data_testing$决定)[[3]][[1]],  # 利用混淆矩阵评估模型
+  gbm_random = confusionMatrix(model_gbm_random_pre, data_testing$决定)[[3]][[1]], 
+)
+result_df_compare %>% t() %>% as.data.frame() %>% rownames_to_column(var = "model") %>% 
+  rename(value = V1) %>% 
+  arrange(value)
+```
+
+# 思考(标准化好坏)
+
+- 为什么需要进行标准化?
+- 什么时候需要进行标准化?
+- 为什么命名model_gbm_random_std_pre等?model,gbm,random,std,pre分别的含义，如此命名的好处，如果加入特征选择又该如何命名？model_gbm,model_gbm_random,model_gbm_std,model_gbm_random_std.
+

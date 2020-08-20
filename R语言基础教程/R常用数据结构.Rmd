@@ -1,0 +1,203 @@
+---
+title: "R常用数据结构"
+author: 
+- affiliation: Dongbei University of Finance & Economics
+  name: Studennt. LJJ
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    highlight: espresso
+    theme: united
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+    toc_depth: 5
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      fig.show = "hold",
+                      fig.align = "center",
+                      tidy = FALSE)
+```
+
+## 加载经常用的R包
+
+```{r,warning=FALSE,message=FALSE}
+library(pacman)
+# 模型
+p_load(tidyverse,grf,glmnet,caret,tidytext,fpp2,
+       forecast,car,tseries,hdm,tidymodels,broom)
+
+# 读数据
+p_load(readxl,writexl,data.table,openxlsx,haven,rvest)
+
+# 数据探索
+p_load(DT,skimr,DataExplorer,explore,vtable,stringr,lubridate)
+
+# 可视化
+p_load(patchwork,ggrepel,ggcorrplot,gghighlight,ggthemes,shiny)
+
+# 其它常用包
+p_load(magrittr,listviewer,devtools,here,janitor,reticulate,jsonlite)
+```
+
+## R数据结构
+
+### 向量
+
+```{r}
+# 向量
+
+x <- c(1,2,3,4,5);print(x)
+
+x <- 1:10;print(x)
+
+x <- seq(from=1,to=10);print(x)
+
+x <- seq(from=1,to=10,by=2);print(x)
+
+x <- seq(from=1,to=10,length.out=50);print(x)
+
+x <- rep(1:5,times = 2);print(x)
+x <- rep(1:5,each = 2);print(x)
+x <- rep(1:5,times = 2,each = 2);print(x)
+```
+
+```{r}
+# sample()取样函数从一组数据中随机取出指定数量的数据
+# replace参数决定是否可以重复取数
+y <- sample(x=1:100,size=10,replace=F);print(y)
+
+y <- sample(x=c(0,1),size=20,replace=T);print(y)
+
+
+
+# 使用正态分布随机数生成函数生成指定数量、平均值、标准差的随机数
+x <- rnorm(n=10,mean=100,sd=20);print(x)
+```
+
+### 时间日期
+
+```{r}
+# 生成日期变量并用生成的日期变量生成一组日期序列数据
+s <- as.Date("2014-1-1")
+s
+e <- as.Date("2014-4-1")
+e
+dtVec <- seq(from=s,to=e,by=7)
+print(dtVec)
+print(class(dtVec))
+```
+
+or:
+
+```{r}
+lubridate::ymd("20201010")
+lubridate::dmy("10102020")
+lubridate::mdy("10102020")
+lubridate::dweeks(1) # "604800s (~1 weeks)"
+lubridate::dyears(1) # "31557600s (~1 years)"
+lubridate::years(1)  # "1y 0m 0d 0H 0M 0S"
+lubridate::ymd(20201010) + 0:10
+fast_strptime('9/1/01', '%y/%m/%d')
+parse_date_time("9/1/01", "ymd")
+hms::as_hms(85)
+make_difftime(99999)
+```
+
+```{r}
+jan31 <- ymd(20180131)
+jan31 + months(1)
+jan31 %m+% months(1)
+```
+
+```{r}
+# 将Date日期转换成儒略日期
+# 在R中这是自1970-1-1以来的天数
+d <- as.Date("2014-4-17")
+as.integer(d)
+julian(d)
+as_date(d)
+as_datetime(60)
+```
+
+```{r}
+# 提取日期中的各个组成部分信息
+d <- now()
+d
+year(d)
+month(d)
+mday(d)
+yday(d)
+wday(d)
+wday(d)
+wday(d, label = TRUE, abbr = FALSE)
+wday(d, label = TRUE, abbr = TRUE)
+wday(d + days(-2:4), label = TRUE, abbr = TRUE)
+```
+
+### 矩阵数组
+
+```{r}
+# 数组
+
+# 生成向量然后通过设置行列数据转换成二维数组
+x <- 1:20
+dim(x) <- c(5,4)
+print(x)
+
+# 直接生成数组并初始化每个元素为3.14
+x <- array(3.14,dim=c(5,4))
+print(x)
+
+
+# 可以生成三维数组
+# 使用正态分布随机数初始化整个数组
+x <- array(rnorm(40,10,5),dim=c(5,4,2))
+print(x)
+print(length(x))  # 对于矩阵length()函数得到的是所有元素的总数量
+```
+
+### 数据框
+
+```{r}
+# 数据框
+# 数据框的形式和Excel比较相似
+# 每一列可以看做是一个向量，类型相同；不同列数据之间可以有不同类型
+# 同列表的重要区别是：数据框要求每一列数据长度相同
+# 数据框的每一行可以看作是一条记录，每一列看做是记录的某一个属性
+# 数据框是数据处理中非常重要的数据结构，用途很广必须深入了解
+df  <- data.frame(symbols=c("MSFT","KO","CSCO"),
+                  price=c(40.40,40.56,23.02),
+                  currency=rep("USD",3),
+                  country=rep("USA",3),
+                  type=rep("STOCK",3),stringsAsFactors = FALSE)
+df
+print(class(df))
+
+cat("df数据框行数为：",nrow(df),"\ndf数据框列数为：",ncol(df),"\n",sep="")
+cat("df数据框总元素数量为：",length(df),"\n",sep="")  # 得到的不是总元素个数，也不是行数而是列数（属性）数量
+```
+
+
+### 列表
+
+```{r}
+# 列表使用list()函数来定义，列表中的每个元素可以是单个变量或者是向量，甚至是另一个列表
+# 列表中每个向量的长度可以不同，这是列表和数据框的重要区别
+# 数据框是一种形式特殊的列表
+lst <- list(symbols=c("MSFT","KO","CSCO"),
+            price=c(40.40,40.56,23.02),
+            currency="USD",country="USA",
+            type="STOCK" )
+lst    # 月饼盒子
+print(length(lst))  # 共5个元素
+lst[[1]] # 打开第一个月饼
+lst$symbols
+
+lst[1]  # 第一个月饼（未打开）
+```
+
+

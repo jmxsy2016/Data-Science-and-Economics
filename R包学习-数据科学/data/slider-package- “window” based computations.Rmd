@@ -1,0 +1,290 @@
+--- 
+title: "slider- “window” based computations"
+# subtitle: "Lecture title"
+author:
+- affiliation: Dongbei University of Finance & Economics
+  name: Studennt. Li Junjie
+date: '`r Sys.Date()`'
+output:
+  bookdown::html_document2:
+    # code_folding: hide
+    highlight: pygments
+    # highlight: zenburn
+    # highlight: haddock
+    theme: darkly
+    # theme: cerulean
+    df_print: paged	
+    number_sections: true
+    keep_md: no
+    keep_tex: no
+    toc: yes
+    toc_depth: 5
+    toc_float:
+      collapsed: no
+      smooth_scroll: yes
+    # css: styles.css
+# bibliography: [book.bib, packages.bib]
+# biblio-style: apalike
+link-citations: yes
+sansfont: Times New Roman
+always_allow_html: yes
+urlcolor: "red"
+description: "This is a minimal example of using the bookdown package to write a book. The output format for this example is bookdown::gitbook."
+abstract: |
+    `slider` provides a family of general purpose “`sliding window`” functions. The API is purposefully very similar to `purrr.` The goal of these functions is usually to compute rolling averages, cumulative sums, rolling regressions, or other “window” based computations.
+editor_options: 
+  chunk_output_type: console
+---
+
+# 加载经常用的R包
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      cache = FALSE,
+                      fig.show = "hold",
+                      fig.align = "center",
+                      tidy = FALSE)
+                      # class.source = "bg-warning")
+```
+
+```{r,echo=FALSE}
+library(bubblyr)
+# bubblyr::bubbly(theme = "sweet")
+# bubblyr::bubbly(theme = "rladies")
+```
+
+```{js, echo=FALSE}
+$('.title').css('color', 'red')
+$('.title').css('font-family', 'Times New Roman')
+```
+
+```{css, echo=FALSE}
+* {
+    # font-size: 17px !important;
+    font-family: "Times New Roman" !important;
+    # color: rgb(199 237	204)
+}
+::selection {
+   # background: rgb(135 206 255);
+}
+```
+
+```{r,warning=FALSE,message=FALSE}
+library(pacman)
+# 读数据
+p_load(readxl,writexl,data.table,openxlsx,haven,rvest)
+```
+
+```{r,warning=FALSE,message=FALSE}
+# 数据探索
+p_load(tidyverse,DT,skimr,DataExplorer,explore,vtable,stringr,kableExtra,lubridate)
+```
+
+```{r,eval=FALSE,warning=FALSE,message=FALSE}
+# 模型
+p_load(grf,glmnet,caret,tidytext,fpp2,forecast,car,tseries,hdm,tidymodels,broom)
+```
+
+```{r,eval=FALSE,warning=FALSE,message=FALSE}
+# 可视化
+p_load(patchwork,ggrepel,ggcorrplot,gghighlight,ggthemes,shiny)
+```
+
+```{r,eval=TRUE,warning=FALSE,message=FALSE}
+# 其它常用包
+p_load(magrittr,listviewer,devtools,here,janitor,reticulate,jsonlite)
+p_load(slider)
+```
+
+# Getting started with slider
+
+## slide()
+
+```{r}
+map(1:4,~.x)
+```
+
+```{r}
+slider::slide(1:4,~.x)
+```
+
+On top of this, you can control the size and placement of the window by using the additional arguments to `slide()`. For example, you can ask for a window of size 3 containing “the current element, as well as the 2 before it” like this:
+
+```{r}
+slide(1:4,~.x,.before = 2)
+```
+
+You’ll notice that **the first two elements of the list contain partial or “incomplete” windows**. By default, `slide()` assumes that you want to compute on these windows anyways, but if you don’t care about them, you can change the `.complete` argument.
+
+```{r}
+slide(1:4,~.x,.before = 2,.complete = TRUE)
+```
+
+```{r}
+slide(1:4,~.x,.before = 1,.after = 1)
+```
+
+```{r}
+slide(1:4,~.x,.before = Inf)
+```
+
+```{r}
+slide(1:10,mean,.before = 1,.after = 1)
+```
+
+```{r}
+slide(1:10,sum,.after = 2)
+```
+
+## slide_index()
+
+To make things a bit more interesting, let’s assume that the sales vector from the example above is also tied to some “index”, like a date vector of when the sale actually occurred.
+
+```{r}
+index_vec <- as.Date("2019-08-29") + c(0, 1, 5, 6)
+wday_vec <- as.character(wday(index_vec, label = TRUE))
+wday_vec
+```
+
+```{r}
+sales_vec <- c(2, 4, 6, 2)
+
+slide_dbl(sales_vec, mean, .before = 2)
+```
+
+```{r}
+company <- tibble(
+  sales = sales_vec,
+  index = index_vec,
+  wday = wday_vec
+)
+
+company
+```
+
+```{r}
+wday_vec
+```
+
+```{r}
+slide(wday_vec, ~.x, .before = 2)
+```
+
+```{r}
+slide_index(wday_vec,index_vec, ~.x, .before = 2)
+```
+
+```{r}
+slide_index(wday_vec, index_vec, ~.x, .before = days(2))
+```
+
+Knowing this, we can swap out `slide_dbl()` for `slide_index_dbl()` to see how to correctly compute our **3 day rolling average**.
+
+```{r}
+mutate(
+  company,
+  roll_val = slide_dbl(sales, mean, .before = 2),
+  roll_day = slide_index_dbl(sales, index, mean, .before = days(2))
+) -> df
+
+df
+```
+
+## slide_period()
+
+With `slide_index()`, we always returned a vector of the same size as .x, and the idea was to build indices to slice .x with using “the current element of .i + some number of elements before/after it”. `slide_period()` works a bit differently. It first breaks .i up into “time blocks” by some period (like monthly), and then uses those blocks to define how to slide over .x.
+
+To see an example, let’s expand out our company sales data frame.
+
+```{r}
+big_index_vec <- c(
+  as.Date("2019-08-30") + 0:4,
+  as.Date("2019-11-30") + 0:4
+)
+big_index_vec
+```
+
+```{r}
+big_sales_vec <- c(2, 4, 6, 2, 8, 10, 9, 3, 5, 2)
+big_company <- tibble(
+  sales = big_sales_vec,
+  index = big_index_vec
+)
+big_company
+```
+
+```{r}
+slide_period(big_company, big_company$index, "month", ~.x)
+```
+
+```{r}
+monthly_summary <- function(data) {
+  summarise(data, index = max(index), sales = sum(sales))
+}
+
+slide_period_dfr(
+  big_company,
+  big_company$index,
+  "month",
+  monthly_summary
+)
+```
+
+```{r}
+big_company %>% 
+  mutate(index_month = floor_date(index,unit = "month")) %>% 
+  group_by(index_month) %>% 
+  summarise(sales_sum = sum(sales)) %>% 
+  ungroup()
+```
+
+or:
+
+```{r}
+big_company %>% 
+  separate(col = index,into = c("year","month","day")) %>% 
+  group_by(year,month) %>% 
+  mutate(sales_sum = sum(sales)) %>% 
+  ungroup() %>% 
+  unite(year:day,col = "date",sep = "-") %>% 
+  mutate(date = ymd(date))
+```
+
+But here is where things get interesting! Now what if we want to compute those **monthly sales**, but we want the time blocks to be made of the “current month block, **plus 1 month block before it”**. For example, for the month of 2019-09, it would include 2019-08 and 2019-09 together in the rolling summary. There isn’t an easy way to do this in dplyr alone. With slider, there are two ways to do this.
+
+```{r}
+slide_period_dfr(
+  big_company,
+  big_company$index,
+  "month",
+  monthly_summary,
+  .before = 1
+)
+```
+
+```{r}
+big_company %>%
+  mutate(
+    monthly = floor_date(index, "month"),
+    sales_summary = slide_index_dbl(sales, monthly, sum, .before = months(1))
+  )
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

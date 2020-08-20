@@ -33,18 +33,28 @@
 ## Machine Learning and Causal Inference(`Python` & `R`) 
 
 - [python安装教程](https://jmxsy2016.github.io/Data-Science-and-Economics/Machine_Learning_and_Causal_Inference/Python安装.pdf )
+- [机器学习简介](https://jmxsy2016.github.io/Data-Science-and-Economics/Machine_Learning_and_Causal_Inference/code/Machine-Learning-Introduction.html)
+- [机器学习数据预处理](https://jmxsy2016.github.io/Data-Science-and-Economics/Machine_Learning_and_Causal_Inference/code/Machine-Learning-data-preprocess.html)
+- [机器学习模型训练和调节参数](https://jmxsy2016.github.io/Data-Science-and-Economics/Machine_Learning_and_Causal_Inference/code/Machine-Learning-model-train-paramters.html)
+- [机器学习模型训练和集成](https://jmxsy2016.github.io/Data-Science-and-Economics/Machine_Learning_and_Causal_Inference/code/Machine-Learning-model-training-and-integration.html)
+- [机器学习案例分析-基于泰克尼坦号](待更新):待更新
 
 ---
 
-## 金融大数据与R语言
+## R语言基础教程
 
-- [R语言学习建议](https://jmxsy2016.github.io/Data-Science-and-Economics/R语言与金融大数据/R学习建议.html)
-- [R语言基础知识](https://jmxsy2016.github.io/Data-Science-and-Economics/R语言与金融大数据/R语言基础知识.html)
-- [R语言数据结构](https://jmxsy2016.github.io/Data-Science-and-Economics/R语言与金融大数据/R常用数据结构.html)
-- [R语言数据操作](https://jmxsy2016.github.io/Data-Science-and-Economics/R语言与金融大数据/R数据操作.html)
-- [R语言基础绘图技术](https://jmxsy2016.github.io/Data-Science-and-Economics/R语言与金融大数据/R基础绘图技术.html)
+- [R语言学习建议](https://jmxsy2016.github.io/Data-Science-and-Economics/R语言基础教程/R学习建议.html)
+- [R语言基础知识](https://jmxsy2016.github.io/Data-Science-and-Economics/R语言基础教程/R语言基础知识.html)
+- [R语言数据结构](https://jmxsy2016.github.io/Data-Science-and-Economics/R语言基础教程/R常用数据结构.html)
+- [R语言数据操作](https://jmxsy2016.github.io/Data-Science-and-Economics/R语言基础教程/R数据操作.html)
+- [R语言基础绘图技术](https://jmxsy2016.github.io/Data-Science-and-Economics/R语言基础教程/R基础绘图技术.html)
 - [R语言数据分析函数](https://jmxsy2016.github.io/Data-Science-and-Economics/R语言与金融大数据/R重要数据分析函数.html)
-- [xts-处理高频时间序列数据](https://jmxsy2016.github.io/Data-Science-and-Economics/R语言与金融大数据/xts-处理高频时间序列数据.html)
+
+---
+
+## 金融数据处理和R语言
+
+- [xts-处理高频时间序列数据](https://jmxsy2016.github.io/Data-Science-and-Economics/R语言基础教程/xts-处理高频时间序列数据.html)
 
 ---
 
@@ -73,16 +83,16 @@
 
 ## R高级编程
 
-- [Tidyverse中10个技巧性函数——来源YouTube](https://jmxsy2016.github.io/Data-Science-and-Economics/R高级编程/code/Tidyverse中10个具有技巧性函数.html)
-- [批量读取Excel数据](https://jmxsy2016.github.io/Data-Science-and-Economics/R高级编程/code/批量读取Excel数据.html)
-- [purrr教程1](https://jmxsy2016.github.io/Data-Science-and-Economics/R高级编程/code/purrr教程.html)
-- [purrr教程2](https://jmxsy2016.github.io/Data-Science-and-Economics/R高级编程/code/purrr教程2.html)
-- [R字符串数据处理——一个实际例子](https://jmxsy2016.github.io/Data-Science-and-Economics/R高级编程/code/R字符串数据处理-一个实际例子.html)
-- [爬虫教程_CSS选择器](https://jmxsy2016.github.io/Data-Science-and-Economics/R高级编程/code/爬虫教程_CSS选择器.html)
-- [爬虫完整教程](https://jmxsy2016.github.io/Data-Science-and-Economics/R高级编程/code/R爬虫完整教程.html)
+- [Tidyverse中10个技巧性函数——来源YouTube](https://jmxsy2016.github.io/Data-Science-and-Economics/R语言高级编程/code/Tidyverse中10个具有技巧性函数.html)
+- [批量读取Excel数据](https://jmxsy2016.github.io/Data-Science-and-Economics/R语言高级编程/code/批量读取Excel数据.html)
+- [purrr教程1](https://jmxsy2016.github.io/Data-Science-and-Economics/R语言高级编程/code/purrr教程.html)
+- [purrr教程2](https://jmxsy2016.github.io/Data-Science-and-Economics/R语言高级编程/code/purrr教程2.html)
+- [R字符串数据处理——一个实际例子](https://jmxsy2016.github.io/Data-Science-and-Economics/R语言高级编程/code/R字符串数据处理-一个实际例子.html)
+- [爬虫教程_CSS选择器](https://jmxsy2016.github.io/Data-Science-and-Economics/R语言高级编程/code/爬虫教程_CSS选择器.html)
+- [爬虫完整教程](https://jmxsy2016.github.io/Data-Science-and-Economics/R语言高级编程/code/R爬虫完整教程.html)
 - [RMarkdown PPT教程](https://rladies.github.io/meetup-presentations_oslo/2020-05-11-rmarkdown_like_a_boss/presentation.html#1)
 - [Integration: R and Python](https://shawnsanto.com/files/sta323/slides/lec-16b-rpython.html#1)
-- [如何制作一个PPT](https://jmxsy2016.github.io/Data-Science-and-Economics/R高级编程/code/PPT.html)
+- [如何制作一个PPT](https://jmxsy2016.github.io/Data-Science-and-Economics/R语言高级编程/code/PPT.html): **`R语言课程大纲`**
 - [最受欢迎的鲜为人知的软件包](https://eringrand.github.io/fave_r_functions/)
 
 ---
@@ -146,6 +156,7 @@
 - [datapasta](https://milesmcbain.github.io/datapasta/index.html):剪贴板数据转换为c()和数据框
 - [DataExplorer](https://boxuancui.github.io/DataExplorer/)：数据探索
 - [labelled](https://jmxsy2016.github.io/Data-Science-and-Economics/R包学习-计量经济学/labelled.html):Introduction to labelled
+- [naniar](https://github.com/njtierney/naniar):`naniar`提供了有原则的、整洁的方法来总结、可视化和操作丢失的数据
 
 ### 模型分析
 
@@ -153,9 +164,12 @@
 - [pmdplyr](https://cran.r-project.org/web/packages/pmdplyr/pmdplyr.pdf):dplyr软件包作为基础，使操作面板数据更加容易
 - [stargazer](https://cran.r-project.org/web/packages/stargazer/vignettes/stargazer.pdf) [文档](https://jmxsy2016.github.io/Data-Science-and-Economics/R包学习-计量经济学/stargazer.pdf):将模型结果绘制成表格
 
-### 可重复研究
+### 可重复研究(R Markdown系列)
 
 - [prodigenr](https://github.com/lwjohnst86/prodigenr):具有prodigenr的项目创建: 可重复和开放科学项目的一个组成部分,更好用的project
+- [bubblyr](https://github.com/feddelegrand7/bubblyr):`bubblyr` is an R wrapper of the `JavaScript` library `bubbly-bg`
+- [downloadthis](https://cran.r-project.org/web/packages/downloadthis/vignettes/downloadthis.html):Implement `**download buttons**` in HTML output from 'rmarkdown' without the need for 'runtime:shiny'. [网址](https://github.com/fmmattioni/downloadthis)
+- [emo](https://github.com/hadley/emo):The goal of `emo(ji)` is to make it very easy to insert `emoji` into RMarkdown documents.
 
 ### 项目管理
 
@@ -168,6 +182,20 @@
 #### 正则表达式
 
 - [RegExplain](https://github.com/gadenbuie/regexplain):正则表达式很复杂，RegExplain使你更容易看到你在做什么。
+- [stringr.plus](https://github.com/johncassil/stringr.plus):提供了一些`stringr`中没有的用于处理字符串的额外函数。函数可以很好地与`tidyverse`一起使用。[一个笔记](https://jmxsy2016.github.io/Data-Science-and-Economics/Data-Science-and-Economics/R包学习-文本挖掘/stringr.plus-package)
+
+### shiny
+
+- [golem](https://thinkr-open.github.io/golem/):an opinionated framework for building production-grade shiny applications
+
+
+
+
+
+
+
+
+
 
 
 

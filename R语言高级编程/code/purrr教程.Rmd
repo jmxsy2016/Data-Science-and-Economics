@@ -1,0 +1,511 @@
+---
+title: "purrr教程"
+author: "LJJ"
+date: "2020/4/18"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      fig.show = "hold",
+                      fig.align = "center",
+                      cache = TRUE)
+```
+
+## 加载包
+
+```{r,warning=FALSE,message=FALSE}
+library(tidyverse) # CRAN v1.3.0 
+library(purrr) # CRAN v0.3.4 
+library(repurrrsive) # CRAN v1.0.0 
+library(wesanderson) # CRAN v0.3.6 
+```
+
+## 了解list
+
+```{r}
+x <- list(a = "a", b = 2)
+x$a
+x$b
+x[["a"]]
+x[["b"]]
+```
+
+```{r}
+x[[1]]
+x[[2]]
+```
+
+```{r}
+x[1]
+x[2]
+```
+
+```{r}
+x["a"]
+x["b"]
+```
+
+```{r}
+str(x)
+```
+
+```{r}
+listviewer::jsonedit(wesanderson)
+```
+
+```{r}
+str(wesanderson)  # 很完整
+```
+
+```{r}
+str(got_chars,list.len = 5)
+```
+
+```{r}
+str(got_chars[[1]][[1]])
+str(got_chars[[1]],list.len = 5)
+```
+
+```{r}
+listviewer::jsonedit(got_chars)
+```
+
+```{r}
+str(gh_users,max.level = 1)
+listviewer::jsonedit(gh_users)
+```
+
+```{r}
+str(gh_repos,max.level = 1,list.len = 5)
+str(gh_repos,max.level = 2,list.len = 5)
+```
+
+## 练习
+
+```{r}
+str(wesanderson)
+str(wesanderson,max.level = 0)
+str(wesanderson,max.level = 1)
+str(wesanderson,max.level = 2)
+```
+
+```{r}
+str(got_chars,max.level = 0)
+str(got_chars,max.level = 1)
+str(got_chars,max.level = 2,list.len = 2)
+str(got_chars,max.level = 3,list.len = 2)
+```
+
+```{r}
+str(got_chars,list.len = 0)
+str(got_chars,list.len = 1)
+str(got_chars,list.len = 2)
+```
+
+```{r}
+got_chars %>% listviewer::jsonedit()
+str(got_chars,max.level = 1,list.len = 1)
+str(got_chars,max.level = 2,list.len = 1)
+```
+
+```{r}
+str(got_chars[[1]])
+str(got_chars[[1]],max.level = 0)
+str(got_chars[[1]],max.level = 1)
+str(got_chars[[1]],max.level = 2)
+str(got_chars[[1]],max.level = 2,list.len = 5)
+```
+
+## map简介
+
+```{r}
+map(c(9, 16, 25), sqrt)
+```
+
+```{r}
+got_chars[1:4] %>% listviewer::jsonedit()
+```
+
+```{r}
+map(got_chars[1:4],"name")
+```
+
+```{r}
+map(got_chars[5:8],3)
+```
+
+```{r}
+map_chr(got_chars[9:12], "name")
+```
+
+```{r}
+map_dfr(got_chars, extract, c("name", "culture", "gender", "id", "born", "alive"))
+```
+
+```{r}
+library(tibble) # CRAN v3.0.1 # CRAN v3.0.1
+got_chars %>% {
+  tibble(
+       name = map_chr(., "name"),
+    culture = map_chr(., "culture"),
+     gender = map_chr(., "gender"),       
+         id = map_int(., "id"),
+       born = map_chr(., "born"),
+      alive = map_lgl(., "alive")
+  )
+}
+```
+
+## 练习
+
+```{r}
+map_dfr(1,function(x){
+  tibble(
+       name = map_chr(got_chars, "name"),
+    culture = map_chr(got_chars, "culture"),
+     gender = map_chr(got_chars, "gender"),       
+         id = map_int(got_chars, "id"),
+       born = map_chr(got_chars, "born"),
+      alive = map_lgl(got_chars, "alive")
+  )
+})
+```
+
+or
+
+```{r}
+got_chars %>% map_dfr(`[`,2:6)
+```
+
+```{r}
+iris %>% map(`[`,1:4)
+```
+
+## map进阶
+
+```{r}
+aliases <-
+  set_names(map(got_chars, "aliases"), map_chr(got_chars, "name"))
+(aliases <-
+    aliases[c("Theon Greyjoy", "Asha Greyjoy", "Brienne of Tarth")])
+```
+
+```{r}
+my_fun <- function(x) paste(x, collapse = " | ")
+map(aliases, my_fun)
+```
+
+```{r}
+map(aliases, function(x) paste(x, collapse = " | ")) 
+```
+
+```{r}
+(a <- map(got_chars, "aliases")[[19]]) ## OOPS! NULL --> a useless example
+(a <- map(got_chars, "aliases")[[16]]) ## ok good
+paste(a, sep = " | ")                  ## OOPS! not what I want
+paste(a, collapse = " | ")             ## ok good
+got_chars[15:17] %>%                   ## I am a programming god
+  map("aliases") %>% 
+  map_chr(paste, collapse = " | ")     ## good!
+```
+
+```{r}
+aliases <- set_names(map(got_chars, "aliases"), map_chr(got_chars, "name"))
+map_chr(aliases[c(3, 10, 20, 24)], ~ paste(.x, collapse = " | ")) %>% 
+  tibble::enframe(value = "aliases")
+```
+
+```{r}
+tibble::tibble(
+  name = map_chr(got_chars, "name"),
+  aliases = got_chars %>% 
+    map("aliases") %>% 
+    map_chr(~ paste(.x, collapse = " | "))
+) %>% 
+  dplyr::slice(c(3, 10, 20, 24))
+```
+
+## map2
+
+```{r}
+nms <- got_chars %>% 
+  map_chr("name")
+birth <- got_chars %>% 
+  map_chr("born")
+```
+
+```{r}
+my_fun <- function(x, y) paste(x, "was born", y)
+map2_chr(nms, birth, my_fun) 
+```
+
+```{r}
+map2_chr(nms, birth, function(x, y) paste(x, "was born", y))
+```
+
+```{r}
+map2_chr(nms,birth,~ paste(.x,"was born", .y)) %>% sample(10)
+```
+
+## pmap
+
+```{r}
+df <- got_chars %>% {
+  tibble::tibble(
+    name = map_chr(., "name"),
+    aliases = map(., "aliases"),
+    allegiances = map(., "allegiances")
+  )
+}
+```
+
+```{r}
+my_fun <- function(name, aliases, allegiances) {
+  paste(name, "has", length(aliases), 
+        "aliases and",length(allegiances), "allegiances")
+}
+df %>% 
+  pmap_chr(my_fun)
+```
+
+## Trump Android words
+
+```{r}
+library(purrr) # CRAN v0.3.4 # CRAN v0.3.4 # CRAN v0.3.4
+suppressMessages(library(dplyr)) # not installed on this machine vNA
+library(tibble) # CRAN v3.0.1 # CRAN v3.0.1
+# load(url("http://varianceexplained.org/files/trump_tweets_df.rda"))
+# save(trump_tweets_df,file = "R高级编程/data1/trump_tweets_df.RData")
+load(file = "./R高级编程/data1/trump_tweets_df.RData")
+```
+
+```{r}
+trump_tweets_df %>% glimpse()
+trump_tweets_df %>% datatable()
+```
+
+```{r}
+tweets <- trump_tweets_df$text
+tweets %>% head() %>% strtrim(70)
+```
+
+```{r}
+regex <- "badly|crazy|weak|spent|strong|dumb|joke|guns|funny|dead"# 正则表达式
+```
+
+```{r}
+tweets %>% class()
+```
+
+```{r}
+tweets <- tweets[c(1, 2, 5, 6, 198, 347, 919)]
+tweets %>% strtrim(70)
+```
+
+```{r}
+matches <- gregexpr(regex, tweets)
+```
+
+```{r}
+str_locate_all(tweets,regex)
+```
+
+## Sample from groups, n varies by group
+
+```{r}
+iris %>% 
+  group_by(Species) %>% 
+  nest() %>% 
+  ungroup() %>% 
+  mutate(n = c(2,5,3))->iris_nested
+iris_nested
+```
+
+```{r}
+map2(iris_nested$data,iris_nested$n,sample_n)
+```
+
+
+```{r}
+(sampled_iris <- iris_nested %>%
+  mutate(samp = map2(data, n, sample_n)))
+```
+
+```{r}
+sampled_iris %>% 
+  select(-data) %>%
+  unnest(samp)
+```
+
+```{r}
+iris %>% 
+  group_by(Species) %>% 
+  nest() %>% 
+  ungroup() %>% 
+  mutate(n = c(2,5,3)) %>% 
+  mutate(samp = map2(data,n,sample_n)) %>% 
+  unnest(samp) %>% 
+  select(-data)
+```
+
+能不能换种方法？
+
+```{r}
+map(c(2,5,3),function(x){
+  iris %>% 
+  filter(Species == "setosa") %>% 
+  sample_n(x)
+}) %>% 
+  bind_rows()
+```
+
+## List columns
+
+```{r}
+library(tidyverse) # CRAN v1.3.0 # CRAN v1.3.0 # CRAN v1.3.0 # CRAN v1.3.0 # CRAN v1.3.0
+library(lubridate) # CRAN v1.7.8
+library(here) # CRAN v0.1 # CRAN v0.1
+```
+
+```{r}
+trump_tweets_df %>% 
+  slice(c(1, 2, 5, 6, 198, 347, 919)) %>% 
+  select(text,created,statusSource)->tb_raw
+```
+
+```{r}
+source_regex <- "android|iphone"
+tword_regex <- "badly|crazy|weak|spent|strong|dumb|joke|guns|funny|dead"
+
+```
+
+```{r}
+tb_raw %>% 
+  mutate(source = str_extract(statusSource,source_regex)) %>% 
+  mutate(twords = str_extract_all(text,tword_regex))->tb
+tb
+tb %>% view()
+```
+
+```{r}
+tb %>% 
+  mutate(n = lengths(twords),
+         hour = hour(created),
+         start = str_locate_all(text,tword_regex))->tb
+tb
+```
+
+## Call the API of Ice and Fire
+
+```{r}
+library(repurrrsive) # CRAN v1.0.0 # CRAN v1.0.0 # CRAN v1.0.0
+library(tidyverse) # CRAN v1.3.0 # CRAN v1.3.0 # CRAN v1.3.0 # CRAN v1.3.0 # CRAN v1.3.0
+library(httr) # CRAN v1.4.1
+library(here) # CRAN v0.1 # CRAN v0.1
+```
+
+```{r}
+got_chars %>% listviewer::jsonedit()
+```
+
+```{r}
+set_names(map_int(got_chars,"id"),
+          map_chr(got_chars,"name"))->pov
+
+pov %>% tail()
+```
+
+```{r}
+pov %>% enframe(value = "id")->ice
+ice
+```
+
+## Nested data frame, modelling, and Gapminder
+
+```{r}
+library(tidyverse) # CRAN v1.3.0 # CRAN v1.3.0 # CRAN v1.3.0 # CRAN v1.3.0 # CRAN v1.3.0
+library(gapminder) # CRAN v0.3.0
+library(broom) # CRAN v0.5.5 # CRAN v0.5.5
+```
+
+```{r}
+gapminder %>% datatable()
+```
+
+```{r}
+gapminder %>% 
+  ggplot(aes(year,lifeExp,group = country)) +
+  geom_line() +
+  geom_point()
+```
+
+```{r}
+gapminder %>% 
+  ggplot(aes(year,lifeExp,group = country)) +
+  geom_smooth(method = "lm",se = FALSE,alpah = 0.5)
+```
+
+```{r}
+gapminder %>% 
+  group_by(country) %>% 
+  nest()->gap_nested
+```
+
+```{r}
+gapminder %>% 
+  split(.$country)
+```
+
+```{r}
+gap_nested$data[[1]]
+```
+
+```{r}
+gap_fits <- gap_nested %>%
+  mutate(fit = map(data,function(x){
+    lm(lifeExp ~ year, data = x)
+    })
+    )
+gap_fits$fit
+```
+
+```{r}
+canada <- which(gap_fits$country == "Canada")
+summary(gap_fits$fit[[canada]])
+```
+
+```{r}
+gap_fits %>%
+  mutate(rsq = map_dbl(fit, ~ summary(.x)[["r.squared"]])) %>%
+  arrange(rsq)
+```
+
+```{r}
+library(broom) # CRAN v0.5.5 # CRAN v0.5.5
+gap_fits %>%
+  mutate(coef = map(fit, tidy)) %>%
+  unnest(coef)
+```
+
+```{r}
+# write.csv(iris,"../data1/iris.csv")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+

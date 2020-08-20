@@ -1,0 +1,175 @@
+--- 
+title: "Higher,further,faster with Marvelous R Markdown"
+# subtitle: "Lecture title"
+author:
+- affiliation: Dongbei University of Finance & Economics
+  name: Studennt. Li Junjie
+date: '`r Sys.Date()`'
+output:
+  bookdown::html_document2:
+    # code_folding: hide
+    highlight: pygments
+    # highlight: zenburn
+    # highlight: haddock
+    theme: darkly
+    # theme: cerulean
+    df_print: paged	
+    number_sections: true
+    keep_md: no
+    keep_tex: no
+    toc: yes
+    toc_depth: 5
+    toc_float:
+      collapsed: no
+      smooth_scroll: yes
+    # css: styles.css
+# bibliography: [book.bib, packages.bib]
+# biblio-style: apalike
+params:
+  species: Adelie
+link-citations: yes
+sansfont: Times New Roman
+always_allow_html: yes
+urlcolor: "red"
+description: "This is a minimal example of using the bookdown package to write a book. The output format for this example is bookdown::gitbook."
+abstract: |
+    深入探讨R Markdown的四个分类，进一步领略R Markdown的玄幻之处！四个分类为：Literate Programming，Data Products，Control Documents，Templating。
+    
+    幻动片：https://docs.google.com/presentation/d/e/2PACX-1vRo1eXJtiwo6aTA8KZ2E-bUbv2GOonC2RIVk_5eWQ5y-ADXbRamBhHaa3w1vMW6BkEPOMJ13ZahSo8Q/embed?start=false&loop=true&delayms=30000&slide=id.p
+    
+editor_options: 
+  chunk_output_type: console
+---
+
+# `r emo::ji("smile")`加载经常用的R包`r emo::ji("smile")`
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      cache = FALSE,
+                      fig.show = "hold",
+                      fig.align = "center",
+                      tidy = FALSE)
+                      # class.source = "bg-warning")
+```
+
+```{r,echo=FALSE}
+library(bubblyr)
+# bubblyr::bubbly(theme = "sweet")
+bubblyr::bubbly(theme = "rladies")
+```
+
+```{js, echo=FALSE}
+$('.title').css('color', 'red')
+$('.title').css('font-family', 'Times New Roman')
+```
+
+```{css, echo=FALSE}
+* {
+    # font-size: 17px !important;
+    font-family: "Times New Roman" !important;
+    # color: rgb(199 237	204)
+}
+::selection {
+   # background: rgb(135 206 255);
+}
+```
+
+```{r,warning=FALSE,message=FALSE}
+library(pacman)
+# 读数据
+p_load(readxl,writexl,data.table,openxlsx,haven,rvest)
+```
+
+```{r,warning=FALSE,message=FALSE}
+# 数据探索
+p_load(tidyverse,DT,skimr,DataExplorer,explore,vtable,stringr,kableExtra,lubridate)
+```
+
+```{r,eval=FALSE,warning=FALSE,message=FALSE}
+# 模型
+p_load(grf,glmnet,caret,tidytext,fpp2,forecast,car,tseries,hdm,tidymodels,broom)
+```
+
+```{r,eval=FALSE,warning=FALSE,message=FALSE}
+# 可视化
+p_load(patchwork,ggrepel,ggcorrplot,gghighlight,ggthemes,shiny)
+```
+
+```{r,eval=TRUE,warning=FALSE,message=FALSE}
+# 其它常用包
+p_load(magrittr,listviewer,devtools,here,janitor,reticulate,jsonlite)
+```
+
+# `r emo::ji("smile")`Literate Programming`r emo::ji("smile")`
+
+A programming paradigm introduced by `Donald Knuth` in which a computer program is given an explanation of its logic in a natural language, such as English, interspersed with snippets of macros and traditional source code, from which compilable source code can be generated.
+
+```{r, include = TRUE}
+p_load(palmerpenguins)
+smaller <- penguins %>%
+  filter(body_mass_g <= 4000)
+```
+
+```{r}
+smaller
+```
+
+We have data about `r nrow(penguins)` penguins. Only `r nrow(penguins) - nrow(smaller)` are larger than
+4000 grams. The distribution of the remainder is shown below:
+
+```{r}
+smaller %>% 
+  ggplot(aes(body_mass_g)) +
+  geom_histogram() +
+  mytheme
+```
+
+# `r emo::ji("smile")`Data Product`r emo::ji("smile")`
+
+```{r}
+p_load(reactable)
+```
+
+```{r}
+smaller %>% datatable()
+```
+
+Data Product(s):
+
+- `Reports` - HTML, PDF, Word, Markdown, RTF, Tufte handout, GitHub document
+- `Presentations` - Xaringan, Powerpoint, ioslides, reveal.js, beamer
+- `Dashboards` - flexdashboard as standalone or with Shiny
+- `Entire websites` - Blogdown, Hugodown, distill, R Markdown site
+- `Books` - bookdown
+- `HTMLWidgets` - DT, reactable, plotly, crosstalk and more
+
+# `r emo::ji("smile")`Control Document`r emo::ji("smile")`
+
+```{r}
+params$species
+penguins %>%
+  filter(species == params$species) %>%
+  filter(!is.na(body_mass_g)) -> smaller
+```
+
+We have data about `r nrow(penguins)` penguins. Only `r nrow(penguins) - nrow(smaller)` are not classified as`r params$species`. The distribution of the
+`r params$species` penguins are shown below:
+
+```{r}
+smaller %>%
+  ggplot(aes(body_mass_g,fill = sex)) +
+  geom_histogram(binwidth = 100) +
+  mytheme
+```
+
+# `r emo::ji("smile")`Templating`r emo::ji("smile")`
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,280 @@
+---
+title: "字符串处理笔记"
+author: "LJJ"
+date: "2020/4/18"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      fig.show = "hold",
+                      fig.align = "center",
+                      cache = TRUE)
+```
+
+## 加载包和数据
+
+```{r}
+library(stringr)
+library(tidyverse,warn.conflicts = FALSE)
+```
+
+
+```{r}
+x <- c("why", "video", "cross", "extra", "deal", "authority")
+x
+```
+
+## str_detect(x, pattern)
+
+```{r}
+str_detect(x,"[aeiou]")
+```
+
+## str_count(x, pattern)
+
+```{r}
+str_count(x,pattern = "[aeiou]")
+```
+
+## str_subset(x, pattern)
+
+```{r}
+str_subset(x,"[aeiou]")
+```
+
+## str_locate(x, pattern)
+
+```{r}
+str_locate_all(x,"[aeiou]")
+```
+
+## str_extract(x, pattern)
+
+```{r}
+str_extract(x, "[aeiou]")
+str_extract(x,"(.)[aeiou](.)")
+str_extract_all(x, "[aeiou]")
+```
+
+## str_match(x, pattern)
+
+```{r}
+str_match(x, "(.)[aeiou](.)")
+```
+
+## str_replace(x, pattern, replacement)
+
+```{r}
+str_replace(x,"[aeiou]","?")
+```
+
+## str_split(x, pattern)
+
+```{r}
+str_split(x,"[aeiou]")
+```
+
+fixed(): match exact bytes
+coll(): match human letters
+boundary(): match boundaries
+
+Regexplain RStudio插件为使用来自stringr的正则表达式和函数提供了一个友好的接口。这个插件允许您交互式地构建regexp、检查常用字符串匹配函数的输出、查阅交互式帮助页面，或者使用所包含的资源学习正则表达式。
+
+```{r}
+# devtools::install_github("gadenbuie/regexplain")
+```
+
+R提供了一套可靠的字符串运算，但是因为它们是随着时间的推移有机地成长起来的，所以它们可能不一致，并且有点难以学习。此外，它们在其他编程语言中落后于字符串运算，因此在像 Ruby 或Python这样的语言中很容易做到的一些事情在r中是相 当困难的。 
+
+使用一致的函数名和参数名。 第一个参数始终是要修改的字符串的向量，这使得 stringr 与管道协同工作得特别好:
+
+```{r}
+letters %>% 
+  .[1:10] %>% 
+  str_pad(3,"right") %>% 
+  str_c(letters[1:10])
+  
+
+letters %>% 
+  .[1:10] %>% 
+  str_c(letters[1:10])
+```
+
+## 正则表达式
+
+### Basic matches
+
+```{r}
+x <- c("apple", "banana", "pear")
+str_extract(x, "an")
+```
+
+```{r}
+# 大小写忽略
+bananas <- c("banana", "Banana", "BANANA")
+str_extract(bananas,regex(pattern = "banana"))
+str_extract(bananas,regex(pattern = "banana",ignore_case = TRUE))
+```
+
+```{r}
+str_extract(x, ".a.")
+```
+
+```{r}
+str_detect("\nX\n", ".X.")
+str_extract("\nX\n",regex(".x.",ignore_case = TRUE,dotall = TRUE))
+```
+
+## Escaping
+
+```{r}
+dot <- "\\."
+dot
+writeLines(dot)
+str_extract(c("abc","a.c","b.ef"),"\\.")
+```
+
+```{r}
+x <- "a\\b"
+x
+writeLines(x)
+```
+
+```{r}
+str_extract(x,"\\\\")
+```
+
+### grouping 
+
+```{r}
+fruit %>% 
+  str_extract_all(pattern = "(..)\\1")   # 列表，提取匹配元素
+```
+
+```{r}
+fruit %>% 
+  str_extract(pattern = "(..)\\1")  # 非列表
+```
+
+```{r}
+fruit %>%
+  str_subset(pattern = "(..)\\1")
+```
+
+```{r}
+fruit %>% 
+  str_subset("(..)\\1") %>% 
+  str_match("(..)\\1")
+```
+
+```{r}
+str_match(c("grey", "gray"), "gr(e|a)y")
+```
+
+```{r}
+str_extract(c("grey", "gray"), "gr(e|a)y")
+```
+
+```{r}
+str_extract_all(c("grey", "gray"), "gr(e|a)y")
+```
+
+## Anchors
+
+```{r}
+x <- c("apple", "banana", "pear")
+str_extract(x,"^a")
+str_extract(x,"[aeiou]$")
+```
+
+```{r}
+str_extract_all(x,"[aeiou]$")
+```
+
+```{r}
+str_subset(x,pattern = "[aeiou]$")
+```
+
+```{r}
+x <- "Line 1\nLine 2\nLine 3\n"
+x
+x %>% writeLines()
+str_extract_all(x, "^Line..")
+```
+
+```{r}
+str_extract_all(x, regex("^Line..", multiline = TRUE))
+```
+
+```{r}
+## \A matches the start of the input.
+## \Z matches the end of the input.
+str_extract_all(x, regex("\\ALine..", multiline = TRUE)) 
+str_extract_all(x, regex("Line..\\Z", multiline = TRUE)) 
+```
+
+## Repetition
+
+?: 0 or 1.
++: 1 or more.
+*: 0 or more.
+
+```{r}
+x <- "1888 is the longest year in Roman numerals: MDCCCLXXXVIIICCXL"
+x
+```
+
+```{r}
+str_extract_all(x,"CC?")
+str_extract(x,"CC?")
+```
+
+```{r}
+str_extract_all(x,"CC*")
+```
+
+```{r}
+str_extract_all(x, 'C[LX]+')
+```
+
+```{r}
+str_extract_all(x, "C{2}")
+str_extract_all(x, "C{2,}")
+str_extract_all(x, "C{2,3}")
+```
+
+```{r}
+x
+str_extract_all(x, "C{2}")
+```
+
+默认情况下，这些匹配是“贪婪的” : 它们将匹配尽可能长的字符串。 你可以让它们变得“懒惰” ，通过将？ 跟着他们:
+
+```{r}
+str_extract(x, c("C{2,3}", "C{2,3}?"))
+```
+
+```{r}
+str_extract(x, c("C[LX]+", "C[LX]+?"))
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

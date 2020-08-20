@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<nbaplayer>
+
+	   <team>
+	        <city name="houston"> rockets</city>
+			<player> james harden</player>
+	   </team>
+	   
+	   <team>
+	        <city name="boston"> celtics</city>
+			<player> kyrie irving</player>
+	   </team>
+	   
+	   <team>
+	        <city name="goldenstates"> worriors</city>
+			<player> stephen curry</player>
+	   </team>
+	   
+</nbaplayer>
