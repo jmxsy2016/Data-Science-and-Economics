@@ -4,7 +4,7 @@
     <title>R语言学习攻略</title>
     <meta charset="utf-8" />
     <meta name="author" content="Studennt. LJJ" />
-    <meta name="date" content="2020-07-01" />
+    <meta name="date" content="2020-08-26" />
     <link href="libs/remark-css-0.0.1/default.css" rel="stylesheet" />
     <link href="libs/remark-css-0.0.1/metropolis.css" rel="stylesheet" />
   </head>
@@ -15,7 +15,7 @@ class: center, middle, inverse, title-slide
 # R语言学习攻略
 ## R语言:从0到1
 ### Studennt. LJJ
-### 2020-07-01
+### 2020-08-26
 
 ---
 
@@ -29,9 +29,9 @@ class: inverse, center, middle
 
 --
 
-- [R官网](https://cran.r-project.org/mirrors.html)
-- [Rstudio官网](https://rstudio.com/products/rstudio/download/)
+- [R官网](https://cran.r-project.org/mirrors.html)和[Rstudio官网](https://rstudio.com/products/rstudio/download/)
 - [Git](https://git-scm.com/downloads)
+- [Python官网](https://www.anaconda.com/products/individual)
 
 --
 
@@ -100,6 +100,8 @@ if (!requireNamespace("xaringan"))
 
 本地下载安装:分为二进制和Source两种方式
 
+以上三种安装方式视频教程有介绍，视频在**R，Rstudio，python和git安装**一节
+
 ---
 
 ## R语言基本语法
@@ -141,6 +143,7 @@ head(mtcars,6)
 ```
 
 ---
+
 ## R语言基本语法
 
 
@@ -201,6 +204,15 @@ mtcars[1:8]
 
 Base R的图形美观度一般，但是经过修改应该会有所改善，但是这不如直接使用ggplot语法格式，更加美观，代码量更少！
 
+
+```r
+boxplot(Sepal.Length~Species,data = iris)
+```
+
+&lt;img src="PPT_files/figure-html/unnamed-chunk-7-1.png" style="display: block; margin: auto;" /&gt;
+
+---
+
 ## 线性回归
 
 
@@ -226,7 +238,7 @@ ggplot2容易学习，只要有数据，想绘制什么样的图形都可以，�
 
 下边牛刀小试:
 
-&lt;img src="PPT_files/figure-html/unnamed-chunk-8-1.png" style="display: block; margin: auto;" /&gt;
+&lt;img src="PPT_files/figure-html/unnamed-chunk-9-1.png" style="display: block; margin: auto;" /&gt;
 
 ---
 class: inverse, center, middle
@@ -307,7 +319,9 @@ Tidyverse还包括许多其他具有更专业用途的软件包。
 
 --
 
-- 模型分析:[tidymodels](https://www.tidymodels.org/)和[Caret](https://topepo.github.io/caret/data-splitting.html)
+- 模型分析:
+  - [tidymodels](https://www.tidymodels.org/)
+  - [caret](https://topepo.github.io/caret/data-splitting.html)
 
 ---
 class: inverse, center, middle
@@ -318,15 +332,27 @@ class: inverse, center, middle
 
 ## R Markdown
 
+--
+
 - [Bookdown](https://bookdown.org/yihui/bookdown/):如何写一本书
+
+--
 
 - [Blogdown](https://bookdown.org/yihui/blogdown/):如何搭建个人博客
 
+--
+
 - [Xaringan](https://arm.rbind.io/slides/xaringan.html#1):如何制作PPT
+
+--
 
 - [Rmarkdown](https://rstudio.com/resources/cheatsheets/):如何用R Markdown写代码
 
+--
+
 - [Vitae](https://pkg.mitchelloharawild.com/vitae/):如何更新简历
+
+--
 
 ---
 
@@ -375,7 +401,7 @@ class: inverse, center, middle
 
 --
 
-- [R Views](https://rviews.rstudio.com/):R的博客
+- [R Views](https://rviews.rstudio.com/):R语言的博客
 
 --
 
@@ -383,7 +409,7 @@ class: inverse, center, middle
 
 --
 
-- [R News](https://www.r-craft.org/category/r-news/):R新闻
+- [R News](https://www.r-craft.org/category/r-news/):R每周新闻
 
 --
 
@@ -407,21 +433,37 @@ class: inverse, center, middle
 
 --
 
-- [Bookdown系列](https://bookdown.org/):优秀的R书，由bookdown包书写
+- [Bookdown系列](https://bookdown.org/):优秀的R语言书，由bookdown包书写
 
 ---
 
+--
+
 ## 个人项目
 
-- [可视化](https://jmxsy2016.github.io/Learning-visualization/):一系列R可视化教程
+- [可视化](https://jmxsy2016.github.io/Learning-visualization/):一系列R可视化教程和有用的R可视化包集合
 
-- [数据科学](https://github.com/jmxsy2016/Data-Science-and-Economics):数据科学与经济学
+- [数据科学](https://github.com/jmxsy2016/Data-Science-and-Economics):数据科学与经济学项目，涉及各种编程和学术信息
 
-- [因果推断](https://github.com/jmxsy2016/Causal_Inference):机器学习与因果推断
+--
 
-## 多浏览Github和推特
+## 多浏览Github项目和推特
 
-## 跟踪动态和一些R数据科学家
+- 如何充分使用GitHub工具
+- 如何使用推特开展学术研究
+- 跟踪R语言动态和一些R数据科学家
+
+--
+
+## 阅读高质量书的方法
+
+- R数据科学
+- [Happy Git and GitHub for the useR](https://happygitwithr.com/)
+- [现代科研指北](https://bookdown.org/yufree/sciguide/)
+- ...
+
+## 
+
 
 ---
 

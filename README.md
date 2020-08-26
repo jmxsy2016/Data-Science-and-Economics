@@ -123,7 +123,8 @@
   - [R Markdown Cookbook](https://bookdown.org/yihui/rmarkdown-cookbook/):谢益辉代表性著作	
 
 - 珍妮	
-  - [What They Forgot to Teach You About R](https://github.com/rstats-wtf/what-they-forgot):一些不为人知的R和Rstudio技巧 	
+  - [What They Forgot to Teach You About R](https://github.com/rstats-wtf/what-they-forgot):一些不为人知的R和Rstudio技巧 
+  - [Happy Git and GitHub for the useR](https://happygitwithr.com/)
 
 - 其它	
   - [RMarkdown for Scientists](https://rmd4sci.njtierney.com/)：RMarkdown概述	
