@@ -1,0 +1,242 @@
+---
+title: "tidyverse-tips"
+# subtitle: "Lecture title"
+author:
+- affiliation: Dongbei University of Finance & Economics
+  name: Studennt. Li Junjie
+date: '`r Sys.Date()`'
+output:
+  bookdown::html_document2:
+    # code_folding: hide
+    highlight: pygments
+    # highlight: zenburn
+    # highlight: haddock
+    # theme: darkly
+    theme: flatly
+    df_print: paged	
+    number_sections: true
+    keep_md: no
+    keep_tex: no
+    toc: yes
+    toc_depth: 5
+    toc_float:
+      collapsed: no
+      smooth_scroll: yes
+    # css: styles.css
+# bibliography: [book.bib, packages.bib]
+# biblio-style: apalike
+link-citations: yes
+sansfont: Times New Roman
+always_allow_html: yes
+urlcolor: "red"
+description: "This is a minimal example of using the bookdown package to write a book. The output format for this example is bookdown::gitbook."
+abstract: |
+    Below are some notes I have taken on David Robinson’s screencasts, with tips and tricks I use for my own R peregrinations in the Tidyverse framework. Hopefully, these notes will be useful to others.   
+    参考网址：https://oliviergimenez.github.io/tidyverse-tips/
+---
+
+# 😊加载经常用的R包😊
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      cache = FALSE,
+                      fig.show = "hold",
+                      fig.align = "center",
+                      tidy = FALSE)
+                      # class.source = "bg-warning")
+```
+
+```{js, echo=FALSE}
+$('.title').css('color', 'red')
+$('.title').css('font-family', 'Times New Roman')
+```
+
+```{css, echo=FALSE}
+* {
+    # font-size: 17px !important;
+    font-family: "Times New Roman" !important;
+    color: rgb(0 0	0)
+}
+::selection {
+   # background: rgb(135 206 255);
+}
+```
+
+```{css, echo=FALSE}
+code {
+    font-size: 19px !important;
+    font-family: "Times New Roman" !important;
+    # color: rgb(199 237	204)
+}
+::selection {
+   # background: rgb(135 206 255);
+}
+```
+
+```{r,echo=FALSE}
+library(bubblyr)
+bubblyr::bubbly(theme = "warmup")
+# bubblyr::bubbly(theme = "rladies")
+```
+
+```{r,warning=FALSE,message=FALSE}
+library(pacman)
+# 读数据
+p_load(readxl,writexl,data.table,openxlsx,haven,rvest)
+```
+
+```{r,warning=FALSE,message=FALSE}
+# 数据探索
+p_load(tidyverse,DT,skimr,DataExplorer,explore,vtable,stringr,kableExtra,lubridate)
+```
+
+```{r,eval=FALSE,warning=FALSE,message=FALSE}
+# 模型
+p_load(grf,glmnet,caret,tidytext,fpp2,forecast,car,tseries,hdm,tidymodels,broom)
+```
+
+```{r,eval=FALSE,warning=FALSE,message=FALSE}
+# 可视化
+p_load(patchwork,ggrepel,ggcorrplot,gghighlight,ggthemes,shiny)
+```
+
+```{r,eval=TRUE,warning=FALSE,message=FALSE}
+# 其它常用包
+p_load(magrittr,listviewer,devtools,here,janitor,reticulate,jsonlite)
+```
+
+# 😊加载数据😊
+
+```{r}
+data("starwars")
+starwars_raw <- starwars
+```
+
+# 😊一些技巧函数😊
+
+```{r}
+starwars_raw %>% DT::datatable()
+```
+
+```{r}
+starwars_raw %>% 
+  count(name,sort = TRUE)
+```
+
+```{r}
+starwars_raw %>% 
+  count(gender,sort = TRUE)
+```
+
+```{r}
+starwars_raw %>% 
+  count(species,gender,sort = TRUE)
+```
+
+```{r}
+starwars_raw %>% 
+  drop_na() %>% 
+  count(species,mass)
+```
+
+```{r}
+starwars_raw %>% 
+  drop_na() %>% 
+  count(species,wt = mass)
+```
+
+```{r}
+starwars %>% 
+  filter(species %in% c('Aleena','Droid')) %>%
+  count(species, gender)
+```
+
+```{r}
+starwars %>% 
+  filter(species %in% c('Aleena','Droid')) %>%
+  count(species, gender) %>% 
+  complete(species,gender)
+```
+
+```{r}
+starwars %>% 
+  filter(species %in% c('Aleena','Droid')) %>%
+  count(species, gender) %>% 
+  complete(species,gender,fill = list(n = 0))
+```
+
+```{r,echo=FALSE}
+knitr::include_graphics(here::here("R语言高级编程",
+                                   "fig",
+                                   "dplyr_across.png"))
+```
+
+```{r}
+starwars_raw %>% 
+  summarise(across(where(is.numeric),list(mean = ~mean(.x,na.rm = TRUE),
+                                          sd = ~sd(.x,na.rm = TRUE))))
+```
+
+```{r}
+starwars %>%
+  count(height_classes = 10 * (height %/% 10), 
+        name = "class_size")
+```
+
+```{r}
+starwars %>%
+  filter(!is.na(species)) %>%
+  count(species = fct_lump(species, 3)) %>%
+  mutate(species = fct_reorder(species, n)) %>% 
+  ggplot(aes(x = n, y = species)) + 
+  geom_col() +
+  mytheme
+```
+
+```{r}
+starwars %>%
+  filter(!is.na(species)) %>%
+  count(species = fct_lump(species, 3)) %>% 
+  mutate(species = factor(species)) %>% 
+  ggplot(aes(x = n, y = fct_reorder(species,n,.desc = FALSE))) +
+  geom_col() +
+  mytheme
+```
+
+Free the scales
+
+The argument `scales = "free"` is useful when using `facet_wrap()`. It allows the X and Y axes to have their own scale in each panel. You can choose to have a free scale on the X axis only with `scales = "free_x"`, same thing for the Y axis with `scales = "free_y"`.
+
+Flip coordinates
+
+We used to add a `coord_flip()` following `geom_col()` to improve the reading of a bar plot by having the categories on the Y axis. This extra line of code is no longer needed as we can simply permute the variables in the `aes()`.
+
+Titles too long
+
+Also, in a `facet_wrap()`, the title of each panel might be too long so that it doesn’t read properly. There are two ways to fix that. Either you decrease the font size with a `theme(strip.text = element_text(size = 6))` or you truncate the title with a `mutate(tr_title_text = str_trunc(title_text, 25)`.
+
+```{r}
+str_trunc("My name is ljj", 10)
+```
+
+Log scale
+
+It often makes sense to plot your data using log scales. It is very easy to do in ggplot2 by piping a `scale_x_log10()` or a `scale_y_log10()`.
+
+Axes format
+To improve the reading of your figure, it might be useful to represent the unit of an axis in percentage or display numbers with commas. The `scales` package is what you need. For example, pipe a `scale_y_continuous(labels = scales::percent)` to have your Y axis in percentages, or `scale_x_continuous(labels = scales::comma)` to add commas to the numbers of your X axis.
+
+Regular expressions
+
+I find them boring but `regular expressions` for describing patterns in strings are very useful when you have to filter rows based on some patterns (`str_detect()`), remove characters (`str_remove()`) or separate rows (`separate_rows()`). Good resources are this book chapter dedicated to strings and the vignette of the `stringr` package.
+
+
+
+
+
+
+
+
+
+
+

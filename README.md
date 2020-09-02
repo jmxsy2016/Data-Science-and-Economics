@@ -1,7 +1,5 @@
 # 学习笔记——机器学习与经济学	
 
----	
-
 ## 计量经济学与R语言	
 
 - [1介绍R语言和基本数据清洗](https://jmxsy2016.github.io/Data-Science-and-Economics/计量经济学与R语言/1介绍R语言和基本数据清洗.html)              	
@@ -22,13 +20,9 @@
 - [16混合OLS、随机效应和固定效应估计](https://jmxsy2016.github.io/Data-Science-and-Economics/计量经济学与R语言/16混合OLS、随机效应和固定效应估计.html)     	
 - [17DID估计](https://jmxsy2016.github.io/Data-Science-and-Economics/计量经济学与R语言/17DID估计.html)	
 
----	
-
 ## 统计学	
 
 [处理缺失数据的高级方法](https://jmxsy2016.github.io/Data-Science-and-Economics/Statistics/处理缺失数据的高级方法.html)	
-
----	
 
 ## Machine Learning and Causal Inference(`Python` & `R`) 	
 
@@ -39,8 +33,6 @@
 - [机器学习模型训练和集成](https://jmxsy2016.github.io/Data-Science-and-Economics/Machine_Learning_and_Causal_Inference/code/Machine-Learning-model-training-and-integration.html)	
 - [机器学习案例分析-基于泰克尼坦号](待更新):待更新	
 
----	
-
 ## R语言基础教程	
 
 - [R语言学习建议](https://jmxsy2016.github.io/Data-Science-and-Economics/R语言基础教程/R学习建议.html)	
@@ -50,19 +42,13 @@
 - [R语言基础绘图技术](https://jmxsy2016.github.io/Data-Science-and-Economics/R语言基础教程/R基础绘图技术.html)	
 - [R语言数据分析函数](https://jmxsy2016.github.io/Data-Science-and-Economics/R语言与金融大数据/R重要数据分析函数.html)	
 
----	
-
 ## 金融数据处理和R语言	
 
 - [xts-处理高频时间序列数据](https://jmxsy2016.github.io/Data-Science-and-Economics/R语言基础教程/xts-处理高频时间序列数据.html)	
 
----	
-
 ## 计量经济学与stata	
 
 - [stata与R语言命令](https://jmxsy2016.github.io/Data-Science-and-Economics/计量经济学与Stata/stata2r.pdf)	
-
----	
 
 ## 数据科学与经济学	
 
@@ -79,8 +65,6 @@
 - [R Docker教程](https://ropenscilabs.github.io/r-docker-tutorial/)	
 - [Google Compute Engine(1)](http://htmlpreview.github.io/?https://github.com/uo-ec510-2020-spring/lectures/blob/master/13-gce-i/13-gce-i.html)	
 
----	
-
 ## R高级编程	
 
 - [Tidyverse中10个技巧性函数——来源YouTube](https://jmxsy2016.github.io/Data-Science-and-Economics/R语言高级编程/code/Tidyverse中10个具有技巧性函数.html)	
@@ -94,8 +78,9 @@
 - [Integration: R and Python](https://shawnsanto.com/files/sta323/slides/lec-16b-rpython.html#1)	
 - [如何制作一个PPT](https://jmxsy2016.github.io/Data-Science-and-Economics/R语言高级编程/code/PPT.html): **`R语言课程大纲`**	
 - [最受欢迎的鲜为人知的软件包](https://eringrand.github.io/fave_r_functions/)	
-
----	
+- [懒人系列](https://bookdown.org/wangminjie/R4DS/lazyman.html):使人变懒的R包
+- [如何快速的重命名](https://www.r-bloggers.com/quick-tips-for-data-cleaning-in-r/)
+- [Tidyverse若干技巧](https://jmxsy2016.github.io/Data-Science-and-Economics/R语言高级编程/code/tidyverse-tips.html)
 
 ## R语言沟通交流	
 
@@ -104,8 +89,6 @@
 - [如何使用RMarkdown制作幻灯片](https://bookdown.org/yihui/rmarkdown/xaringan-start.html)	
 - [如何修改RMarkdown的主题](https://www.datadreaming.org/post/r-markdown-theme-gallery/)	
 - [用blogdown搭建一个静态网站(谢益辉)](https://www.youtube.com/watch?v=g-UnHlp_IgA): 视频版！[PPT](https://slides.yihui.org/2017-blogdown-CGM-Yihui-Xie.html#1)	
-
----	
 
 ## 开源书籍	
 
@@ -133,8 +116,7 @@
   - [现代科研指北](https://bookdown.org/yufree/sciguide/)(在读)	
   - [数据可视化](https://rkabacoff.github.io/datavis/)	
   - [A Generalized and Structured Analytical Workflow for Reproducible and Openly Scientific Projects](https://rostools.gitlab.io/manifesto/)	
-
----	
+  - [Big Book of R](https://www.bigbookofr.com/):R语言书籍大杂烩
 
 ## 程序包	
 
@@ -164,6 +146,7 @@
 - [gmodels](https://cran.r-project.org/web/packages/gmodels/index.html):Various R programming tools for model fitting.	
 - [pmdplyr](https://cran.r-project.org/web/packages/pmdplyr/pmdplyr.pdf):dplyr软件包作为基础，使操作面板数据更加容易	
 - [stargazer](https://cran.r-project.org/web/packages/stargazer/vignettes/stargazer.pdf) [文档](https://jmxsy2016.github.io/Data-Science-and-Economics/R包学习-计量经济学/stargazer.pdf):将模型结果绘制成表格	
+- [equatiomatic](https://datalorax.github.io/equatiomatic/):`equatiomatic`的目标是减少从适合的模型编写LaTeX代码的痛苦。将来，这个包的目标是支持`broom`支持的任何模型。有关当前支持的模型，请参阅`equatiomatic`介绍。
 
 ### 可重复研究(R Markdown系列)	
 
@@ -184,6 +167,7 @@
 
 - [RegExplain](https://github.com/gadenbuie/regexplain):正则表达式很复杂，RegExplain使你更容易看到你在做什么。	
 - [stringr.plus](https://github.com/johncassil/stringr.plus):提供了一些`stringr`中没有的用于处理字符串的额外函数。函数可以很好地与`tidyverse`一起使用。[一个笔记](https://jmxsy2016.github.io/Data-Science-and-Economics/Data-Science-and-Economics/R包学习-文本挖掘/stringr.plus-package)	
+- [inferregex](https://github.com/daranzolin/inferregex):妈妈再也不担心我的正则表达式了
 
 ### shiny	
 
