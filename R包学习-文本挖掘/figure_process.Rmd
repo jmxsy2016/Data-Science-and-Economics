@@ -1,0 +1,127 @@
+--- 
+title: "图像处理笔记"
+# subtitle: "Lecture title"
+author:
+- affiliation: Dongbei University of Finance & Economics
+  name: Studennt. Li Junjie
+date: '`r Sys.Date()`'
+output:
+  bookdown::html_document2:
+    # code_folding: hide
+    highlight: pygments
+    # highlight: zenburn
+    # highlight: haddock
+    # theme: darkly
+    theme: flatly
+    df_print: paged	
+    number_sections: true
+    keep_md: no
+    keep_tex: no
+    toc: yes
+    toc_depth: 5
+    toc_float:
+      collapsed: no
+      smooth_scroll: yes
+    # css: styles.css
+# bibliography: [book.bib, packages.bib]
+# biblio-style: apalike
+link-citations: yes
+sansfont: Times New Roman
+always_allow_html: yes
+urlcolor: "red"
+description: "This is a minimal example of using the bookdown package to write a book. The output format for this example is bookdown::gitbook."
+abstract: |
+    历史虽是记录事实之书，但吾辈之探求，则为理而非事。理是概括众事的，事则是只是一事。天下事没有两件真正相同的，执应付此事的方法，以应付彼事，自然要失败。根据于包含众事之理，以应付诸事，则不至于此了。然而理是因事而见的，舍事而求理，无有是处。所以我们求学，不能不顾事实，亦不能死记事实。
+---
+
+# 加载经常用的R包
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      cache = FALSE,
+                      fig.show = "hold",
+                      fig.align = "center",
+                      tidy = FALSE)
+                      # class.source = "bg-warning")
+```
+
+```{js, echo=FALSE}
+$('.title').css('color', 'red')
+$('.title').css('font-family', 'Times New Roman')
+```
+
+```{css, echo=FALSE}
+* {
+    # font-size: 17px !important;
+    font-family: "Times New Roman" !important;
+    color: rgb(0 0	0)
+}
+::selection {
+   # background: rgb(135 206 255);
+}
+```
+
+```{css, echo=FALSE}
+code {
+    font-size: 19px !important;
+    font-family: "Times New Roman" !important;
+    # color: rgb(199 237	204)
+}
+::selection {
+   # background: rgb(135 206 255);
+}
+```
+
+```{r,echo=FALSE}
+library(bubblyr)
+# bubblyr::bubbly(theme = "warmup")
+bubblyr::bubbly(theme = "rladies")
+```
+
+# 读入图像
+
+```{r}
+data_bear1 <- png::readPNG("fig/bear1.png")
+data_bear1 %>% class()
+data_bear1 %>% dim()
+```
+
+熊大.png由png包读出来就是255\*253\*4的大小，还包含透明度的信息（即画图常用的alpha参数）
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

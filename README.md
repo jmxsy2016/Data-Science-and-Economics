@@ -22,7 +22,7 @@
 
 ## 统计学	
 
-[处理缺失数据的高级方法](https://jmxsy2016.github.io/Data-Science-and-Economics/Statistics/处理缺失数据的高级方法.html)	
+- [1处理缺失数据的高级方法](https://jmxsy2016.github.io/Data-Science-and-Economics/Statistics/处理缺失数据的高级方法.html)	
 
 ## Machine Learning and Causal Inference(`Python` & `R`) 	
 
@@ -81,13 +81,14 @@
 - [懒人系列](https://bookdown.org/wangminjie/R4DS/lazyman.html):使人变懒的R包
 - [如何快速的重命名](https://www.r-bloggers.com/quick-tips-for-data-cleaning-in-r/)
 - [Tidyverse若干技巧](https://jmxsy2016.github.io/Data-Science-and-Economics/R语言高级编程/code/tidyverse-tips.html)
+-[ggplot2高级图形笔记](https://jmxsy2016.github.io/Data-Science-and-Economics/R语言高级编程/code/ggplot2.html)
 
 ## R语言沟通交流	
 
 - [如何发布一本书](https://bookdown.org/yihui/rmarkdown/bookdown-publish.html)	
 - [如何搭建个人博客](https://bookdown.org/yihui/rmarkdown/rmarkdown-site.html)	
 - [如何使用RMarkdown制作幻灯片](https://bookdown.org/yihui/rmarkdown/xaringan-start.html)	
-- [如何修改RMarkdown的主题](https://www.datadreaming.org/post/r-markdown-theme-gallery/)	
+- [如何修改RMarkdown的默认主题](https://www.datadreaming.org/post/r-markdown-theme-gallery/)	
 - [用blogdown搭建一个静态网站(谢益辉)](https://www.youtube.com/watch?v=g-UnHlp_IgA): 视频版！[PPT](https://slides.yihui.org/2017-blogdown-CGM-Yihui-Xie.html#1)	
 
 ## 开源书籍	
@@ -117,6 +118,7 @@
   - [数据可视化](https://rkabacoff.github.io/datavis/)	
   - [A Generalized and Structured Analytical Workflow for Reproducible and Openly Scientific Projects](https://rostools.gitlab.io/manifesto/)	
   - [Big Book of R](https://www.bigbookofr.com/):R语言书籍大杂烩
+  - [正则表达式必知必会](https://www.ituring.com.cn/book/2558)：讲解正则表达式的小册子，很不错，值得学习。
 
 ## 程序包	
 
@@ -131,6 +133,7 @@
 - [magick包](https://cran.r-project.org/web/packages/magick/vignettes/intro.html),[网站](https://docs.ropensci.org/magick/articles/intro.html)	
 - [magickGUI](https://github.com/ShotaOchi/magickGUI)	
 - [printr](https://cran.r-project.org/web/packages/printr/vignettes/printr.html)：打印表格	
+- [countdown](https://github.com/gadenbuie/countdown):`countdown` makes it easy to drop in a simple `countdown` timer in slides and HTML documents written in R Markdown.
 
 
 ### 数据清洗	
@@ -155,6 +158,10 @@
 - [downloadthis](https://cran.r-project.org/web/packages/downloadthis/vignettes/downloadthis.html):Implement `**download buttons**` in HTML output from 'rmarkdown' without the need for 'runtime:shiny'. [网址](https://github.com/fmmattioni/downloadthis)	
 - [emo](https://github.com/hadley/emo):The goal of `emo(ji)` is to make it very easy to insert `emoji` into RMarkdown documents.	
 
+### 文献管理
+
+- [rOpenSci: The RefManageR package](https://docs.ropensci.org/RefManageR/):`RefManageR` provides tools for importing and working with bibliographic references
+
 ### 项目管理	
 
 - [here](https://cran.r-project.org/web/packages/here/here.pdf):管理文件路径	
@@ -172,3 +179,7 @@
 ### shiny	
 
 - [golem](https://thinkr-open.github.io/golem/):an opinionated framework for building production-grade shiny applications
+
+### ggplot2
+
+[A ggplot2 Tutorial for Beautiful Plotting in R-blog version](https://jmxsy2016.github.io/Data-Science-and-Economics/Data-Science-and-Economics/ggplot2/A-ggplot2-Tutorial-for-Beautiful-Plotting-in-R-blog-version.html)
