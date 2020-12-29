@@ -182,7 +182,7 @@
 
 ### ggplot2
 
-[A ggplot2 Tutorial for Beautiful Plotting in R-blog version](https://jmxsy2016.github.io/Data-Science-and-Economics/ggplot2/A-ggplot2-Tutorial-for-Beautiful-Plotting-in-R-blog-version.html):ggplot2完整教程
+[A ggplot2 Tutorial for Beautiful Plotting in R-blog version](https://jmxsy2016.github.io/Data-Science-and-Economics/ggplot2/A-ggplot2-Tutorial-for-Beautiful-Plotting-in-R-blog-version.html):ggplot2系列完整教程
 
 
 
